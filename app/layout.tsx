@@ -4,7 +4,7 @@ import "@tabler/icons-webfont/dist/tabler-icons.min.css";
 import "./globals.css";
 
 const figtree = Figtree({
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "900"],
   subsets: ["latin"],
   variable: "--font-figtree",
   display: "swap",
@@ -18,9 +18,9 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SOCLE — Pilotez votre activité BTP",
+  title: "SOCLE — Tu sais poser. On s'occupe du reste.",
   description:
-    "SOCLE : la boîte à outils des artisans du bâtiment — chiffrage, rentabilité, devis, PV de réception et plus.",
+    "SOCLE est le compagnon de route de l'artisan qui devient entrepreneur BTP : du dépôt de statut à ton premier chantier rentable. Conçu par un artisan, pour les artisans.",
 };
 
 export default function RootLayout({

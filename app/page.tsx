@@ -1,6 +1,83 @@
 import Link from "next/link";
 import RevealInit from "@/components/RevealInit";
+import TauxDemo from "@/components/landing/TauxDemo";
 import "./landing.css";
+
+type Card = { href: string; name: string; desc: string };
+
+const AVANT: Card[] = [
+  {
+    href: "/construction/parametres",
+    name: "Aide au choix du statut",
+    desc: "Micro, EURL ou SASU comparés selon ta situation : revenus, charges, protection.",
+  },
+  {
+    href: "/construction/checklist",
+    name: "Checklist d'immatriculation",
+    desc: "13 étapes, 3 phases, budget estimé. Rien d'oublié, dans le bon ordre.",
+  },
+  {
+    href: "/construction/cgv",
+    name: "CGV et mentions légales",
+    desc: "Conditions de vente et mentions conformes aux usages du BTP.",
+  },
+];
+
+const PENDANT: Card[] = [
+  {
+    href: "/construction/taux-horaire",
+    name: "Taux horaire viable",
+    desc: "Salaire net visé + charges + jours non facturables. Le vrai prix de ton heure.",
+  },
+  {
+    href: "/chantier/materiaux",
+    name: "Chiffrage matériaux par lot",
+    desc: "Prix réels fournisseurs, lot par lot. Pas du théorique, du terrain.",
+  },
+  {
+    href: "/chantier/rentabilite",
+    name: "Rentabilité chantier",
+    desc: "Du déboursé sec à la marge, jusqu'au prix de vente. Tu sais ce que tu gagnes.",
+  },
+  {
+    href: "/chantier/devis",
+    name: "Générateur de devis",
+    desc: "Un devis conforme, propre, exporté en PDF. Prêt à envoyer.",
+  },
+];
+
+const APRES: Card[] = [
+  {
+    href: "/apres/pv-reception",
+    name: "PV de réception conforme",
+    desc: "Conforme, avec réserve ou refus — point par point. Tu réceptionnes sans risque.",
+  },
+  {
+    href: "/apres/dtu",
+    name: "Bibliothèque DTU",
+    desc: "Les points critiques par corps d'état, pour rester dans les règles de l'art.",
+  },
+  {
+    href: "/construction/previsionnel",
+    name: "Prévisionnel financier",
+    desc: "Suis ta rentabilité dans le temps et anticipe les mois creux.",
+  },
+];
+
+function CardGrid({ cards }: { cards: Card[] }) {
+  return (
+    <div className="parcours-grid reveal">
+      {cards.map((c, i) => (
+        <Link key={c.href} href={c.href} className="parcours-card">
+          <div className="parcours-num">{String(i + 1).padStart(2, "0")}</div>
+          <div className="parcours-card-name">{c.name}</div>
+          <p className="parcours-card-desc">{c.desc}</p>
+          <span className="parcours-card-arrow">→</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function Home() {
   return (
@@ -13,273 +90,133 @@ export default function Home() {
           SOCLE<span />
         </Link>
         <div className="nav-links">
-          <a href="#outils">Outils</a>
-          <a href="#pour-qui">Pour qui</a>
-          <a href="#tarifs">Tarifs</a>
+          <a href="#parcours">Outils</a>
           <Link href="/dashboard" className="nav-cta">
-            Accès bêta →
+            Accéder à SOCLE →
           </Link>
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* §1 — HERO */}
       <section className="hero">
-        <div className="hero-tag">Pour les entrepreneurs BTP</div>
+        <div className="hero-tag">Pour les créateurs d&apos;entreprise BTP</div>
         <h1 className="hero-title">
-          Pilotez
+          Tu sais poser.
           <br />
-          votre
-          <br />
-          <em>activité.</em>
+          <em>Tu n&apos;apprendras pas à piloter sur le tas.</em>
         </h1>
         <p className="hero-sub">
-          <strong>
-            Chiffrage matériaux, marge chantier, devis client, réception
-            terrain.
-          </strong>
-          <br />
-          Tout ce qu&apos;il faut pour démarrer et rester rentable — sans usine à
-          gaz.
+          <strong>SOCLE est ton compagnon de route</strong>, du dépôt de statut à
+          ton premier chantier rentable. Conçu par un artisan, pour les artisans.
         </p>
         <div className="hero-actions">
-          <Link href="/dashboard" className="btn-primary">
-            Accès bêta gratuit <span className="arrow">→</span>
-          </Link>
-          <a href="#outils" className="btn-ghost">
+          <a href="#demo" className="btn-primary">
+            Essayer la démo <span className="arrow">→</span>
+          </a>
+          <a href="#parcours" className="btn-ghost">
             Voir les outils
           </a>
         </div>
         <div className="hero-note">
-          14 jours gratuits · Pas de carte bancaire · Annulable à tout moment
+          Accès bêta gratuit · Sans inscription · Sans carte bancaire
         </div>
       </section>
 
       <hr className="divider" />
 
-      {/* DOULEURS */}
-      <section className="section" id="douleurs">
-        <div className="section-tag">Le problème</div>
-        <div className="pain-list">
-          {[
-            {
-              n: "01",
-              t: "Tu poses un prix au feeling",
-              s: "Et tu découvres que tu travailles à perte à mi-chantier",
-            },
-            {
-              n: "02",
-              t: "Le client te demande un prix, tu tâtonnes",
-              s: "Trop haut tu perds le chantier, trop bas tu te fais mal",
-            },
-            {
-              n: "03",
-              t: "Ton devis ne ressemble à rien",
-              s: "Fait sur Word en 2h, sans les mentions légales obligatoires",
-            },
-            {
-              n: "04",
-              t: "Tu ne sais pas si tu es dans les clous DTU",
-              s: "Et en cas de litige, c'est ta décennale qui trinque",
-            },
-            {
-              n: "05",
-              t: "Tu démarres sans savoir à combien facturer ton heure",
-              s: "Un taux trop bas, et tu travailles pour rien dès le premier mois",
-            },
-          ].map((p) => (
-            <div className="pain-item reveal" key={p.n}>
-              <span className="pain-num">{p.n}</span>
-              <div>
-                <div className="pain-text">{p.t}</div>
-                <div className="pain-sub">{p.s}</div>
-              </div>
-              <span className="pain-tag-resolved">Résolu</span>
-            </div>
-          ))}
-        </div>
+      {/* §2 — AVANT */}
+      <section className="section" id="parcours">
+        <div className="section-tag">01 — Avant</div>
+        <h2 className="section-title">Tu lances ton entreprise</h2>
+        <p className="section-sub">
+          Choisir le bon statut. Préparer les bons papiers. Souscrire les bonnes
+          assurances. Dans l&apos;ordre.
+        </p>
+        <CardGrid cards={AVANT} />
       </section>
 
       <hr className="divider" />
 
-      {/* OUTILS */}
-      <section className="section" id="outils">
-        <div className="section-tag">Les outils</div>
-        <div className="tools-grid">
-          {[
-            {
-              n: "01",
-              name: "Chiffrage matériaux",
-              desc: "Prix réels fournisseurs lot par lot. ManoMano, Bricoman, Point.P. Pas du Batiprix théorique.",
-              badge: "live" as const,
-              label: "Disponible",
-            },
-            {
-              n: "02",
-              name: "Rentabilité chantier",
-              desc: "Déboursé sec → frais généraux → marge → prix de vente. Méthode Batiprix adaptée au terrain.",
-              badge: "live" as const,
-              label: "Disponible",
-            },
-            {
-              n: "03",
-              name: "Générateur de devis",
-              desc: "Devis PDF conforme en 3 minutes. Mentions légales, TVA BTP, assurance décennale. Prêt à envoyer.",
-              badge: "soon" as const,
-              label: "Bientôt",
-            },
-            {
-              n: "04",
-              name: "Bibliothèque DTU",
-              desc: "Points de contrôle critiques par corps d'état. Alertes décennales. Formulées pour le chantier, pas pour un bureau.",
-              badge: "live" as const,
-              label: "Disponible",
-            },
-            {
-              n: "05",
-              name: "PV de réception",
-              desc: "Conforme / Réserve / Refus par point. Photo, commentaire, export PDF signable. Ta protection décennale en poche.",
-              badge: "live" as const,
-              label: "Disponible",
-            },
-            {
-              n: "06",
-              name: "Simulateur taux horaire",
-              desc: "Salaire net voulu → charges → jours non facturables → taux minimum viable. La question que personne ne répond clairement.",
-              badge: "soon" as const,
-              label: "Bientôt",
-            },
-          ].map((tool) => (
-            <div className="tool-card reveal" key={tool.n}>
-              <div className="tool-num">{tool.n}</div>
-              <div className="tool-name">{tool.name}</div>
-              <div className="tool-desc">{tool.desc}</div>
-              <div className={`tool-badge ${tool.badge}`}>{tool.label}</div>
-            </div>
-          ))}
-        </div>
+      {/* §3 — PENDANT */}
+      <section className="section">
+        <div className="section-tag">02 — Pendant</div>
+        <h2 className="section-title">Tu fais ton premier chantier</h2>
+        <p className="section-sub">
+          Le bon taux horaire. Le bon prix. Le bon devis. La bonne marge.
+        </p>
+        <CardGrid cards={PENDANT} />
       </section>
 
       <hr className="divider" />
 
-      {/* POUR QUI */}
-      <section className="section" id="pour-qui">
-        <div className="section-tag">Pour qui</div>
-        <div className="target-grid">
-          <div className="target-card reveal">
-            <div className="target-label">Cible principale</div>
-            <div className="target-title">L&apos;entrepreneur BTP qui démarre</div>
-            <div className="target-desc">
-              Tu viens de créer ta SASU ou ton EURL. Tu fais tout toi-même. Tu
-              n&apos;as pas le budget pour un ERP à 200 €/mois.
-            </div>
-            <div className="target-list">
-              <div className="target-list-item">
-                Électricien, plaquiste, carreleur, peintre, maçon
-              </div>
-              <div className="target-list-item">0 à 3 ans d&apos;activité</div>
-              <div className="target-list-item">1 à 3 personnes</div>
-              <div className="target-list-item">
-                Cherche à rester rentable sans se perdre dans les chiffres
-              </div>
-            </div>
-          </div>
-
-          <div className="target-card reveal">
-            <div className="target-label">Cible secondaire</div>
-            <div className="target-title">L&apos;investisseur immobilier actif</div>
-            <div className="target-desc">
-              Tu fais tout ou partie des travaux toi-même. Tu as besoin de
-              chiffrer avant d&apos;acheter un bien, pas après.
-            </div>
-            <div className="target-list">
-              <div className="target-list-item">Marchand de biens TPE</div>
-              <div className="target-list-item">
-                Investisseur locatif avec réno
-              </div>
-              <div className="target-list-item">
-                Chiffrage = décision d&apos;acquisition
-              </div>
-              <div className="target-list-item">
-                Besoin de précision, pas d&apos;approximation
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* §4 — APRÈS */}
+      <section className="section">
+        <div className="section-tag">03 — Après</div>
+        <h2 className="section-title">Tu sécurises et tu pilotes</h2>
+        <p className="section-sub">
+          Réceptionner sans risque. Connaître les DTU. Préparer la suite.
+        </p>
+        <CardGrid cards={APRES} />
       </section>
 
       <hr className="divider" />
 
-      {/* PRICING */}
-      <section className="section" id="tarifs">
-        <div className="section-tag">Tarifs</div>
-        <div className="pricing-grid">
-          <div className="pricing-card">
-            <div className="pricing-plan">Plan Démarrage</div>
-            <div className="pricing-price">
-              19<span style={{ fontSize: "1.5rem", fontWeight: 500 }}> €</span>
-            </div>
-            <div className="pricing-period">par mois · sans engagement</div>
-            <ul className="pricing-features">
-              <li>Chiffrage matériaux (5 chantiers/mois)</li>
-              <li>Calculateur de rentabilité</li>
-              <li>Bibliothèque DTU complète</li>
-              <li>Checklist démarrage entrepreneur</li>
-              <li>Support par email</li>
-            </ul>
-            <button className="pricing-btn outlined">
-              Commencer gratuitement
-            </button>
-          </div>
+      {/* §5 — DÉMO INTERACTIVE */}
+      <section className="section" id="demo">
+        <div className="section-tag">04 — Essaie</div>
+        <h2 className="section-title">Essaie tout de suite. Sans inscription.</h2>
+        <p className="section-sub">
+          Calcule ton taux horaire viable. En 30 secondes, tu sauras à combien tu
+          dois facturer pour ne pas travailler à perte.
+        </p>
+        <TauxDemo />
+      </section>
 
-          <div className="pricing-card featured">
-            <div className="pricing-plan">Plan Pro</div>
-            <div className="pricing-price" style={{ color: "var(--white)" }}>
-              39<span style={{ fontSize: "1.5rem", fontWeight: 500 }}> €</span>
-            </div>
-            <div className="pricing-period">par mois · sans engagement</div>
-            <ul className="pricing-features">
-              <li>Tout le plan Démarrage</li>
-              <li>Chiffrage illimité</li>
-              <li>Générateur de devis PDF</li>
-              <li>PV de réception chantier</li>
-              <li>Simulateur taux horaire viable</li>
-              <li>Situations de travaux</li>
-            </ul>
-            <button className="pricing-btn solid">
-              Démarrer l&apos;essai gratuit
-            </button>
-          </div>
-        </div>
-        <div className="pricing-note">
-          14 jours d&apos;essai gratuit · Aucune carte bancaire requise ·
-          Résiliable à tout moment
+      <hr className="divider" />
+
+      {/* §6 — MANIFESTE */}
+      <section className="section manifesto">
+        <div className="section-tag">05 — Pourquoi</div>
+        <h2 className="section-title">Pourquoi j&apos;ai créé SOCLE</h2>
+        <div className="manifesto-body">
+          <p>
+            Je suis artisan. J&apos;ai lancé ma boîte. J&apos;ai galéré comme tout
+            le monde — pas sur les chantiers, mais sur tout le reste.
+          </p>
+          <p>
+            Les outils qui existent sont faits pour des grosses entreprises, ou pour
+            des comptables. Pas pour nous, ceux qui démarrent seuls et qui apprennent
+            la gestion sur le tas.
+          </p>
+          <p>
+            J&apos;ai construit SOCLE comme l&apos;outil que j&apos;aurais voulu
+            avoir quand j&apos;ai commencé. Celui qui répond aux vraies questions :
+            quel statut, quel taux, quelle marge, quel risque.
+          </p>
+          <p>
+            Brutal sur les chiffres, simple sur l&apos;interface, honnête sur les
+            marges. Pas de promesse de t&apos;enrichir. Juste de quoi piloter sans te
+            tromper.
+          </p>
+          <div className="manifesto-sign">— Benjamin, artisan &amp; fondateur</div>
         </div>
       </section>
 
-      {/* CTA FINAL */}
+      {/* §7 — CTA FINAL */}
       <div className="cta-section reveal">
-        <div className="cta-title">
-          Ton premier
-          <br />
-          chantier <em>rentable</em>
-          <br />
-          commence ici.
+        <div className="cta-text">
+          <div className="cta-title">Commence quand tu es prêt.</div>
+          <p className="cta-sub">
+            L&apos;accès bêta est gratuit. Sans carte bancaire. Sans engagement.
+          </p>
         </div>
-        <div className="cta-right">
-          <Link
-            href="/dashboard"
-            className="btn-primary"
-            style={{
-              background: "var(--green)",
-              fontSize: "16px",
-              padding: "16px 32px",
-            }}
-          >
-            Accès bêta gratuit <span className="arrow">→</span>
+        <div className="cta-actions">
+          <Link href="/dashboard" className="btn-primary">
+            Accéder à SOCLE <span className="arrow">→</span>
           </Link>
-          <div className="cta-note">
-            Conçu par un artisan BTP · Pour les artisans BTP
-          </div>
+          <a href="#demo" className="cta-ghost">
+            Refaire la démo
+          </a>
         </div>
       </div>
 
@@ -288,9 +225,8 @@ export default function Home() {
         <div className="footer-logo">
           SOCLE<span />
         </div>
-        <div className="footer-meta">
-          © 2026 · Fait en France · Pour les pros du BTP
-        </div>
+        <div className="footer-tagline">Conçu par un artisan, pour les artisans</div>
+        <div className="footer-meta">© 2026 · Fait en France</div>
       </footer>
     </div>
   );
