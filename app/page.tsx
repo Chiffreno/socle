@@ -13,8 +13,8 @@ const AVANT: Card[] = [
   },
   {
     href: "/construction/checklist",
-    name: "Checklist d'immatriculation",
-    desc: "13 étapes, 3 phases, budget estimé. Rien d'oublié, dans le bon ordre.",
+    name: "Guide d'ouverture d'entreprise",
+    desc: "Un guide pas-à-pas : 13 étapes, 3 phases, budget estimé. Rien d'oublié, dans le bon ordre.",
   },
   {
     href: "/construction/cgv",
@@ -64,9 +64,9 @@ const APRES: Card[] = [
   },
 ];
 
-function CardGrid({ cards }: { cards: Card[] }) {
+function CardGrid({ cards, cols = 3 }: { cards: Card[]; cols?: 2 | 3 }) {
   return (
-    <div className="parcours-grid reveal">
+    <div className={`parcours-grid cols-${cols} reveal`}>
       {cards.map((c, i) => (
         <Link key={c.href} href={c.href} className="parcours-card">
           <div className="parcours-num">{String(i + 1).padStart(2, "0")}</div>
@@ -101,13 +101,10 @@ export default function Home() {
       <section className="hero">
         <div className="hero-tag">Pour les créateurs d&apos;entreprise BTP</div>
         <h1 className="hero-title">
-          Tu sais poser.
-          <br />
-          <em>Tu n&apos;apprendras pas à piloter sur le tas.</em>
+          De l&apos;immatriculation au premier chantier rentable.
         </h1>
         <p className="hero-sub">
-          <strong>SOCLE est ton compagnon de route</strong>, du dépôt de statut à
-          ton premier chantier rentable. Conçu par un artisan, pour les artisans.
+          SOCLE — le kit de lancement du créateur BTP.
         </p>
         <div className="hero-actions">
           <a href="#demo" className="btn-primary">
@@ -125,7 +122,7 @@ export default function Home() {
       <hr className="divider" />
 
       {/* §2 — AVANT */}
-      <section className="section" id="parcours">
+      <section className="section parcours-section" id="parcours">
         <div className="section-tag">01 — Avant</div>
         <h2 className="section-title">Tu lances ton entreprise</h2>
         <p className="section-sub">
@@ -138,19 +135,19 @@ export default function Home() {
       <hr className="divider" />
 
       {/* §3 — PENDANT */}
-      <section className="section">
+      <section className="section parcours-section">
         <div className="section-tag">02 — Pendant</div>
         <h2 className="section-title">Tu fais ton premier chantier</h2>
         <p className="section-sub">
           Le bon taux horaire. Le bon prix. Le bon devis. La bonne marge.
         </p>
-        <CardGrid cards={PENDANT} />
+        <CardGrid cards={PENDANT} cols={2} />
       </section>
 
       <hr className="divider" />
 
       {/* §4 — APRÈS */}
-      <section className="section">
+      <section className="section parcours-section">
         <div className="section-tag">03 — Après</div>
         <h2 className="section-title">Tu sécurises et tu pilotes</h2>
         <p className="section-sub">

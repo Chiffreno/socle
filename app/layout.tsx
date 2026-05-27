@@ -18,9 +18,9 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SOCLE — Tu sais poser. On s'occupe du reste.",
+  title: "SOCLE — Le kit de lancement du créateur BTP",
   description:
-    "SOCLE est le compagnon de route de l'artisan qui devient entrepreneur BTP : du dépôt de statut à ton premier chantier rentable. Conçu par un artisan, pour les artisans.",
+    "SOCLE — le kit de lancement du créateur BTP : de l'immatriculation à ton premier chantier rentable. Statut, taux horaire, chiffrage, devis, PV de réception. Conçu par un artisan, pour les artisans.",
 };
 
 export default function RootLayout({
