@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOCLE — Pilotez votre activité BTP</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black: #0a0a09;
+  --white: #fafaf8;
+  --green: #1a7a3c;
+  --green-light: #e8f5ee;
+  --green-mid: #2a9a50;
+  --gray: #f0efeb;
+  --gray2: #e0dfd8;
+  --gray3: #999990;
+  --border: #e0dfd8;
+  --ff: 'Figtree', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--ff);
+  background: var(--white);
+  color: var(--black);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 64px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--ff);
+  font-weight: 900;
+  font-size: 1.25rem;
+  letter-spacing: -0.04em;
+  color: var(--black);
+  text-decoration: none;
+}
+
+.nav-logo span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  margin-left: 3px;
+  margin-bottom: 2px;
+  vertical-align: middle;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray3);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  transition: color 0.15s;
+}
+
+.nav-links a:hover { color: var(--black); }
+
+.nav-cta {
+  background: var(--black) !important;
+  color: var(--white) !important;
+  padding: 9px 20px !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  transition: background 0.15s !important;
+}
+
+.nav-cta:hover { background: var(--green) !important; }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 120px 48px 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hero-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.1s forwards;
+}
+
+.hero-tag::before {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 1px;
+  background: var(--green);
+}
+
+.hero-title {
+  font-size: clamp(3.5rem, 8vw, 7rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--black);
+  margin-bottom: 36px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.2s forwards;
+}
+
+.hero-title em {
+  font-style: normal;
+  color: var(--green);
+}
+
+.hero-sub {
+  font-size: 1.2rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--gray3);
+  max-width: 540px;
+  margin-bottom: 48px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.3s forwards;
+}
+
+.hero-sub strong { color: var(--black); font-weight: 600; }
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.4s forwards;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--black);
+  color: var(--white);
+  padding: 14px 28px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+  letter-spacing: -0.01em;
+}
+
+.btn-primary:hover { background: var(--green); }
+
+.btn-primary .arrow {
+  transition: transform 0.15s;
+}
+
+.btn-primary:hover .arrow { transform: translateX(4px); }
+
+.btn-ghost {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray3);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.btn-ghost:hover { color: var(--black); }
+
+.hero-note {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gray3);
+  margin-top: 20px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.5s forwards;
+}
+
+/* ── DIVIDER ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0 48px;
+}
+
+/* ── DOULEURS ── */
+.section {
+  padding: 100px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.section-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gray3);
+  margin-bottom: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-tag::before {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 1px;
+  background: var(--gray3);
+}
+
+.pain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+.pain-item {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.pain-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gray3);
+  font-weight: 500;
+}
+
+.pain-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--black);
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.pain-sub {
+  font-size: 13px;
+  color: var(--gray3);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+.pain-tag-resolved {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--green-light);
+  color: var(--green);
+  border: 1px solid #b2d4bb;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── OUTILS ── */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tool-card {
+  background: var(--white);
+  padding: 36px 32px;
+  transition: background 0.15s;
+  cursor: default;
+}
+
+.tool-card:hover { background: var(--gray); }
+
+.tool-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--gray3);
+  letter-spacing: 0.1em;
+  margin-bottom: 20px;
+}
+
+.tool-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--black);
+  margin-bottom: 8px;
+}
+
+.tool-desc {
+  font-size: 13px;
+  color: var(--gray3);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.tool-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 3px;
+  margin-top: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tool-badge.live { background: var(--green-light); color: var(--green); border: 1px solid #b2d4bb; }
+.tool-badge.soon { background: var(--gray); color: var(--gray3); border: 1px solid var(--border); }
+
+/* ── POUR QUI ── */
+.target-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.target-card {
+  background: var(--gray);
+  border-radius: 12px;
+  padding: 40px;
+}
+
+.target-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray3);
+  margin-bottom: 16px;
+}
+
+.target-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--black);
+  margin-bottom: 12px;
+  line-height: 1.15;
+}
+
+.target-desc {
+  font-size: 14px;
+  color: var(--gray3);
+  line-height: 1.6;
+}
+
+.target-list {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.target-list-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--black);
+  font-weight: 500;
+}
+
+.target-list-item::before {
+  content: '—';
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ── PRICING ── */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pricing-card {
+  background: var(--white);
+  padding: 48px 40px;
+}
+
+.pricing-card.featured { background: var(--black); }
+
+.pricing-plan {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gray3);
+  margin-bottom: 24px;
+}
+
+.pricing-card.featured .pricing-plan { color: rgba(255,255,255,0.4); }
+
+.pricing-price {
+  font-size: 3.5rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--black);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.pricing-card.featured .pricing-price { color: var(--white); }
+
+.pricing-period {
+  font-size: 13px;
+  color: var(--gray3);
+  font-weight: 400;
+  margin-bottom: 32px;
+}
+
+.pricing-card.featured .pricing-period { color: rgba(255,255,255,0.4); }
+
+.pricing-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.pricing-features li {
+  font-size: 14px;
+  color: var(--black);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pricing-card.featured .pricing-features li { color: rgba(255,255,255,0.8); }
+
+.pricing-features li::before {
+  content: '✓';
+  color: var(--green);
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.pricing-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  text-align: center;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s;
+  cursor: pointer;
+  border: none;
+  font-family: var(--ff);
+  letter-spacing: -0.01em;
+}
+
+.pricing-btn.outlined {
+  border: 1.5px solid var(--border);
+  color: var(--black);
+  background: transparent;
+}
+
+.pricing-btn.outlined:hover { border-color: var(--black); }
+
+.pricing-btn.solid {
+  background: var(--green);
+  color: var(--white);
+}
+
+.pricing-btn.solid:hover { background: var(--green-mid); }
+
+/* ── CTA FINAL ── */
+.cta-section {
+  margin: 0 48px 100px;
+  background: var(--black);
+  border-radius: 16px;
+  padding: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.cta-title {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--white);
+  line-height: 1.05;
+  max-width: 480px;
+}
+
+.cta-title em {
+  font-style: normal;
+  color: var(--green-mid);
+}
+
+.cta-right { flex-shrink: 0; text-align: right; }
+
+.cta-note {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 12px;
+  letter-spacing: 0.06em;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-logo {
+  font-weight: 900;
+  font-size: 1rem;
+  letter-spacing: -0.04em;
+  color: var(--black);
+}
+
+.footer-logo span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  margin-left: 2px;
+  margin-bottom: 1px;
+  vertical-align: middle;
+}
+
+.footer-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gray3);
+  letter-spacing: 0.04em;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  nav { padding: 0 24px; }
+  nav .nav-links { display: none; }
+  .hero { padding: 100px 24px 60px; }
+  .divider { margin: 0 24px; }
+  .section { padding: 64px 24px; }
+  .tools-grid { grid-template-columns: 1fr; }
+  .target-grid { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .cta-section { margin: 0 24px 60px; padding: 48px 32px; flex-direction: column; }
+  .cta-right { text-align: left; }
+  footer { padding: 24px; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .pain-item { grid-template-columns: 36px 1fr; }
+  .pain-tag-resolved { display: none; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">SOCLE<span></span></a>
+  <div class="nav-links">
+    <a href="#outils">Outils</a>
+    <a href="#pour-qui">Pour qui</a>
+    <a href="#tarifs">Tarifs</a>
+    <a href="#" class="nav-cta">Accès bêta →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">Pour les entrepreneurs BTP</div>
+  <h1 class="hero-title">
+    Pilotez<br>votre<br><em>activité.</em>
+  </h1>
+  <p class="hero-sub">
+    <strong>Chiffrage matériaux, marge chantier, devis client, réception terrain.</strong><br>
+    Tout ce qu'il faut pour démarrer et rester rentable — sans usine à gaz.
+  </p>
+  <div class="hero-actions">
+    <a href="#" class="btn-primary">Accès bêta gratuit <span class="arrow">→</span></a>
+    <a href="#outils" class="btn-ghost">Voir les outils</a>
+  </div>
+  <div class="hero-note">14 jours gratuits · Pas de carte bancaire · Annulable à tout moment</div>
+</section>
+
+<hr class="divider">
+
+<!-- DOULEURS -->
+<section class="section" id="douleurs">
+  <div class="section-tag">Le problème</div>
+  <div class="pain-list">
+
+    <div class="pain-item reveal">
+      <span class="pain-num">01</span>
+      <div>
+        <div class="pain-text">Tu poses un prix au feeling</div>
+        <div class="pain-sub">Et tu découvres que tu travailles à perte à mi-chantier</div>
+      </div>
+      <span class="pain-tag-resolved">Résolu</span>
+    </div>
+
+    <div class="pain-item reveal">
+      <span class="pain-num">02</span>
+      <div>
+        <div class="pain-text">Le client te demande un prix, tu tâtonnes</div>
+        <div class="pain-sub">Trop haut tu perds le chantier, trop bas tu te fais mal</div>
+      </div>
+      <span class="pain-tag-resolved">Résolu</span>
+    </div>
+
+    <div class="pain-item reveal">
+      <span class="pain-num">03</span>
+      <div>
+        <div class="pain-text">Ton devis ne ressemble à rien</div>
+        <div class="pain-sub">Fait sur Word en 2h, sans les mentions légales obligatoires</div>
+      </div>
+      <span class="pain-tag-resolved">Résolu</span>
+    </div>
+
+    <div class="pain-item reveal">
+      <span class="pain-num">04</span>
+      <div>
+        <div class="pain-text">Tu ne sais pas si tu es dans les clous DTU</div>
+        <div class="pain-sub">Et en cas de litige, c'est ta décennale qui trinque</div>
+      </div>
+      <span class="pain-tag-resolved">Résolu</span>
+    </div>
+
+    <div class="pain-item reveal">
+      <span class="pain-num">05</span>
+      <div>
+        <div class="pain-text">Tu démarres sans savoir à combien facturer ton heure</div>
+        <div class="pain-sub">Un taux trop bas, et tu travailles pour rien dès le premier mois</div>
+      </div>
+      <span class="pain-tag-resolved">Résolu</span>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- OUTILS -->
+<section class="section" id="outils">
+  <div class="section-tag">Les outils</div>
+  <div class="tools-grid">
+
+    <div class="tool-card reveal">
+      <div class="tool-num">01</div>
+      <div class="tool-name">Chiffrage matériaux</div>
+      <div class="tool-desc">Prix réels fournisseurs lot par lot. ManoMano, Bricoman, Point.P. Pas du Batiprix théorique.</div>
+      <div class="tool-badge live">Disponible</div>
+    </div>
+
+    <div class="tool-card reveal">
+      <div class="tool-num">02</div>
+      <div class="tool-name">Rentabilité chantier</div>
+      <div class="tool-desc">Déboursé sec → frais généraux → marge → prix de vente. Méthode Batiprix adaptée au terrain.</div>
+      <div class="tool-badge live">Disponible</div>
+    </div>
+
+    <div class="tool-card reveal">
+      <div class="tool-num">03</div>
+      <div class="tool-name">Générateur de devis</div>
+      <div class="tool-desc">Devis PDF conforme en 3 minutes. Mentions légales, TVA BTP, assurance décennale. Prêt à envoyer.</div>
+      <div class="tool-badge soon">Bientôt</div>
+    </div>
+
+    <div class="tool-card reveal">
+      <div class="tool-num">04</div>
+      <div class="tool-name">Bibliothèque DTU</div>
+      <div class="tool-desc">Points de contrôle critiques par corps d'état. Alertes décennales. Formulées pour le chantier, pas pour un bureau.</div>
+      <div class="tool-badge live">Disponible</div>
+    </div>
+
+    <div class="tool-card reveal">
+      <div class="tool-num">05</div>
+      <div class="tool-name">PV de réception</div>
+      <div class="tool-desc">Conforme / Réserve / Refus par point. Photo, commentaire, export PDF signable. Ta protection décennale en poche.</div>
+      <div class="tool-badge live">Disponible</div>
+    </div>
+
+    <div class="tool-card reveal">
+      <div class="tool-num">06</div>
+      <div class="tool-name">Simulateur taux horaire</div>
+      <div class="tool-desc">Salaire net voulu → charges → jours non facturables → taux minimum viable. La question que personne ne répond clairement.</div>
+      <div class="tool-badge soon">Bientôt</div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- POUR QUI -->
+<section class="section" id="pour-qui">
+  <div class="section-tag">Pour qui</div>
+  <div class="target-grid">
+
+    <div class="target-card reveal">
+      <div class="target-label">Cible principale</div>
+      <div class="target-title">L'entrepreneur BTP qui démarre</div>
+      <div class="target-desc">Tu viens de créer ta SASU ou ton EURL. Tu fais tout toi-même. Tu n'as pas le budget pour un ERP à 200 €/mois.</div>
+      <div class="target-list">
+        <div class="target-list-item">Électricien, plaquiste, carreleur, peintre, maçon</div>
+        <div class="target-list-item">0 à 3 ans d'activité</div>
+        <div class="target-list-item">1 à 3 personnes</div>
+        <div class="target-list-item">Cherche à rester rentable sans se perdre dans les chiffres</div>
+      </div>
+    </div>
+
+    <div class="target-card reveal">
+      <div class="target-label">Cible secondaire</div>
+      <div class="target-title">L'investisseur immobilier actif</div>
+      <div class="target-desc">Tu fais tout ou partie des travaux toi-même. Tu as besoin de chiffrer avant d'acheter un bien, pas après.</div>
+      <div class="target-list">
+        <div class="target-list-item">Marchand de biens TPE</div>
+        <div class="target-list-item">Investisseur locatif avec réno</div>
+        <div class="target-list-item">Chiffrage = décision d'acquisition</div>
+        <div class="target-list-item">Besoin de précision, pas d'approximation</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PRICING -->
+<section class="section" id="tarifs">
+  <div class="section-tag">Tarifs</div>
+  <div class="pricing-grid">
+
+    <div class="pricing-card">
+      <div class="pricing-plan">Plan Démarrage</div>
+      <div class="pricing-price">19<span style="font-size:1.5rem;font-weight:500;"> €</span></div>
+      <div class="pricing-period">par mois · sans engagement</div>
+      <ul class="pricing-features">
+        <li>Chiffrage matériaux (5 chantiers/mois)</li>
+        <li>Calculateur de rentabilité</li>
+        <li>Bibliothèque DTU complète</li>
+        <li>Checklist démarrage entrepreneur</li>
+        <li>Support par email</li>
+      </ul>
+      <button class="pricing-btn outlined">Commencer gratuitement</button>
+    </div>
+
+    <div class="pricing-card featured">
+      <div class="pricing-plan">Plan Pro</div>
+      <div class="pricing-price" style="color:var(--white);">39<span style="font-size:1.5rem;font-weight:500;"> €</span></div>
+      <div class="pricing-period">par mois · sans engagement</div>
+      <ul class="pricing-features">
+        <li>Tout le plan Démarrage</li>
+        <li>Chiffrage illimité</li>
+        <li>Générateur de devis PDF</li>
+        <li>PV de réception chantier</li>
+        <li>Simulateur taux horaire viable</li>
+        <li>Situations de travaux</li>
+      </ul>
+      <button class="pricing-btn solid">Démarrer l'essai gratuit</button>
+    </div>
+
+  </div>
+  <div style="text-align:center;margin-top:20px;font-family:var(--mono);font-size:11px;color:var(--gray3);letter-spacing:0.06em;">
+    14 jours d'essai gratuit · Aucune carte bancaire requise · Résiliable à tout moment
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<div class="cta-section reveal">
+  <div class="cta-title">
+    Ton premier<br>chantier <em>rentable</em><br>commence ici.
+  </div>
+  <div class="cta-right">
+    <a href="#" class="btn-primary" style="background:var(--green);font-size:16px;padding:16px 32px;">
+      Accès bêta gratuit <span class="arrow">→</span>
+    </a>
+    <div class="cta-note">Conçu par un artisan BTP · Pour les artisans BTP</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">SOCLE<span></span></div>
+  <div class="footer-meta">© 2026 · Fait en France · Pour les pros du BTP</div>
+</footer>
+
+<script>
+// Reveal on scroll
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

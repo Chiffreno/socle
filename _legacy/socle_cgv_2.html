@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOCLE — Générateur de CGV BTP</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #0a0a09; --white: #fafaf8; --green: #1a7a3c; --green-dark: #0f4f26;
+  --green-l: #e8f5ee; --green-b: #b8ddc8; --gray-bg: #f0efeb; --gray2: #e0dfd8;
+  --gray3: #999990; --gray4: #5a5a54; --orange: #c45a0a; --orange-bg: #fef3eb;
+  --orange-b: #f0c8a0; --red: #b83030; --ff: 'Figtree', sans-serif; --mono: 'DM Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--ff); background: var(--gray-bg); color: var(--black); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+/* TOPBAR */
+.topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 52px; background: var(--black); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+.logo { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--white); display: flex; align-items: baseline; }
+.logo-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; margin-left: 1px; display: inline-block; }
+.tb-right { display: flex; align-items: center; gap: 4px; }
+.tb-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; color: rgba(255,255,255,.45); transition: all .15s; }
+.tb-btn:hover { background: rgba(255,255,255,.06); color: var(--white); }
+.tb-btn i { font-size: 18px; }
+.tb-user { display: flex; align-items: center; gap: 9px; padding: 4px 10px 4px 4px; border-radius: 8px; margin-left: 6px; cursor: pointer; transition: background .15s; }
+.tb-user:hover { background: rgba(255,255,255,.06); }
+.tb-avatar { width: 28px; height: 28px; border-radius: 6px; background: var(--green); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--white); }
+.tb-name { font-size: 12px; font-weight: 600; color: var(--white); }
+.tb-plan { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,.35); letter-spacing: .06em; text-transform: uppercase; }
+
+/* LAYOUT */
+.layout { display: flex; padding-top: 52px; }
+
+/* SIDEBAR */
+.sidebar { position: fixed; left: 0; top: 52px; bottom: 0; width: 240px; background: var(--white); border-right: 1px solid var(--gray2); display: flex; flex-direction: column; padding: 24px 0 16px; overflow-y: auto; }
+.sb-group { margin-bottom: 24px; }
+.sb-label { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--gray3); padding: 0 24px 8px; }
+.sb-item { display: flex; align-items: center; gap: 11px; padding: 8px 24px 8px 21px; font-weight: 400; font-size: 14px; color: var(--gray4); border-left: 3px solid transparent; cursor: pointer; transition: all .12s; }
+.sb-item i { font-size: 17px; color: var(--gray3); flex-shrink: 0; }
+.sb-item:hover { color: var(--black); background: var(--gray-bg); }
+.sb-item:hover i { color: var(--gray4); }
+.sb-item.active { background: var(--green-l); color: var(--green); border-left-color: var(--green); font-weight: 600; }
+.sb-item.active i { color: var(--green); }
+.sb-badge { margin-left: auto; font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--orange); background: var(--orange-bg); border: 1px solid var(--orange-b); border-radius: 99px; padding: 1px 7px; }
+.sb-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--gray2); }
+
+/* MAIN */
+.main { flex: 1; margin-left: 240px; padding: 40px 40px 80px; }
+.page-eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--green); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+.page-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--green); }
+.page-title { font-weight: 700; font-size: clamp(1.8rem, 3vw, 2.4rem); letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 10px; }
+.page-sub { font-size: 15px; color: var(--gray4); line-height: 1.6; max-width: 560px; margin-bottom: 28px; }
+
+.disclaimer { background: var(--orange-bg); border: 1px solid var(--orange-b); border-left: 3px solid var(--orange); border-radius: 8px; padding: 12px 18px; margin-bottom: 32px; font-size: 13px; color: var(--orange); line-height: 1.6; }
+.disclaimer strong { font-weight: 700; }
+
+/* GRILLE */
+.sim-grid { display: grid; grid-template-columns: 1fr 480px; gap: 24px; align-items: start; }
+
+/* FORM */
+.form-col { display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--white); border: 1px solid var(--gray2); border-radius: 12px; padding: 24px; }
+.card-title { font-weight: 700; font-size: .95rem; letter-spacing: -0.01em; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.card-title i { font-size: 18px; color: var(--green); }
+.card-sub { font-size: 13px; color: var(--gray3); margin-bottom: 18px; line-height: 1.5; }
+
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field-label { font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 7px; letter-spacing: -0.01em; }
+.field-label .opt { font-weight: 400; color: var(--gray3); font-size: 11px; }
+.field-input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray2); border-radius: 8px; font-size: 14px; font-family: var(--ff); font-weight: 400; color: var(--black); background: var(--white); outline: none; transition: border-color .15s; -webkit-appearance: none; }
+.field-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,122,60,.08); }
+.field-input::placeholder { color: var(--gray3); }
+.field-select { cursor: pointer; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+/* Pills client */
+.client-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.cpill { padding: 9px 16px; border-radius: 8px; border: 1.5px solid var(--gray2); background: var(--white); font-size: 13px; font-weight: 600; color: var(--gray4); cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 7px; font-family: var(--ff); }
+.cpill:hover { border-color: var(--gray3); color: var(--black); }
+.cpill.active { background: var(--green-l); border-color: var(--green); color: var(--green); }
+.cpill i { font-size: 16px; }
+
+/* Toggles clauses optionnelles */
+.toggles-grid { display: flex; flex-direction: column; gap: 8px; }
+.toggle-row { display: flex; align-items: flex-start; gap: 14px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--gray2); background: var(--white); cursor: pointer; transition: all .15s; user-select: none; }
+.toggle-row:hover { border-color: var(--gray3); }
+.toggle-row.on { background: var(--green-l); border-color: var(--green-b); }
+.toggle-check { width: 18px; height: 18px; border: 1.5px solid var(--gray2); border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; transition: all .15s; background: var(--white); }
+.toggle-row.on .toggle-check { background: var(--green); border-color: var(--green); }
+.toggle-check i { display: none; font-size: 12px; color: var(--white); }
+.toggle-row.on .toggle-check i { display: block; }
+.toggle-info { flex: 1; }
+.toggle-name { font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 2px; }
+.toggle-row.on .toggle-name { color: var(--green-dark); }
+.toggle-desc { font-size: 11px; color: var(--gray3); line-height: 1.4; }
+
+/* Sous-champs conditionnels */
+.sub-field { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--gray2); }
+.sub-field.visible { display: block; }
+
+/* PREVIEW */
+.preview-col { position: sticky; top: 72px; }
+.preview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.preview-label { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--gray3); }
+.preview-meta { font-family: var(--mono); font-size: 11px; color: var(--gray3); }
+
+.btn-print { display: inline-flex; align-items: center; gap: 8px; background: var(--green); color: var(--white); border: none; padding: 10px 18px; border-radius: 8px; font-family: var(--ff); font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; letter-spacing: -0.01em; }
+.btn-print:hover { background: var(--green-dark); }
+.btn-print:active { transform: scale(.98); }
+.btn-print i { font-size: 16px; }
+
+.preview-card { background: var(--white); border: 1px solid var(--gray2); border-radius: 12px; overflow: hidden; max-height: 72vh; overflow-y: auto; }
+
+/* CGV DOCUMENT */
+.cgv-doc { padding: 32px 36px; font-size: 12.5px; line-height: 1.7; color: var(--black); font-family: 'Georgia', serif; }
+.cgv-doc .cgv-title { font-family: var(--ff); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.01em; text-align: center; margin-bottom: 4px; }
+.cgv-doc .cgv-subtitle { font-family: var(--ff); font-size: 12px; color: var(--gray4); text-align: center; margin-bottom: 22px; line-height: 1.5; }
+.cgv-doc .cgv-id { background: var(--gray-bg); border-radius: 6px; padding: 12px 16px; font-family: var(--ff); font-size: 12px; color: var(--gray4); margin-bottom: 22px; line-height: 1.7; }
+.cgv-doc h2 { font-family: var(--ff); font-weight: 700; font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; margin-top: 20px; margin-bottom: 7px; padding-bottom: 5px; border-bottom: 1px solid var(--gray2); color: var(--black); }
+.cgv-doc p { margin-bottom: 7px; }
+.cgv-doc ul { padding-left: 18px; margin-bottom: 7px; }
+.cgv-doc ul li { margin-bottom: 3px; }
+.cgv-doc .hi { background: var(--green-l); border: 1px solid var(--green-b); border-radius: 4px; padding: 7px 12px; margin: 8px 0; font-size: 12px; color: var(--green-dark); }
+.cgv-doc .ph { color: var(--orange); font-style: italic; background: var(--orange-bg); padding: 0 3px; border-radius: 3px; }
+.cgv-doc .cgv-footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--gray2); font-family: var(--ff); font-size: 11px; color: var(--gray3); text-align: center; line-height: 1.5; }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) { .sim-grid { grid-template-columns: 1fr 420px; } }
+@media (max-width: 900px) {
+  .sidebar { display: none; } .main { margin-left: 0; padding: 28px 20px 80px; }
+  .sim-grid { grid-template-columns: 1fr; } .preview-col { position: static; }
+}
+@media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } .field-row-3 { grid-template-columns: 1fr 1fr; } }
+
+/* PRINT */
+@media print {
+  body { background: white; }
+  .topbar, .sidebar, .main > .page-eyebrow, .main > .page-title, .main > .page-sub,
+  .disclaimer, .form-col, .preview-header { display: none !important; }
+  .layout { padding-top: 0; }
+  .main { margin-left: 0; padding: 0; }
+  .sim-grid { display: block; }
+  .preview-col { position: static; }
+  .preview-card { border: none; border-radius: 0; max-height: none; overflow: visible; }
+  .cgv-doc { padding: 18mm 20mm; font-size: 9.5pt; line-height: 1.6; }
+  .cgv-doc h2 { font-size: 7.5pt; margin-top: 14pt; page-break-after: avoid; }
+  .cgv-doc p, .cgv-doc li { font-size: 9pt; page-break-inside: avoid; orphans: 3; widows: 3; }
+  .cgv-doc .cgv-title { font-size: 15pt; }
+  .cgv-doc .ph { background: none; color: #888; }
+  .cgv-doc .hi { background: #f5f5f5; border: 1px solid #ddd; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">SOCLE<span class="logo-dot"></span></div>
+  <div class="tb-right">
+    <div class="tb-btn"><i class="ti ti-bell" aria-hidden="true"></i></div>
+    <div class="tb-user">
+      <div class="tb-avatar">BG</div>
+      <div><div class="tb-name">Benjamin G.</div><div class="tb-plan">Plan Pro</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sb-group">
+      <div class="sb-label">Principal</div>
+      <div class="sb-item"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Lancement</div>
+      <div class="sb-item"><i class="ti ti-checklist" aria-hidden="true"></i>Checklist<span class="sb-badge">3</span></div>
+      <div class="sb-item"><i class="ti ti-clock-dollar" aria-hidden="true"></i>Taux horaire</div>
+      <div class="sb-item"><i class="ti ti-trending-up" aria-hidden="true"></i>Prévisionnel</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Prix &amp; Marges</div>
+      <div class="sb-item"><i class="ti ti-calculator" aria-hidden="true"></i>Chiffrage matériaux</div>
+      <div class="sb-item"><i class="ti ti-chart-bar" aria-hidden="true"></i>Rentabilité</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Terrain</div>
+      <div class="sb-item active"><i class="ti ti-shield-check" aria-hidden="true"></i>CGV</div>
+      <div class="sb-item"><i class="ti ti-file-text" aria-hidden="true"></i>Devis<span class="sb-badge">2</span></div>
+      <div class="sb-item"><i class="ti ti-receipt" aria-hidden="true"></i>Factures</div>
+      <div class="sb-item"><i class="ti ti-clipboard-check" aria-hidden="true"></i>PV de réception</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Technique</div>
+      <div class="sb-item"><i class="ti ti-book" aria-hidden="true"></i>Bibliothèque DTU</div>
+      <div class="sb-item"><i class="ti ti-folder" aria-hidden="true"></i>Admin &amp; documents</div>
+    </div>
+    <div class="sb-bottom">
+      <div class="sb-item"><i class="ti ti-settings" aria-hidden="true"></i>Paramètres</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-eyebrow">Terrain · Documents juridiques</div>
+    <h1 class="page-title">Générateur de CGV BTP</h1>
+    <p class="page-sub">Conditions Générales de Vente adaptées à ton activité. Toutes les clauses obligatoires plus les clauses spécifiques BTP les plus litigieuses.</p>
+
+    <div class="disclaimer">
+      <strong>Document indicatif.</strong> Ces CGV couvrent les mentions légalement obligatoires et les clauses les plus fréquentes en BTP. Faire relire par un professionnel du droit avant utilisation commerciale. SOCLE ne constitue pas un conseil juridique.
+    </div>
+
+    <div class="sim-grid">
+      <!-- ═══ FORMULAIRE ═══ -->
+      <div class="form-col">
+
+        <!-- Identité -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-building" aria-hidden="true"></i>Identité de l'entreprise</div>
+          <div class="card-sub">Ces informations apparaissent en en-tête et sont obligatoires sur tous tes documents commerciaux.</div>
+          <div class="field">
+            <div class="field-label">Raison sociale / Nom commercial</div>
+            <input class="field-input" id="nom" type="text" placeholder="GOMES Benjamin — Électricité" oninput="gen()">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">Statut juridique</div>
+              <select class="field-input field-select" id="statut" onchange="gen()">
+                <option value="SASU">SASU</option>
+                <option value="EURL">EURL</option>
+                <option value="Micro-entreprise">Micro-entreprise</option>
+                <option value="SAS">SAS</option>
+                <option value="SARL">SARL</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-label">SIREN</div>
+              <input class="field-input" id="siren" type="text" placeholder="123 456 789" oninput="gen()">
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label">Adresse du siège social</div>
+            <input class="field-input" id="adresse" type="text" placeholder="12 rue des Artisans, 77260 Changis-sur-Marne" oninput="gen()">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">N° inscription RM <span class="opt">(Chambre des Métiers)</span></div>
+              <input class="field-input" id="rm" type="text" placeholder="123456789 77" oninput="gen()">
+            </div>
+            <div class="field">
+              <div class="field-label">Code NAF</div>
+              <input class="field-input" id="naf" type="text" placeholder="4321A" oninput="gen()">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">Email</div>
+              <input class="field-input" id="email" type="email" placeholder="contact@entreprise.fr" oninput="gen()">
+            </div>
+            <div class="field">
+              <div class="field-label">Téléphone</div>
+              <input class="field-input" id="tel" type="text" placeholder="06 00 00 00 00" oninput="gen()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Assurance -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-shield" aria-hidden="true"></i>Assurances professionnelles</div>
+          <div class="card-sub">La mention de la décennale est obligatoire sur tous tes documents commerciaux en BTP.</div>
+          <div class="field">
+            <div class="field-label">Assureur (garantie décennale)</div>
+            <input class="field-input" id="assureur" type="text" placeholder="Hiscox / April / MMA..." oninput="gen()">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">N° de police décennale</div>
+              <input class="field-input" id="police" type="text" placeholder="GD-2024-123456" oninput="gen()">
+            </div>
+            <div class="field">
+              <div class="field-label">Zone géographique</div>
+              <input class="field-input" id="zone" type="text" placeholder="France métropolitaine" oninput="gen()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Conditions commerciales -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-coin" aria-hidden="true"></i>Conditions commerciales</div>
+          <div class="card-sub">Ces paramètres définissent tes conditions de paiement et les pénalités applicables.</div>
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">Acompte à la signature</div>
+              <select class="field-input field-select" id="acompte" onchange="gen()">
+                <option value="0">Pas d'acompte</option>
+                <option value="30" selected>30% du montant HT</option>
+                <option value="40">40% du montant HT</option>
+                <option value="50">50% du montant HT</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-label">Délai de paiement solde</div>
+              <select class="field-input field-select" id="delai" onchange="gen()">
+                <option value="réception">À réception de facture</option>
+                <option value="15 jours">15 jours</option>
+                <option value="30 jours" selected>30 jours</option>
+                <option value="45 jours">45 jours</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <div class="field-label">TVA principale</div>
+              <select class="field-input field-select" id="tva" onchange="gen()">
+                <option value="5,5%">5,5% — Isolation/énergie</option>
+                <option value="10%" selected>10% — Rénovation particuliers</option>
+                <option value="20%">20% — Neuf / professionnels</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-label">Taux horaire de référence</div>
+              <input class="field-input" id="tauxh" type="number" value="40" min="10" max="300" oninput="gen()">
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--gray3);margin-top:-8px">Le taux horaire s'applique à la facturation des travaux supplémentaires non prévus au devis.</div>
+        </div>
+
+        <!-- Type de clients -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-users" aria-hidden="true"></i>Type de clients</div>
+          <div class="card-sub">Détermine les clauses légales à inclure. Les obligations diffèrent fortement entre particuliers (Code consommation) et professionnels (Code de commerce).</div>
+          <div class="client-pills">
+            <div class="cpill active" id="pill-part" onclick="toggleClient('particuliers')">
+              <i class="ti ti-home" aria-hidden="true"></i>Particuliers
+            </div>
+            <div class="cpill active" id="pill-pro" onclick="toggleClient('professionnels')">
+              <i class="ti ti-briefcase" aria-hidden="true"></i>Professionnels
+            </div>
+          </div>
+        </div>
+
+        <!-- Clauses optionnelles -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-adjustments" aria-hidden="true"></i>Clauses spécifiques BTP</div>
+          <div class="card-sub">Active les clauses adaptées à ton activité. Chacune couvre une situation courante source de litige.</div>
+
+          <div class="toggles-grid">
+
+            <div class="toggle-row on" id="tgl-suppl" onclick="toggle('suppl')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Travaux supplémentaires</div>
+                <div class="toggle-desc">Encadre les demandes en cours de chantier. Source de litige N°1 en BTP. Avenant écrit obligatoire avant exécution.</div>
+              </div>
+            </div>
+
+            <div class="toggle-row on" id="tgl-force" onclick="toggle('force')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Force majeure</div>
+                <div class="toggle-desc">Liste explicite des événements reconnus en BTP : intempéries, grève fournisseurs, pénurie matériaux, épidémie.</div>
+              </div>
+            </div>
+
+            <div class="toggle-row on" id="tgl-client" onclick="toggle('client')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Obligations du maître d'ouvrage</div>
+                <div class="toggle-desc">Accès chantier, alimentation eau/électricité, fourniture des plans. Si le client ne respecte pas ses obligations, les délais sont suspendus.</div>
+              </div>
+            </div>
+
+            <div class="toggle-row on" id="tgl-vices" onclick="toggle('vices')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Vices cachés préexistants</div>
+                <div class="toggle-desc">Dégage ta responsabilité sur les désordres antérieurs (amiante, installation non conforme, structure défectueuse). Procédure arrêt de travaux + avenant.</div>
+              </div>
+            </div>
+
+            <div class="toggle-row on" id="tgl-resil" onclick="toggle('resil')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Résiliation du contrat</div>
+                <div class="toggle-desc">Cadre l'annulation par le client avant ou pendant les travaux. Indemnisation des matériaux commandés et de la mobilisation.</div>
+                <div class="sub-field" id="sub-resil">
+                  <div class="field-label" style="font-size:12px;margin-bottom:6px;">Indemnisation forfaitaire si résiliation avant démarrage</div>
+                  <select class="field-input field-select" style="font-size:13px;" id="resil-pct" onchange="gen()">
+                    <option value="15">15% du montant HT</option>
+                    <option value="20" selected>20% du montant HT</option>
+                    <option value="30">30% du montant HT</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="toggle-row" id="tgl-sous" onclick="toggle('sous')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Recours à la sous-traitance</div>
+                <div class="toggle-desc">Déclare que tu peux faire appel à des sous-traitants qualifiés et assurés, sans modifier ta responsabilité vis-à-vis du client.</div>
+              </div>
+            </div>
+
+            <div class="toggle-row" id="tgl-photos" onclick="toggle('photos')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Photos et références commerciales</div>
+                <div class="toggle-desc">Autorisation de photographier le chantier pour ton book et tes réseaux, sous réserve d'accord du client pour les particuliers.</div>
+              </div>
+            </div>
+
+            <div class="toggle-row" id="tgl-index" onclick="toggle('index')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Révision des prix — indice BT01</div>
+                <div class="toggle-desc">Pour les chantiers de plus de 3 mois. Indexation sur l'indice BT01 (INSEE) en cas de variation significative du coût des matériaux.</div>
+              </div>
+            </div>
+
+            <div class="toggle-row" id="tgl-dechets" onclick="toggle('dechets')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Déchets et nettoyage de fin de chantier</div>
+                <div class="toggle-desc">Définit qui évacue les gravats et fait le nettoyage final. Évite les conflits à la réception.</div>
+                <div class="sub-field" id="sub-dechets">
+                  <div class="field-label" style="font-size:12px;margin-bottom:6px;">Évacuation des déchets</div>
+                  <select class="field-input field-select" style="font-size:13px;" id="dechets-qui" onchange="gen()">
+                    <option value="entreprise">Incluse dans le prix — assurée par l'entreprise</option>
+                    <option value="client">À la charge du maître d'ouvrage</option>
+                    <option value="devis">Selon devis — précisé sur chaque devis</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="toggle-row on" id="tgl-securite" onclick="toggle('securite')">
+              <div class="toggle-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="toggle-info">
+                <div class="toggle-name">Sécurité et conditions d'accès</div>
+                <div class="toggle-desc">L'entreprise peut interrompre les travaux en cas de risque pour la sécurité. Non-responsabilité pour dommages causés par des tiers hors présence.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Médiation -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-scale" aria-hidden="true"></i>Médiation <span style="font-size:.8rem;font-weight:400;color:var(--gray3);">— Obligatoire pour les particuliers</span></div>
+          <div class="card-sub">Depuis le 1er janvier 2016, tout professionnel traitant avec des particuliers doit proposer un médiateur de la consommation agréé.</div>
+          <div class="field">
+            <div class="field-label">Médiateur de la consommation</div>
+            <select class="field-input field-select" id="mediateur" onchange="gen()">
+              <option value="CM2C">CM2C (Centre de Médiation et d'Arbitrage de Paris) — www.cm2c.net</option>
+              <option value="MEDICYS">MEDICYS — www.medicys.fr</option>
+              <option value="La Médiation Professionnelle">La Médiation Professionnelle — www.lamediationprofessionnelle.org</option>
+              <option value="CNPM">CNPM Médiation de la Consommation — www.cnpm-mediation-consommation.eu</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══ APERÇU ═══ -->
+      <div class="preview-col">
+        <div class="preview-header">
+          <div>
+            <div class="preview-label">Aperçu CGV</div>
+            <div class="preview-meta" id="art-count">— articles</div>
+          </div>
+          <button class="btn-print" onclick="window.print()">
+            <i class="ti ti-download" aria-hidden="true"></i>
+            Télécharger PDF
+          </button>
+        </div>
+        <div class="preview-card">
+          <div class="cgv-doc" id="cgv-output"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── STATE ──
+let clients = { particuliers: true, professionnels: true };
+let toggles = { suppl: true, force: true, client: true, vices: true, resil: true, sous: false, photos: false, index: false, dechets: false, securite: true };
+
+function toggleClient(t) {
+  clients[t] = !clients[t];
+  document.getElementById('pill-' + (t === 'particuliers' ? 'part' : 'pro')).classList.toggle('active', clients[t]);
+  gen();
+}
+
+function toggle(key) {
+  toggles[key] = !toggles[key];
+  document.getElementById('tgl-' + key).classList.toggle('on', toggles[key]);
+  // Sous-champs
+  const sf = document.getElementById('sub-' + key);
+  if (sf) sf.classList.toggle('visible', toggles[key]);
+  gen();
+}
+
+// Init sub-fields
+['resil', 'dechets'].forEach(k => {
+  const sf = document.getElementById('sub-' + k);
+  if (sf) sf.classList.toggle('visible', toggles[k]);
+});
+
+function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function ph(val, label) { return val ? val : `<span class="ph">[${label}]</span>`; }
+function today() { return new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }); }
+
+// ── NUMÉROTATION DYNAMIQUE ──
+let artN = 0;
+function art(titre) { artN++; return `<h2>Article ${artN} — ${titre}</h2>`; }
+
+function gen() {
+  artN = 0;
+  const nom = v('nom'), statut = v('statut'), siren = v('siren'), adresse = v('adresse');
+  const rm = v('rm'), naf = v('naf'), email = v('email'), tel = v('tel');
+  const assureur = v('assureur'), police = v('police'), zone = v('zone');
+  const acompte = v('acompte'), delai = v('delai'), tva = v('tva');
+  const tauxh = v('tauxh') || '40';
+  const mediateur = v('mediateur');
+  const resilPct = v('resil-pct') || '20';
+  const dechetsQui = v('dechets-qui') || 'entreprise';
+  const avP = clients.particuliers, avB = clients.professionnels;
+
+  const nomRef = ph(nom, 'Raison sociale');
+  const acompteStr = acompte === '0' ? 'Aucun acompte n\'est exigé à la commande.' : `Un acompte de ${acompte}% du montant HT est exigible à la signature du devis, avant tout démarrage des travaux.`;
+  const penalB = avB ? `Pour les clients professionnels, tout retard de paiement entraîne de plein droit, sans mise en demeure préalable : (i) des pénalités de retard au taux directeur de la BCE majoré de 10 points de pourcentage, courrant jusqu'au paiement intégral ; (ii) une indemnité forfaitaire pour frais de recouvrement de 40 € (art. D. 441-5 C. com.), sans préjudice de tout dommage complémentaire si les frais réels de recouvrement dépassent ce montant.` : '';
+  const penalP = avP ? `Pour les clients particuliers, tout retard de paiement entraîne des intérêts de retard au taux légal en vigueur, exigibles à compter d'une mise en demeure restée sans effet pendant 8 jours.` : '';
+
+  let html = `
+    <div class="cgv-title">CONDITIONS GÉNÉRALES DE VENTE</div>
+    <div class="cgv-subtitle">${nomRef} — ${statut}<br>Document établi le ${today()}</div>
+    <div class="cgv-id">
+      <strong>${nomRef}</strong> — ${statut}<br>
+      SIREN : ${ph(siren, 'SIREN')} &nbsp;|&nbsp; Code NAF : ${ph(naf, 'Code NAF')}<br>
+      RM : ${ph(rm, 'N° Registre des Métiers')}<br>
+      Siège : ${ph(adresse, 'Adresse')}<br>
+      ${email ? `Email : ${email}` : ''}${email && tel ? ' &nbsp;|&nbsp; ' : ''}${tel ? `Tél. : ${tel}` : ''}
+    </div>
+
+    ${art('Champ d\'application')}
+    <p>Les présentes Conditions Générales de Vente (CGV) régissent l'ensemble des relations contractuelles entre ${nomRef} (ci-après « l'Entreprise ») et ses clients${avP && avB ? ', particuliers ou professionnels,' : avP ? ' particuliers' : ' professionnels'}, pour tout devis, commande ou contrat de travaux. Toute commande implique l'acceptation pleine et entière des présentes CGV, qui prévalent sur tout autre document du client sauf dérogation expresse et écrite.</p>
+
+    ${art('Devis et formation du contrat')}
+    <p>Tout devis est valable <strong>30 jours</strong> à compter de sa date d'émission. Le contrat est formé par la signature du devis accompagnée de la mention « Bon pour accord »${acompte !== '0' ? ` et du versement de l'acompte prévu à l'article concernant les conditions de paiement` : ''}. Toute modification ultérieure fait l'objet d'un avenant écrit signé par les deux parties, pouvant entraîner une révision du prix et/ou des délais.</p>
+
+    ${art('Prix et TVA')}
+    <p>Les prix sont exprimés en euros HT. La TVA applicable est de <strong>${tva}</strong> pour les travaux entrant dans le champ de l'article 279-0 bis du CGI. D'autres taux peuvent s'appliquer selon la nature précise des travaux (neuf : 20 %, isolation thermique : 5,5 %). En cas de modification légale des taux de TVA, les prix TTC seront ajustés en conséquence.</p>
+
+    ${art('Délais d\'exécution')}
+    <p>Les délais d'exécution courent à compter de la réception de l'acompte et de toutes les informations nécessaires. Ils sont donnés à titre indicatif et ne constituent pas un engagement ferme sauf mention contraire écrite dans le devis. Les délais sont automatiquement prolongés en cas de modification demandée par le client, de défaillance d'un tiers ou d'événement de force majeure.</p>
+
+    ${art('Conditions de paiement')}
+    <p>${acompteStr}</p>
+    <p>Le solde est exigible <strong>${delai}</strong>, déduction faite de l'acompte versé. Aucun escompte n'est accordé pour paiement anticipé sauf accord express préalable.</p>
+    <p>${penalP}</p>
+    ${penalB ? `<p>${penalB}</p>` : ''}
+
+    ${art('Réserve de propriété')}
+    <p>L'Entreprise conserve la propriété des matériaux et produits fournis jusqu'au paiement intégral du prix. Cette clause s'applique même en cas d'incorporation dans l'immeuble dans les conditions permises par la loi. En cas de non-paiement, l'Entreprise peut exiger la restitution des matériaux non encore incorporés.</p>
+
+    ${art('Réception des travaux')}
+    <p>À l'achèvement des travaux, une réception contradictoire est organisée, faisant l'objet d'un procès-verbal signé. En l'absence de réserve notifiée à l'Entreprise dans un délai de <strong>8 jours</strong> suivant l'achèvement, les travaux sont réputés acceptés sans réserve.</p>
+
+    ${avP ? `
+    ${art('Droit de rétractation (particuliers)')}
+    <p>Conformément aux articles L. 221-18 et suivants du Code de la consommation, tout client particulier ayant conclu un contrat hors établissement dispose d'un <strong>droit de rétractation de 14 jours calendaires</strong> à compter de la signature, en adressant le formulaire joint ou toute déclaration non ambiguë par courrier recommandé avec accusé de réception.</p>
+    <div class="hi">Si le client particulier demande expressément le commencement des travaux avant l'expiration de ce délai, il devra payer un montant proportionnel aux prestations fournies jusqu'à la communication de sa rétractation (art. L. 221-25 C. conso.).</div>
+    ` : ''}
+
+    ${art('Garanties légales')}
+    <ul>
+      <li><strong>Parfait achèvement (art. 1792-6 C. civ.) :</strong> 1 an à compter de la réception — tous les désordres signalés.</li>
+      <li><strong>Bon fonctionnement (art. 1792-3 C. civ.) :</strong> 2 ans — éléments d'équipement dissociables.</li>
+      <li><strong>Décennale (art. 1792 C. civ.) :</strong> 10 ans — dommages compromettant la solidité ou l'usage.</li>
+    </ul>
+    <div class="hi"><strong>Assurance décennale :</strong> ${ph(assureur, 'Assureur')} — Police N° ${ph(police, 'N° Police')} — Zone : ${ph(zone, 'Zone géographique')}</div>
+
+    ${toggles.vices ? `
+    ${art('Vices cachés préexistants')}
+    <p>L'Entreprise n'est pas responsable des vices cachés préexistants à son intervention (présence d'amiante, installations électriques non conformes, structures défectueuses, pollution des sols, etc.). Toute découverte en cours de chantier d'un désordre préexistant entraîne l'arrêt immédiat des travaux concernés et la rédaction d'un avenant définissant les nouvelles conditions d'exécution et de prix. Les travaux ne reprennent qu'après signature de cet avenant par les deux parties.</p>
+    ` : ''}
+
+    ${toggles.suppl ? `
+    ${art('Travaux supplémentaires et modificatifs')}
+    <p>Tout travail non expressément prévu au devis initial constitue un travail supplémentaire. <strong>Aucun travail supplémentaire ne peut être exécuté sans avoir fait l'objet d'un avenant écrit et signé par les deux parties préalablement à son exécution.</strong> Les travaux supplémentaires réalisés en urgence, avec accord verbal du client attesté par un bon de commande ou un email, seront facturés au taux horaire de <strong>${tauxh} € HT/h</strong> majoré des coûts de matériaux. Les travaux supplémentaires effectués sans avenant ni accord exprès ne sont pas dus par le client mais peuvent faire l'objet d'une demande de paiement fondée sur l'enrichissement sans cause.</p>
+    ` : ''}
+
+    ${toggles.client ? `
+    ${art('Obligations du maître d\'ouvrage')}
+    <p>Le client s'engage à : (i) fournir un accès libre et sécurisé au chantier aux horaires convenus, (ii) mettre à disposition l'alimentation en eau et en électricité nécessaire à l'exécution des travaux, (iii) fournir tous plans, documents techniques et autorisations administratives nécessaires avant le démarrage, (iv) dégager les zones d'intervention des meubles et effets personnels. Le non-respect de l'une de ces obligations entraîne la suspension automatique des délais d'exécution et peut donner lieu à une facturation des temps d'attente au taux horaire de ${tauxh} € HT/h.</p>
+    ` : ''}
+
+    ${toggles.securite ? `
+    ${art('Sécurité et conditions d\'intervention')}
+    <p>L'Entreprise se réserve le droit d'interrompre les travaux sans préavis et sans pénalité si les conditions d'hygiène, de sécurité ou d'accès au chantier ne permettent pas une exécution dans des conditions conformes à la réglementation applicable (Code du travail — santé et sécurité au travail). L'Entreprise n'est pas responsable des dommages causés par des tiers ayant accès au chantier en dehors de ses heures de présence, sauf manquement à son obligation de sécurisation du chantier.</p>
+    ` : ''}
+
+    ${toggles.force ? `
+    ${art('Force majeure')}
+    <p>Constituent des cas de force majeure libérant l'Entreprise de ses obligations de délai, sans indemnité, les événements présentant les caractères d'extériorité, d'imprévisibilité et d'irrésistibilité, notamment : intempéries classées par Météo-France rendant l'exécution des travaux dangereuse ou impossible, grèves de fournisseurs ou transporteurs, pénurie de matériaux indépendante de la volonté de l'Entreprise, épidémie ou pandémie reconnue par les autorités, coupures prolongées d'énergie, désordres affectant les approvisionnements, inondations, séismes. L'Entreprise informe le client dans les meilleurs délais de la survenance d'un tel événement et des conséquences sur le calendrier.</p>
+    ` : ''}
+
+    ${toggles.resil ? `
+    ${art('Résiliation du contrat')}
+    <p>En cas de résiliation du contrat à l'initiative du client après signature du devis et avant démarrage des travaux, une indemnité forfaitaire de <strong>${resilPct}% du montant HT</strong> est due à l'Entreprise, couvrant les frais de mobilisation et les commandes de matériaux déjà passées. Les matériaux spécifiquement commandés pour le chantier restent à la charge du client sur présentation des justificatifs d'achat. En cas de résiliation en cours de travaux, les prestations réalisées sont facturées au prorata de l'avancement, majorées des coûts liés à l'interruption et à la remise en état du chantier.</p>
+    ` : ''}
+
+    ${toggles.index ? `
+    ${art('Révision des prix — Clause d\'indexation BT01')}
+    <p>Pour les chantiers dont la durée d'exécution est supérieure à 3 mois, les prix pourront être révisés à la hausse ou à la baisse en fonction de l'évolution de l'indice BT01 (indice général du bâtiment, publié mensuellement par l'INSEE). La formule de révision est : P = Po × (BT / BTo), où Po est le prix initial, BTo est la valeur de l'indice BT01 au mois de signature du devis, et BT est la valeur de l'indice au mois d'exécution des travaux concernés. L'Entreprise informera le client de toute révision significative (supérieure à 3%) avant son application.</p>
+    ` : ''}
+
+    ${toggles.sous ? `
+    ${art('Recours à la sous-traitance')}
+    <p>L'Entreprise se réserve le droit de sous-traiter tout ou partie des travaux à des entreprises spécialisées qualifiées et couvertes par les assurances professionnelles requises. Le recours à la sous-traitance ne modifie pas la responsabilité de l'Entreprise vis-à-vis du client. Le client est informé du recours à la sous-traitance et conserve son droit de recours direct contre le sous-traitant dans les conditions prévues par la loi N° 75-1334 du 31 décembre 1975.</p>
+    ` : ''}
+
+    ${toggles.dechets ? `
+    ${art('Déchets, gravats et nettoyage de chantier')}
+    <p>${dechetsQui === 'entreprise' ? `L'évacuation des déchets, gravats et emballages produits par les travaux est incluse dans le prix du devis. L'Entreprise assure le tri sélectif selon la réglementation en vigueur et l'évacuation vers une déchetterie agréée. Un nettoyage de base de la zone d'intervention est effectué à l'achèvement des travaux.` : dechetsQui === 'client' ? `L'évacuation des déchets, gravats et emballages produits par les travaux est à la charge exclusive du maître d'ouvrage, sauf mention contraire au devis. L'Entreprise peut, sur demande, assurer cette prestation avec un devis complémentaire spécifique.` : `Les conditions d'évacuation des déchets et de nettoyage de fin de chantier sont précisées dans chaque devis. En l'absence de mention expresse, l'évacuation reste à la charge du maître d'ouvrage.`}</p>
+    ` : ''}
+
+    ${toggles.photos ? `
+    ${art('Photographies et r\u00e9f\u00e9rences commerciales')}
+    <p>L\u2019Entreprise se r\u00e9serve le droit de photographier les travaux avant, pendant et apr\u00e8s leur r\u00e9alisation \u00e0 des fins de documentation technique et de promotion commerciale (site internet, r\u00e9seaux professionnels, book de r\u00e9f\u00e9rences). ${avP ? "Pour les clients particuliers, ces photographies ne permettront pas l\u2019identification du logement ou des occupants sans accord expr\u00e8s \u00e9crit. Le client particulier peut s\u2019opposer \u00e0 toute utilisation commerciale des photographies en le notifiant lors de la signature du devis." : "Ces photographies pourront \u00eatre utilis\u00e9es \u00e0 des fins de r\u00e9f\u00e9rences commerciales, sous r\u00e9serve de ne pas divulguer d\u2019informations confidentielles relatives \u00e0 l\u2019activit\u00e9 du client professionnel."}</p>
+    ` : ''}
+
+    ${art('Responsabilité')}
+    <p>La responsabilité de l'Entreprise ne peut être engagée qu'en cas de faute prouvée et est limitée au montant du devis accepté, sauf faute lourde ou dolosive. L'Entreprise n'est pas responsable des dommages indirects ou immatériels.</p>
+
+    ${art('Données personnelles (RGPD)')}
+    <p>Les données collectées sont traitées conformément au RGPD (UE 2016/679) et conservées pour la durée légale (10 ans pour les documents comptables). Droits d'accès, rectification et effacement : ${ph(email, 'email de contact')}.</p>
+
+    ${avP ? `
+    ${art('Médiation de la consommation')}
+    <p>Conformément aux articles L. 616-1 et R. 616-1 du Code de la consommation, en cas de litige non résolu à l'amiable, le client particulier peut recourir gratuitement à : <strong>${mediateur}</strong>. Ce recours est facultatif et n'empêche pas de saisir les juridictions compétentes.</p>
+    ` : ''}
+
+    ${avB ? `
+    ${art('Clauses spécifiques aux clients professionnels')}
+    <p><strong>Attribution de juridiction :</strong> En cas de litige entre professionnels, compétence exclusive aux tribunaux du ressort du siège social de l'Entreprise. <strong>Délais de paiement :</strong> Conformément à l'art. L. 441-10 C. com., délai maximum de 60 jours nets ou 45 jours fin de mois. <strong>Compensation :</strong> Toute compensation entre créances doit faire l'objet d'un accord express écrit préalable.</p>
+    ` : ''}
+
+    ${art('Droit applicable')}
+    <p>Les présentes CGV sont soumises au droit français. ${avP ? 'Pour les clients particuliers, les juridictions compétentes sont celles du domicile du défendeur.' : 'Attribution expresse de juridiction au tribunal compétent du siège social de l\'Entreprise.'}</p>
+
+    <div class="cgv-footer">
+      CGV générées via SOCLE · ${ph(nom, 'Raison sociale')} · SIREN : ${ph(siren, 'SIREN')} · ${today()}<br>
+      <em>Ce document est un modèle indicatif — faire valider par un professionnel du droit avant utilisation commerciale.</em>
+    </div>
+  `;
+
+  document.getElementById('cgv-output').innerHTML = html;
+  document.getElementById('art-count').textContent = artN + ' articles';
+}
+
+// Init
+gen();
+</script>
+</body>
+</html>

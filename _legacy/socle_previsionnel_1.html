@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOCLE — Prévisionnel première année</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:       #0a0a09;
+  --white:       #fafaf8;
+  --green:       #1a7a3c;
+  --green-dark:  #0f4f26;
+  --green-light: #e8f5ee;
+  --green-b:     #b8ddc8;
+  --gray-bg:     #f0efeb;
+  --gray2:       #e0dfd8;
+  --gray3:       #999990;
+  --gray4:       #5a5a54;
+  --orange:      #c45a0a;
+  --orange-bg:   #fef3eb;
+  --orange-b:    #f0c8a0;
+  --red:         #b83030;
+  --red-bg:      #fdf0f0;
+  --red-b:       #f0b8b8;
+  --blue:        #1a4a8a;
+  --blue-bg:     #e8f0fb;
+  --blue-b:      #b8cce8;
+  --ff:  'Figtree', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: var(--ff); background: var(--gray-bg); color: var(--black); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+/* ── TOPBAR ── */
+.topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 52px; background: var(--black); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+.logo { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--white); display: flex; align-items: baseline; }
+.logo-dot { display: inline-block; width: 8px; height: 8px; background: var(--green); border-radius: 50%; margin-left: 1px; }
+.tb-right { display: flex; align-items: center; gap: 4px; }
+.tb-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; color: rgba(255,255,255,0.45); transition: all .15s; }
+.tb-btn:hover { background: rgba(255,255,255,0.06); color: var(--white); }
+.tb-btn i { font-size: 18px; }
+.tb-user { display: flex; align-items: center; gap: 9px; padding: 4px 10px 4px 4px; border-radius: 8px; margin-left: 6px; cursor: pointer; transition: background .15s; }
+.tb-user:hover { background: rgba(255,255,255,0.06); }
+.tb-avatar { width: 28px; height: 28px; border-radius: 6px; background: var(--green); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--white); }
+.tb-name { font-size: 12px; font-weight: 600; color: var(--white); }
+.tb-plan { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.35); letter-spacing: .06em; text-transform: uppercase; }
+
+/* ── LAYOUT ── */
+.layout { display: flex; padding-top: 52px; }
+
+/* ── SIDEBAR ── */
+.sidebar { position: fixed; left: 0; top: 52px; bottom: 0; width: 240px; background: var(--white); border-right: 1px solid var(--gray2); display: flex; flex-direction: column; padding: 24px 0 16px; overflow-y: auto; }
+.sb-group { margin-bottom: 24px; }
+.sb-label { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--gray3); padding: 0 24px 8px; }
+.sb-item { display: flex; align-items: center; gap: 11px; padding: 8px 24px 8px 21px; font-weight: 400; font-size: 14px; color: var(--gray4); border-left: 3px solid transparent; cursor: pointer; transition: all .12s; }
+.sb-item i { font-size: 17px; color: var(--gray3); flex-shrink: 0; }
+.sb-item:hover { color: var(--black); background: var(--gray-bg); }
+.sb-item:hover i { color: var(--gray4); }
+.sb-item.active { background: var(--green-light); color: var(--green); border-left-color: var(--green); font-weight: 600; }
+.sb-item.active i { color: var(--green); }
+.sb-badge { margin-left: auto; font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--orange); background: var(--orange-bg); border: 1px solid var(--orange-b); border-radius: 99px; padding: 1px 7px; }
+.sb-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--gray2); }
+
+/* ── MAIN ── */
+.main { flex: 1; margin-left: 240px; padding: 40px 40px 80px; }
+
+/* ── PAGE HEADER ── */
+.page-eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--green); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+.page-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--green); }
+.page-title { font-weight: 700; font-size: clamp(1.8rem, 3vw, 2.4rem); letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 10px; }
+.page-sub { font-size: 15px; color: var(--gray4); line-height: 1.6; max-width: 560px; margin-bottom: 40px; }
+
+/* ── GRILLE ── */
+.sim-grid { display: grid; grid-template-columns: 1fr 420px; gap: 24px; align-items: start; }
+
+/* ── INPUTS ── */
+.inputs-col { display: flex; flex-direction: column; gap: 16px; }
+.card { background: var(--white); border: 1px solid var(--gray2); border-radius: 12px; padding: 24px; }
+.card-title { font-weight: 700; font-size: .95rem; letter-spacing: -0.01em; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.card-title i { font-size: 18px; color: var(--green); }
+.card-sub { font-size: 13px; color: var(--gray3); margin-bottom: 20px; line-height: 1.5; }
+
+.field { margin-bottom: 16px; }
+.field:last-child { margin-bottom: 0; }
+.field-label { font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 8px; letter-spacing: -0.01em; display: flex; align-items: baseline; justify-content: space-between; }
+.field-hint { font-weight: 400; font-family: var(--mono); font-size: 11px; color: var(--gray3); }
+.input-row { display: flex; gap: 10px; align-items: center; }
+.input-num { width: 130px; flex-shrink: 0; padding: 10px 12px; border: 1px solid var(--gray2); border-radius: 8px; font-size: 15px; font-family: var(--mono); font-weight: 500; color: var(--black); background: var(--white); outline: none; transition: border-color .15s; -webkit-appearance: none; text-align: right; }
+.input-num:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,122,60,.08); }
+.input-slider { flex: 1; -webkit-appearance: none; height: 4px; background: var(--gray2); border-radius: 99px; outline: none; cursor: pointer; }
+.input-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2px solid var(--white); box-shadow: 0 0 0 1px var(--green); }
+.input-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2px solid var(--white); }
+.input-suffix { font-family: var(--mono); font-size: 12px; color: var(--gray3); flex-shrink: 0; white-space: nowrap; }
+.field-note { font-size: 12px; color: var(--gray3); margin-top: 6px; line-height: 1.5; }
+
+/* Pills */
+.pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill { padding: 9px 16px; border-radius: 8px; border: 1.5px solid var(--gray2); background: var(--white); font-size: 13px; font-weight: 600; color: var(--gray4); cursor: pointer; transition: all .15s; display: flex; flex-direction: column; gap: 2px; font-family: var(--ff); }
+.pill:hover { border-color: var(--gray3); color: var(--black); }
+.pill.active { background: var(--green-light); border-color: var(--green); color: var(--green); }
+.pill-sub { font-size: 10px; font-family: var(--mono); font-weight: 400; color: var(--gray3); }
+.pill.active .pill-sub { color: var(--green-dark); }
+.pill-sm { padding: 8px 14px; font-family: var(--mono); font-size: 13px; }
+
+/* Note pédagogique contextuelle */
+.peda-note {
+  background: var(--blue-bg);
+  border: 1px solid var(--blue-b);
+  border-left: 3px solid var(--blue);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--blue);
+  line-height: 1.6;
+}
+.peda-note strong { font-weight: 700; color: var(--blue); }
+
+/* Alerte TVA franchise */
+.tva-franchise-note {
+  background: var(--orange-bg);
+  border: 1px solid var(--orange-b);
+  border-left: 3px solid var(--orange);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--orange);
+  line-height: 1.6;
+  display: none;
+}
+.tva-franchise-note.visible { display: block; }
+
+/* ── RÉSULTATS ── */
+.result-col { position: sticky; top: 72px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Signal */
+.signal-card { border-radius: 12px; padding: 24px; border: 1px solid var(--gray2); transition: all .3s; }
+.signal-card.go { background: var(--green-light); border-color: var(--green-b); }
+.signal-card.attention { background: var(--orange-bg); border-color: var(--orange-b); }
+.signal-card.stop { background: var(--red-bg); border-color: var(--red-b); }
+
+.signal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.signal-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.signal-card.go .signal-icon { background: var(--green); }
+.signal-card.attention .signal-icon { background: var(--orange); }
+.signal-card.stop .signal-icon { background: var(--red); }
+.signal-icon i { font-size: 20px; color: var(--white); }
+.signal-label { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; }
+.signal-card.go .signal-label { color: var(--green); }
+.signal-card.attention .signal-label { color: var(--orange); }
+.signal-card.stop .signal-label { color: var(--red); }
+.signal-title { font-weight: 700; font-size: 1rem; color: var(--black); letter-spacing: -0.01em; }
+.signal-revenu { font-family: var(--mono); font-weight: 500; font-size: 2.4rem; letter-spacing: -0.03em; line-height: 1; margin: 12px 0 6px; }
+.signal-card.go .signal-revenu { color: var(--green); }
+.signal-card.attention .signal-revenu { color: var(--orange); }
+.signal-card.stop .signal-revenu { color: var(--red); }
+.signal-sub { font-size: 13px; color: var(--gray4); line-height: 1.5; }
+.signal-bar-wrap { margin-top: 14px; }
+.signal-bar-label { display: flex; justify-content: space-between; font-size: 11px; font-family: var(--mono); color: var(--gray3); margin-bottom: 6px; }
+.signal-bar { height: 6px; background: var(--gray2); border-radius: 99px; overflow: hidden; }
+.signal-bar-fill { height: 100%; border-radius: 99px; transition: width .4s ease; }
+.signal-card.go .signal-bar-fill { background: var(--green); }
+.signal-card.attention .signal-bar-fill { background: var(--orange); }
+.signal-card.stop .signal-bar-fill { background: var(--red); }
+
+/* Résultats */
+.results-card { background: var(--black); border-radius: 12px; padding: 24px; color: var(--white); }
+.results-eyebrow { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.results-eyebrow::before { content: ''; width: 16px; height: 1px; background: var(--green); }
+
+.views-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,.08); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+.view-col { padding: 16px; background: rgba(255,255,255,.03); }
+.view-label { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 14px; }
+.view-metric { margin-bottom: 12px; }
+.view-metric:last-child { margin-bottom: 0; }
+.vm-label { font-size: 11px; color: rgba(255,255,255,.45); margin-bottom: 3px; }
+.vm-val { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; letter-spacing: -0.02em; color: var(--white); }
+.vm-val.green { color: var(--green); }
+.vm-val.sm { font-size: .9rem; }
+
+.btn-toggle { width: 100%; padding: 11px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 8px; font-family: var(--ff); font-size: 13px; font-weight: 600; color: rgba(255,255,255,.6); cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 7px; }
+.btn-toggle:hover { background: rgba(255,255,255,.12); color: var(--white); }
+.btn-toggle i { font-size: 15px; transition: transform .2s; }
+.btn-toggle.open i { transform: rotate(180deg); }
+
+.detail-panel { display: none; margin-top: 16px; }
+.detail-panel.visible { display: block; }
+
+.detail-section { margin-bottom: 16px; }
+.detail-section-title { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.06); }
+
+.cd-line { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 12px; }
+.cd-line:last-child { border-bottom: none; }
+.cd-label { color: rgba(255,255,255,.5); flex: 1; }
+.cd-val { font-family: var(--mono); font-weight: 500; color: rgba(255,255,255,.8); text-align: right; margin-left: 12px; }
+.cd-line.total .cd-label { color: rgba(255,255,255,.75); font-weight: 600; }
+.cd-line.total .cd-val { color: var(--white); font-size: 13px; }
+.cd-line.ecart-pos .cd-val { color: var(--green); }
+.cd-line.ecart-neg .cd-val { color: #e07070; }
+
+/* Explication statut */
+.statut-explication { background: rgba(255,255,255,.04); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 12px; color: rgba(255,255,255,.6); line-height: 1.65; }
+.statut-explication strong { color: var(--white); font-weight: 600; }
+.statut-explication em { font-style: normal; color: var(--green); font-family: var(--mono); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) { .sim-grid { grid-template-columns: 1fr 360px; } }
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 28px 20px 80px; }
+  .sim-grid { grid-template-columns: 1fr; }
+  .result-col { position: static; }
+  .views-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">SOCLE<span class="logo-dot"></span></div>
+  <div class="tb-right">
+    <div class="tb-btn"><i class="ti ti-bell" aria-hidden="true"></i></div>
+    <div class="tb-user">
+      <div class="tb-avatar">BG</div>
+      <div><div class="tb-name">Benjamin G.</div><div class="tb-plan">Plan Pro</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sb-group">
+      <div class="sb-label">Principal</div>
+      <div class="sb-item"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Lancement</div>
+      <div class="sb-item"><i class="ti ti-checklist" aria-hidden="true"></i>Checklist<span class="sb-badge">4</span></div>
+      <div class="sb-item"><i class="ti ti-clock-dollar" aria-hidden="true"></i>Taux horaire</div>
+      <div class="sb-item active"><i class="ti ti-trending-up" aria-hidden="true"></i>Prévisionnel</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Prix &amp; Marges</div>
+      <div class="sb-item"><i class="ti ti-calculator" aria-hidden="true"></i>Chiffrage matériaux</div>
+      <div class="sb-item"><i class="ti ti-chart-bar" aria-hidden="true"></i>Rentabilité</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Terrain</div>
+      <div class="sb-item"><i class="ti ti-file-text" aria-hidden="true"></i>Devis<span class="sb-badge">2</span></div>
+      <div class="sb-item"><i class="ti ti-receipt" aria-hidden="true"></i>Factures</div>
+      <div class="sb-item"><i class="ti ti-clipboard-check" aria-hidden="true"></i>PV de réception</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Technique</div>
+      <div class="sb-item"><i class="ti ti-book" aria-hidden="true"></i>Bibliothèque DTU</div>
+      <div class="sb-item"><i class="ti ti-folder" aria-hidden="true"></i>Admin &amp; documents</div>
+    </div>
+    <div class="sb-bottom">
+      <div class="sb-item"><i class="ti ti-settings" aria-hidden="true"></i>Paramètres</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-eyebrow">Lancement · Étape 2 sur 3</div>
+    <h1 class="page-title">Prévisionnel — première année</h1>
+    <p class="page-sub">Combien tu vas réellement gagner selon ton activité prévue. Les calculs sont adaptés à ton statut juridique — cotisations, TVA et régime fiscal sont modélisés correctement.</p>
+
+    <div class="sim-grid">
+      <div class="inputs-col">
+
+        <!-- STATUT -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-building" aria-hidden="true"></i>Statut juridique</div>
+          <div class="card-sub">Ton statut détermine comment tes cotisations sociales sont calculées, ton régime TVA et ta fiscalité. Les trois statuts fonctionnent différemment.</div>
+          <div class="pills">
+            <button class="pill" data-s="micro" onclick="setStatut(this)">
+              Micro-entrepreneur
+              <span class="pill-sub">Cotis. sur CA · ~21,2%</span>
+            </button>
+            <button class="pill" data-s="eurl" onclick="setStatut(this)">
+              EURL (TNS)
+              <span class="pill-sub">Cotis. sur bénéfice · ~45%</span>
+            </button>
+            <button class="pill active" data-s="sasu" onclick="setStatut(this)">
+              SASU (assimilé salarié)
+              <span class="pill-sub">Cotis. sur salaire · ~82%</span>
+            </button>
+          </div>
+          <div class="peda-note" id="peda-statut"></div>
+        </div>
+
+        <!-- OBJECTIF -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-wallet" aria-hidden="true"></i>Objectif de vie</div>
+          <div class="card-sub">Le salaire net mensuel que tu veux toucher. C'est le point de départ — tout le reste découle de cet objectif.</div>
+          <div class="field">
+            <div class="field-label">Salaire net mensuel visé<span class="field-hint" id="salaire-display">2 500 €/mois</span></div>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="salaire-slider" min="1000" max="6000" step="100" value="2500" oninput="sync('salaire')">
+              <input type="number" class="input-num" id="salaire-input" value="2500" min="500" max="15000" step="100" oninput="sync('salaire')">
+              <span class="input-suffix">€/mois</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVITÉ -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-calendar" aria-hidden="true"></i>Activité prévue</div>
+          <div class="card-sub">Ton rythme de travail réel. Sois conservateur — la montée en charge prend toujours plus de temps que prévu.</div>
+
+          <div class="field">
+            <div class="field-label">Taux horaire facturé<span class="field-hint" id="taux-display">35 €/h</span></div>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="taux-slider" min="20" max="120" step="1" value="35" oninput="sync('taux')">
+              <input type="number" class="input-num" id="taux-input" value="35" min="10" max="200" step="1" oninput="sync('taux')">
+              <span class="input-suffix">€/h HT</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Heures facturables par semaine<span class="field-hint" id="heures-display">35 h/sem</span></div>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="heures-slider" min="10" max="45" step="1" value="35" oninput="sync('heures')">
+              <input type="number" class="input-num" id="heures-input" value="35" min="5" max="60" step="1" oninput="sync('heures')">
+              <span class="input-suffix">h/sem</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Semaines travaillées<span class="field-hint" id="semaines-display">44 semaines</span></div>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="semaines-slider" min="20" max="50" step="1" value="44" oninput="sync('semaines')">
+              <input type="number" class="input-num" id="semaines-input" value="44" min="10" max="52" step="1" oninput="sync('semaines')">
+              <span class="input-suffix">sem/an</span>
+            </div>
+            <div class="field-note">52 semaines − congés − formation − imprévus. 44 semaines = 8 semaines non travaillées.</div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Taux de remplissage réel<span class="field-hint" id="remplissage-display">70%</span></div>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="remplissage-slider" min="30" max="100" step="5" value="70" oninput="sync('remplissage')">
+              <input type="number" class="input-num" id="remplissage-input" value="70" min="10" max="100" step="5" oninput="sync('remplissage')">
+              <span class="input-suffix">%</span>
+            </div>
+            <div class="field-note">En première année, rarement plus de 70%. Devis perdus, attente entre chantiers, période de rodage commercial.</div>
+          </div>
+        </div>
+
+        <!-- MATÉRIAUX ET TVA -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-tools" aria-hidden="true"></i>Matériaux et TVA</div>
+          <div class="card-sub">La TVA et le traitement des matériaux dépendent de ton statut et de ton niveau de CA.</div>
+
+          <div class="field">
+            <div class="field-label">Part matériaux dans le CA HT<span class="field-hint" id="mat-display">30%</span></div>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="mat-slider" min="0" max="70" step="5" value="30" oninput="sync('mat')">
+              <input type="number" class="input-num" id="mat-input" value="30" min="0" max="80" step="5" oninput="sync('mat')">
+              <span class="input-suffix">% du CA</span>
+            </div>
+            <div class="field-note">Électriciens : ~25-35%. Maçons/carreleurs : ~40-50%. Peintres : ~15-25%.</div>
+          </div>
+
+          <div class="field" id="field-tva">
+            <div class="field-label">TVA applicable sur tes travaux</div>
+            <div class="pills">
+              <button class="pill pill-sm" data-tva="5.5" onclick="setTVA(this)">5,5%<span class="pill-sub">Isolation, réno énergie</span></button>
+              <button class="pill pill-sm active" data-tva="10" onclick="setTVA(this)">10%<span class="pill-sub">Rénovation particuliers</span></button>
+              <button class="pill pill-sm" data-tva="20" onclick="setTVA(this)">20%<span class="pill-sub">Neuf, professionnels</span></button>
+            </div>
+          </div>
+
+          <div class="tva-franchise-note" id="tva-franchise-note">
+            <strong>Franchise en base de TVA</strong> — Avec ce niveau de CA, tu es sous le seuil de 37 500 € (prestations de service en micro). Tu ne factures pas de TVA à tes clients, mais tu ne récupères pas non plus la TVA sur tes achats de matériaux. Tes matériaux te coûtent donc leur prix TTC.
+          </div>
+        </div>
+
+        <!-- CHARGES FIXES -->
+        <div class="card">
+          <div class="card-title"><i class="ti ti-receipt" aria-hidden="true"></i>Charges fixes annuelles</div>
+          <div class="card-sub">Tout ce que tu paies que tu travailles ou non (véhicule, assurances, outillage, comptable). Reprends le total de ton simulateur de taux horaire × 12.</div>
+          <div class="field">
+            <div class="field-label">Total charges fixes<span class="field-hint" id="charges-display">13 560 €/an</span></div>
+            <div class="input-row">
+              <input type="number" class="input-num" style="width:160px" id="charges-input" value="13560" min="0" step="100" oninput="calcul()">
+              <span class="input-suffix">€/an</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RÉSULTATS -->
+      <div class="result-col">
+
+        <div class="signal-card go" id="signal-card">
+          <div class="signal-header">
+            <div class="signal-icon" id="signal-icon"><i class="ti ti-check" id="signal-icon-i" aria-hidden="true"></i></div>
+            <div>
+              <div class="signal-label" id="signal-label">Projet viable</div>
+              <div class="signal-title" id="signal-title">Ton objectif est atteignable.</div>
+            </div>
+          </div>
+          <div class="signal-revenu" id="signal-revenu">— <span style="font-size:.45em;font-weight:400;opacity:.6">€/mois net</span></div>
+          <div class="signal-sub" id="signal-sub">—</div>
+          <div class="signal-bar-wrap">
+            <div class="signal-bar-label">
+              <span>Revenu estimé vs objectif</span>
+              <span id="signal-bar-pct">—</span>
+            </div>
+            <div class="signal-bar"><div class="signal-bar-fill" id="signal-bar-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="results-card">
+          <div class="results-eyebrow">Analyse détaillée</div>
+
+          <div class="statut-explication" id="statut-explication"></div>
+
+          <div class="views-grid">
+            <div class="view-col">
+              <div class="view-label">Pour gagner <span id="va-sal">—</span> €/mois</div>
+              <div class="view-metric">
+                <div class="vm-label">CA HT annuel nécessaire</div>
+                <div class="vm-val green" id="va-ca">—</div>
+              </div>
+              <div class="view-metric">
+                <div class="vm-label">CA HT mensuel moyen</div>
+                <div class="vm-val sm" id="va-ca-mois">—</div>
+              </div>
+              <div class="view-metric">
+                <div class="vm-label">Heures à facturer/an</div>
+                <div class="vm-val sm" id="va-heures">—</div>
+              </div>
+              <div class="view-metric">
+                <div class="vm-label">Jours de chantier/an</div>
+                <div class="vm-val sm" id="va-jours">—</div>
+              </div>
+            </div>
+
+            <div class="view-col">
+              <div class="view-label">Avec ton activité prévue</div>
+              <div class="view-metric">
+                <div class="vm-label">CA HT annuel estimé</div>
+                <div class="vm-val" id="vb-ca">—</div>
+              </div>
+              <div class="view-metric">
+                <div class="vm-label">Heures facturées/an</div>
+                <div class="vm-val sm" id="vb-heures">—</div>
+              </div>
+              <div class="view-metric">
+                <div class="vm-label">Achats matériaux/an</div>
+                <div class="vm-val sm" id="vb-mat">—</div>
+              </div>
+              <div class="view-metric">
+                <div class="vm-label">Revenu net mensuel</div>
+                <div class="vm-val sm" id="vb-revenu">—</div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-toggle" id="btn-toggle" onclick="toggleDetail()">
+            <i class="ti ti-chevron-down" aria-hidden="true"></i>
+            Voir le calcul complet
+          </button>
+
+          <div class="detail-panel" id="detail-panel">
+
+            <div class="detail-section">
+              <div class="detail-section-title">Compte de résultat simplifié</div>
+              <div class="cd-line"><span class="cd-label">CA HT annuel</span><span class="cd-val" id="d-ca-ht">—</span></div>
+              <div class="cd-line"><span class="cd-label">− Achats matériaux <span id="d-mat-note" style="opacity:.6;font-size:10px"></span></span><span class="cd-val" id="d-mat">—</span></div>
+              <div class="cd-line total"><span class="cd-label">= Valeur ajoutée brute</span><span class="cd-val" id="d-va">—</span></div>
+              <div class="cd-line"><span class="cd-label">− Charges fixes annuelles</span><span class="cd-val" id="d-charges">—</span></div>
+              <div class="cd-line total"><span class="cd-label">= Bénéfice avant cotisations</span><span class="cd-val" id="d-benef-av">—</span></div>
+              <div class="cd-line"><span class="cd-label">− Cotisations sociales <span id="d-cot-detail" style="opacity:.6;font-size:10px"></span></span><span class="cd-val" id="d-cot">—</span></div>
+              <div class="cd-line total"><span class="cd-label">= Résultat net annuel</span><span class="cd-val" id="d-net-an">—</span></div>
+              <div class="cd-line total"><span class="cd-label">→ Revenu mensuel moyen</span><span class="cd-val" id="d-net-mois">—</span></div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-section-title">TVA — flux annuel <span id="d-tva-regime" style="font-weight:400;opacity:.6"></span></div>
+              <div class="cd-line"><span class="cd-label" id="d-tva-col-label">TVA collectée sur CA</span><span class="cd-val" id="d-tva-col">—</span></div>
+              <div class="cd-line"><span class="cd-label" id="d-tva-ded-label">TVA déductible sur achats</span><span class="cd-val" id="d-tva-ded">—</span></div>
+              <div class="cd-line total"><span class="cd-label" id="d-tva-result-label">TVA à reverser à l'État</span><span class="cd-val" id="d-tva-result">—</span></div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-section-title">CA minimum nécessaire</div>
+              <div class="cd-line"><span class="cd-label">Salaire net visé / an</span><span class="cd-val" id="d-sal-an">—</span></div>
+              <div class="cd-line"><span class="cd-label">+ Cotisations sociales nécessaires</span><span class="cd-val" id="d-cot-nec">—</span></div>
+              <div class="cd-line"><span class="cd-label">+ Charges fixes</span><span class="cd-val" id="d-ch-nec">—</span></div>
+              <div class="cd-line total"><span class="cd-label">= CA HT minimum nécessaire</span><span class="cd-val" id="d-ca-nec">—</span></div>
+              <div class="cd-line" id="ecart-line"><span class="cd-label">Écart avec ton activité prévue</span><span class="cd-val" id="d-ecart">—</span></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── CONSTANTES ──
+const SEUIL_TVA_MICRO = 37500; // seuil franchise TVA prestataires de services
+
+const PEDA = {
+  sasu: `<strong>SASU — assimilé salarié.</strong> Tu te verses un <strong>salaire brut</strong>. Les cotisations patronales (~54%) et salariales (~28%) représentent environ <strong>82% de ton salaire net</strong>. Exemple : pour toucher 2 500 €/mois net, ton entreprise doit supporter ~4 550 €/mois de coût total. Le bénéfice restant peut être versé en <strong>dividendes</strong> avec une flat tax de 30%.`,
+  eurl: `<strong>EURL — travailleur non salarié (TNS).</strong> Tes cotisations sont calculées sur ton <strong>bénéfice net</strong> (après charges). Taux effectif ~45% mais avec un minimum de ~1 145 €/an même à bénéfice nul. Avantage : si tu fais une mauvaise année, tes cotisations baissent. Inconvénient : protection sociale moins complète qu'un salarié.`,
+  micro: `<strong>Micro-entrepreneur.</strong> Tes cotisations sont calculées sur ton <strong>CA brut</strong> : 21,2% pour les prestations de service artisanales en BTP (régime micro-BIC). Tu ne déduis pas tes charges réelles — un abattement forfaitaire de 50% du CA est appliqué pour le calcul de l'impôt. Simple, mais pénalisant si tes charges réelles dépassent 50% du CA.`
+};
+
+const EXPL = {
+  sasu: (sal, cot) => `En SASU, tu te verses <em>${fmt(sal)} €/mois</em> de salaire net. Cela représente un coût total pour l'entreprise de <em>${fmt(sal + cot / 12)} €/mois</em> (cotisations patronales + salariales incluses). Le bénéfice restant après charges peut être versé en dividendes (flat tax 30%).`,
+  eurl: (sal, cot) => `En EURL (TNS), tes cotisations sont calculées sur ton bénéfice net. Pour un bénéfice de <em>${fmt((sal + cot / 12) * 12)} €/an</em>, les cotisations représentent <em>${fmt(cot)} €/an</em>. Il existe un minimum de cotisations (~1 145 €/an) même si ton bénéfice est faible.`,
+  micro: (sal, cot, ca) => `En micro-entreprise, tes cotisations sont <em>21,2% de ton CA brut</em>, soit <em>${fmt(cot)} €/an</em> pour un CA de <em>${fmt(ca)} €</em>. Attention : tu ne peux pas déduire tes charges réelles. Si tes charges dépassent 50% de ton CA, la micro devient défavorable.`
+};
+
+// ── STATE ──
+let statut = 'sasu', tva = 10;
+const F = {
+  salaire:     { s: 'salaire-slider',     i: 'salaire-input',     d: 'salaire-display',     u: '€/mois',  v: 2500 },
+  taux:        { s: 'taux-slider',         i: 'taux-input',         d: 'taux-display',         u: '€/h',     v: 35   },
+  heures:      { s: 'heures-slider',       i: 'heures-input',       d: 'heures-display',       u: 'h/sem',   v: 35   },
+  semaines:    { s: 'semaines-slider',     i: 'semaines-input',     d: 'semaines-display',     u: 'semaines',v: 44   },
+  remplissage: { s: 'remplissage-slider',  i: 'remplissage-input',  d: 'remplissage-display',  u: '%',       v: 70   },
+  mat:         { s: 'mat-slider',          i: 'mat-input',          d: 'mat-display',          u: '% du CA', v: 30   },
+};
+
+function sync(key) {
+  const f = F[key];
+  const fromSlider = document.activeElement === document.getElementById(f.s);
+  const v = fromSlider
+    ? parseFloat(document.getElementById(f.s).value)
+    : parseFloat(document.getElementById(f.i).value) || 0;
+  f.v = v;
+  document.getElementById(f.s).value = v;
+  document.getElementById(f.i).value = v;
+  document.getElementById(f.d).textContent = v.toLocaleString('fr-FR') + ' ' + f.u;
+  calcul();
+}
+
+function setStatut(btn) {
+  document.querySelectorAll('.pill[data-s]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  statut = btn.dataset.s;
+  document.getElementById('peda-statut').innerHTML = PEDA[statut];
+  calcul();
+}
+
+function setTVA(btn) {
+  document.querySelectorAll('.pill[data-tva]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  tva = parseFloat(btn.dataset.tva);
+  calcul();
+}
+
+function fmt(n) { return Math.round(n).toLocaleString('fr-FR'); }
+function fmtE(n) { return fmt(n) + ' €'; }
+
+// ── CALCUL RIGOUREUX ──
+function calculCotisations(salaire, beneficeAvCot, caHT) {
+  if (statut === 'sasu') {
+    // Cotisations sur salaire brut
+    // salaire net → salaire brut / coût employeur
+    // Taux salarial ~28% sur brut, patronal ~54% sur brut
+    // Coût total ≈ salaire net × 1.82
+    const coutTotal = salaire * 1.82;
+    const cotisations = coutTotal - salaire;
+    return { cotisations, base: 'salaire', detail: '~82% du salaire net (patronales + salariales)' };
+  } else if (statut === 'eurl') {
+    // Cotisations sur bénéfice net après cotisations (TNS)
+    // beneficeAvCot = bénéfice avant cotisations
+    // cotisations = beneficeAvCot × taux / (1 + taux)
+    const taux = 0.45;
+    const cotisations = Math.max(beneficeAvCot * taux / (1 + taux), 1145);
+    return { cotisations, base: 'bénéfice', detail: `~45% du bénéfice net (minimum 1 145 €/an)` };
+  } else {
+    // MICRO : 21,2% du CA brut (BIC artisanal)
+    const cotisations = caHT * 0.212;
+    return { cotisations, base: 'CA', detail: '21,2% du CA brut (micro-BIC artisanal BTP)' };
+  }
+}
+
+function calculCANecessaire(salaire, charges) {
+  if (statut === 'sasu') {
+    // Coût employeur = salaire × 1.82, + charges fixes, + matériaux
+    const coutEmployeur = salaire * 12 * 1.82;
+    const matPct = F.mat.v / 100;
+    const caNecessaire = (coutEmployeur + charges) / (1 - matPct);
+    const cotNecessaire = salaire * 12 * 0.82;
+    return { caNecessaire, cotNecessaire };
+  } else if (statut === 'eurl') {
+    // CA = (salaire_an × (1 + taux_cot)) + charges + matériaux
+    const matPct = F.mat.v / 100;
+    const salaireAn = salaire * 12;
+    const cotTaux = 0.45;
+    const caNecessaire = (salaireAn * (1 + cotTaux) + charges) / (1 - matPct);
+    const cotNecessaire = salaireAn * cotTaux;
+    return { caNecessaire, cotNecessaire };
+  } else {
+    // MICRO : CA × (1 - 0.212 - matPct) = salaire + charges fixes
+    // Mais charges non déductibles en micro !
+    // Revenu micro = CA × (1 - 0.212) - charges_réelles
+    const matPct = F.mat.v / 100;
+    const salaireAn = salaire * 12;
+    const caNecessaire = (salaireAn + charges) / (1 - 0.212 - matPct);
+    const cotNecessaire = caNecessaire * 0.212;
+    return { caNecessaire, cotNecessaire };
+  }
+}
+
+function calculTVA(caHT, achats) {
+  // Déterminer si assujetti TVA
+  const isMicroSousSeuil = statut === 'micro' && caHT < SEUIL_TVA_MICRO;
+
+  if (isMicroSousSeuil) {
+    return {
+      regime: '(franchise en base)',
+      collectee: 0,
+      deductible: 0,
+      reverser: 0,
+      matCoutReel: achats * (1 + 0.20), // matériaux en TTC (TVA non récupérable)
+      note: 'Sous le seuil de 37 500 € — pas de TVA facturée, pas de TVA récupérée sur achats.'
+    };
+  } else {
+    const tvaTravaux = tva / 100;
+    const tvaMateriaux = 0.20; // TVA achat matériaux toujours à 20%
+    const collectee = caHT * tvaTravaux;
+    const deductible = achats * tvaMateriaux;
+    const reverser = Math.max(0, collectee - deductible);
+    return {
+      regime: `(${tva}% sur travaux, 20% sur achats)`,
+      collectee,
+      deductible,
+      reverser,
+      matCoutReel: achats, // HT car TVA récupérée
+      note: null
+    };
+  }
+}
+
+function calcul() {
+  const salaire    = F.salaire.v;
+  const tauxH      = F.taux.v;
+  const heuresSem  = F.heures.v;
+  const semaines   = F.semaines.v;
+  const rempPct    = F.remplissage.v / 100;
+  const matPct     = F.mat.v / 100;
+  const charges    = parseFloat(document.getElementById('charges-input').value) || 0;
+
+  // ── CA brut ──
+  const heuresAn = heuresSem * semaines * rempPct;
+  const caHT     = heuresAn * tauxH;
+  const achatsMat = caHT * matPct; // achat HT
+
+  // ── TVA ──
+  const tvaResult = calculTVA(caHT, achatsMat);
+  const matCoutReel = tvaResult.matCoutReel; // coût réel des matériaux (TTC si franchise)
+
+  // ── Compte de résultat ──
+  const valAjoutee = caHT - matCoutReel;
+  const beneficeAvCot = valAjoutee - charges;
+
+  // ── Cotisations ──
+  const cotResult = calculCotisations(salaire, beneficeAvCot, caHT);
+  const cotisations = cotResult.cotisations;
+
+  // ── Résultat net ──
+  let resultatNet;
+  if (statut === 'sasu') {
+    // En SASU: on se verse le salaire si le résultat le permet
+    // Résultat net = bénéfice avant cot - coût des cotisations
+    const coutEmployeur = salaire * 12 * 0.82;
+    resultatNet = beneficeAvCot - coutEmployeur - salaire * 12;
+    // Le revenu réel = salaire (car il est tiré de l'entreprise)
+    // + éventuels dividendes si résultat positif
+    const revenuSalaire = salaire; // garanti si CA suffisant
+    const dividendes = Math.max(0, resultatNet) * 0.70; // flat tax 30%
+    resultatNet = Math.min(beneficeAvCot - coutEmployeur, salaire * 12) + Math.max(0, beneficeAvCot - coutEmployeur - salaire * 12) * 0.70;
+    // Simplifié pour affichage: revenu mensuel = ce que tu touches réellement
+    var revenuMensuel = resultatNet > 0
+      ? salaire + Math.max(0, resultatNet - salaire * 12) / 12 * 0.70
+      : Math.max(0, beneficeAvCot - coutEmployeur) / 12;
+    // On simplifie: revenu = min(salaire, (bénéfice - charges cot) / 12)
+    revenuMensuel = Math.max(0, (beneficeAvCot - coutEmployeur) / 12);
+    resultatNet = revenuMensuel * 12;
+  } else {
+    resultatNet = Math.max(0, beneficeAvCot - cotisations);
+    var revenuMensuel = resultatNet / 12;
+  }
+
+  const revenuMois = Math.max(0, revenuMensuel);
+
+  // ── CA nécessaire ──
+  const { caNecessaire, cotNecessaire } = calculCANecessaire(salaire, charges);
+  const heuresNec = Math.round(caNecessaire / tauxH);
+  const joursNec  = Math.round(heuresNec / 7);
+  const ecart     = Math.round(caHT - caNecessaire);
+
+  // ── Signal ──
+  const pct    = salaire > 0 ? Math.min((revenuMois / salaire) * 100, 120) : 0;
+  const pctAff = Math.max(0, Math.min(pct, 100));
+  const signal = pct >= 90 ? 'go' : pct >= 60 ? 'attention' : 'stop';
+
+  const sc = document.getElementById('signal-card');
+  sc.className = 'signal-card ' + signal;
+
+  const icons = { go: 'ti-circle-check', attention: 'ti-alert-triangle', stop: 'ti-circle-x' };
+  document.getElementById('signal-icon-i').className = 'ti ' + icons[signal];
+
+  const labels = { go: '✓ Projet viable', attention: '⚠ Projet à ajuster', stop: '✗ Projet non viable' };
+  const titles = {
+    go: 'Ton objectif est atteignable.',
+    attention: 'Tu ne te paies pas assez.',
+    stop: 'Le projet ne tient pas.'
+  };
+
+  document.getElementById('signal-label').textContent = labels[signal];
+  document.getElementById('signal-title').textContent = titles[signal];
+  document.getElementById('signal-revenu').innerHTML = fmt(Math.round(revenuMois)) + ' <span style="font-size:.45em;font-weight:400;opacity:.6">€/mois net</span>';
+
+  const subs = {
+    go: `Avec ton activité prévue tu touches ~${fmt(Math.round(revenuMois))} €/mois — soit ${Math.round(pct)}% de ton objectif.`,
+    attention: `Tu touches ~${fmt(Math.round(revenuMois))} €/mois au lieu de ${fmt(salaire)} €. Augmente ton taux horaire ou ton volume d'heures.`,
+    stop: `À ce rythme tu ne couvres pas tes charges. Il te manque ${fmtE(Math.abs(ecart))} de CA annuel.`
+  };
+  document.getElementById('signal-sub').textContent = subs[signal];
+  document.getElementById('signal-bar-fill').style.width = pctAff + '%';
+  document.getElementById('signal-bar-pct').textContent = Math.round(pct) + '% de l\'objectif';
+
+  // ── Vue A ──
+  document.getElementById('va-sal').textContent    = fmt(salaire);
+  document.getElementById('va-ca').textContent     = fmtE(Math.round(caNecessaire));
+  document.getElementById('va-ca-mois').textContent = fmtE(Math.round(caNecessaire / 12)) + '/mois';
+  document.getElementById('va-heures').textContent = fmt(heuresNec) + ' h';
+  document.getElementById('va-jours').textContent  = joursNec + ' jours';
+
+  // ── Vue B ──
+  document.getElementById('vb-ca').textContent     = fmtE(Math.round(caHT));
+  document.getElementById('vb-heures').textContent = fmt(Math.round(heuresAn)) + ' h';
+  document.getElementById('vb-mat').textContent    = fmtE(Math.round(matCoutReel));
+  document.getElementById('vb-revenu').textContent = fmtE(Math.round(revenuMois)) + '/mois';
+
+  // ── Explication statut ──
+  document.getElementById('statut-explication').innerHTML =
+    EXPL[statut](salaire, cotisations, caHT);
+
+  // ── Détail compte de résultat ──
+  document.getElementById('d-ca-ht').textContent   = fmtE(Math.round(caHT));
+  document.getElementById('d-mat').textContent     = '− ' + fmtE(Math.round(matCoutReel));
+  document.getElementById('d-mat-note').textContent = tvaResult.note ? '(TTC — TVA non récupérable)' : '(HT)';
+  document.getElementById('d-va').textContent      = fmtE(Math.round(valAjoutee));
+  document.getElementById('d-charges').textContent = '− ' + fmtE(charges);
+  document.getElementById('d-benef-av').textContent = fmtE(Math.round(beneficeAvCot));
+  document.getElementById('d-cot-detail').textContent = cotResult.detail;
+  document.getElementById('d-cot').textContent     = '− ' + fmtE(Math.round(cotisations));
+  document.getElementById('d-net-an').textContent  = fmtE(Math.round(resultatNet));
+  document.getElementById('d-net-mois').textContent = fmtE(Math.round(revenuMois)) + '/mois';
+
+  // ── TVA ──
+  const isFranchise = tvaResult.regime === '(franchise en base)';
+  document.getElementById('d-tva-regime').textContent = tvaResult.regime;
+  if (isFranchise) {
+    document.getElementById('d-tva-col-label').textContent = 'TVA collectée';
+    document.getElementById('d-tva-col').textContent = '0 € (franchise)';
+    document.getElementById('d-tva-ded-label').textContent = 'TVA récupérée sur achats';
+    document.getElementById('d-tva-ded').textContent = '0 € (franchise)';
+    document.getElementById('d-tva-result-label').textContent = 'TVA à reverser';
+    document.getElementById('d-tva-result').textContent = '0 €';
+  } else {
+    document.getElementById('d-tva-col-label').textContent = `TVA collectée (${tva}% sur CA)`;
+    document.getElementById('d-tva-col').textContent = fmtE(Math.round(tvaResult.collectee));
+    document.getElementById('d-tva-ded-label').textContent = 'TVA déductible (20% sur achats)';
+    document.getElementById('d-tva-ded').textContent = '− ' + fmtE(Math.round(tvaResult.deductible));
+    document.getElementById('d-tva-result-label').textContent = 'TVA nette à reverser';
+    document.getElementById('d-tva-result').textContent = fmtE(Math.round(tvaResult.reverser));
+  }
+
+  // ── CA nécessaire ──
+  document.getElementById('d-sal-an').textContent  = fmtE(salaire * 12);
+  document.getElementById('d-cot-nec').textContent = fmtE(Math.round(cotNecessaire));
+  document.getElementById('d-ch-nec').textContent  = fmtE(charges);
+  document.getElementById('d-ca-nec').textContent  = fmtE(Math.round(caNecessaire));
+  const ecartEl = document.getElementById('d-ecart');
+  const ecartLine = document.getElementById('ecart-line');
+  ecartEl.textContent = (ecart >= 0 ? '+' : '') + fmtE(ecart);
+  ecartLine.className = 'cd-line ' + (ecart >= 0 ? 'ecart-pos' : 'ecart-neg');
+
+  // ── Note franchise TVA ──
+  const franchiseNote = document.getElementById('tva-franchise-note');
+  franchiseNote.classList.toggle('visible', isFranchise);
+
+  // ── Note charges display ──
+  document.getElementById('charges-display').textContent = fmtE(charges) + '/an';
+}
+
+function toggleDetail() {
+  document.getElementById('detail-panel').classList.toggle('visible');
+  document.getElementById('btn-toggle').classList.toggle('open');
+}
+
+// ── INIT ──
+document.getElementById('peda-statut').innerHTML = PEDA['sasu'];
+calcul();
+</script>
+
+</body>
+</html>

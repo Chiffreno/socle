@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOCLE — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:       #0a0a09;
+  --white:       #fafaf8;
+  --green:       #1a7a3c;
+  --green-dark:  #0f4f26;
+  --green-light: #e8f5ee;
+  --green-b:     #b8ddc8;
+  --gray-bg:     #f0efeb;
+  --gray2:       #e0dfd8;
+  --gray3:       #999990;
+  --gray4:       #5a5a54;
+  --orange:      #c45a0a;
+  --orange-bg:   #fef3eb;
+  --orange-b:    #f0c8a0;
+  --red:         #b83030;
+  --red-bg:      #fdf0f0;
+  --red-b:       #f0b8b8;
+  --ff:          'Figtree', sans-serif;
+  --mono:        'DM Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--ff);
+  font-weight: 400;
+  background: var(--gray-bg);
+  color: var(--black);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── TOPBAR ─── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  height: 52px;
+  background: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.logo {
+  font-family: var(--ff);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: var(--white);
+  display: flex;
+  align-items: baseline;
+}
+
+.logo-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  margin-left: 1px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-notif {
+  position: relative;
+  width: 36px; height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  color: rgba(255,255,255,0.5);
+}
+
+.topbar-notif:hover { background: rgba(255,255,255,0.08); color: var(--white); }
+
+.topbar-notif i { font-size: 20px; }
+
+.notif-badge {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  background: var(--green);
+  border-radius: 50%;
+  border: 1.5px solid var(--black);
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.topbar-user:hover { background: rgba(255,255,255,0.08); }
+
+.user-avatar {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+.user-info { display: flex; flex-direction: column; }
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.user-plan {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+/* ─── LAYOUT ─── */
+.layout {
+  display: flex;
+  padding-top: 52px;
+  min-height: 100vh;
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  position: fixed;
+  left: 0; top: 52px; bottom: 0;
+  width: 220px;
+  background: var(--white);
+  border-right: 1px solid var(--gray2);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-section { padding: 20px 0 8px; }
+
+.sidebar-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray3);
+  padding: 4px 20px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 20px;
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--gray4);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  user-select: none;
+  position: relative;
+}
+
+.nav-item i { font-size: 18px; color: var(--gray3); flex-shrink: 0; }
+
+.nav-item:hover { background: var(--gray-bg); color: var(--black); }
+.nav-item:hover i { color: var(--gray4); }
+
+.nav-item.active {
+  background: var(--green-light);
+  color: var(--green);
+  border-left-color: var(--green);
+  font-weight: 600;
+}
+
+.nav-item.active i { color: var(--green); }
+
+.nav-badge {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--orange-bg);
+  color: var(--orange);
+  border: 1px solid var(--orange-b);
+  border-radius: 20px;
+  padding: 1px 7px;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 16px 0;
+  border-top: 1px solid var(--gray2);
+}
+
+/* ─── MAIN ─── */
+.main {
+  flex: 1;
+  margin-left: 220px;
+  padding: 36px 32px 80px;
+  max-width: calc(100vw - 220px);
+}
+
+.main-inner { max-width: 860px; }
+
+/* ─── GREETING ─── */
+.greeting {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.greeting-left {}
+
+.greeting-date {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gray3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.greeting-name {
+  font-family: var(--ff);
+  font-weight: 700;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  color: var(--black);
+  line-height: 1.1;
+}
+
+.greeting-name em {
+  font-style: normal;
+  color: var(--green);
+}
+
+.greeting-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--green);
+  color: var(--white);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: -0.01em;
+}
+
+.btn-new:hover { background: var(--green-dark); }
+.btn-new i { font-size: 16px; }
+
+/* ─── BLOC LANCEMENT ─── */
+.bloc-lancement {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 14px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.bloc-lancement.retracted { display: none; }
+
+.bl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--gray2);
+}
+
+.bl-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.bl-icon {
+  width: 36px; height: 36px;
+  background: var(--green-light);
+  border: 1px solid var(--green-b);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bl-icon i { font-size: 18px; color: var(--green); }
+
+.bl-header-content {}
+
+.bl-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--gray3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.bl-title {
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--black);
+  letter-spacing: -0.01em;
+}
+
+.bl-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-hide {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--ff);
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-hide:hover { background: var(--gray-bg); color: var(--gray4); }
+.btn-hide i { font-size: 14px; }
+
+.btn-continuer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--black);
+  color: var(--white);
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-continuer:hover { background: var(--green); }
+.btn-continuer i { font-size: 14px; }
+
+.bl-body {
+  padding: 20px 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.bl-progress-col {}
+
+.bl-prog-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.bl-prog-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray4);
+}
+
+.bl-prog-count {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+}
+
+.prog-track {
+  height: 6px;
+  background: var(--gray-bg);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.prog-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.bl-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bl-phase {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--gray4);
+}
+
+.bl-phase-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gray2);
+  flex-shrink: 0;
+}
+
+.bl-phase.done .bl-phase-dot { background: var(--green); }
+.bl-phase.done { color: var(--green-dark); font-weight: 500; }
+.bl-phase.active .bl-phase-dot { background: var(--orange); }
+
+.bl-phase-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-left: auto;
+}
+
+.bl-next-col {}
+
+.bl-next-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray3);
+  margin-bottom: 10px;
+}
+
+.bl-next-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--gray-bg);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.bl-next-item:hover { background: var(--gray2); }
+
+.bl-next-check {
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--gray2);
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--white);
+}
+
+.bl-next-text {
+  font-size: 13px;
+  color: var(--black);
+  font-weight: 500;
+  flex: 1;
+}
+
+.bl-next-arrow {
+  font-size: 14px;
+  color: var(--gray3);
+}
+
+/* ─── 3 BLOCS ─── */
+.blocs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.bloc-card {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 14px;
+  padding: 22px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+}
+
+.bloc-card:hover {
+  border-color: var(--gray3);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+.bloc-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.bloc-card-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bloc-card-icon.green { background: var(--green-light); }
+.bloc-card-icon.orange { background: var(--orange-bg); }
+.bloc-card-icon.gray { background: var(--gray-bg); }
+
+.bloc-card-icon i { font-size: 20px; }
+.bloc-card-icon.green i { color: var(--green); }
+.bloc-card-icon.orange i { color: var(--orange); }
+.bloc-card-icon.gray i { color: var(--gray4); }
+
+.bloc-card-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--gray3);
+  letter-spacing: 0.08em;
+}
+
+.bloc-card-name {
+  font-family: var(--ff);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  color: var(--black);
+  margin-bottom: 14px;
+  line-height: 1.2;
+}
+
+.bloc-card-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+  flex: 1;
+}
+
+.bloc-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.bloc-metric-label {
+  font-size: 12px;
+  color: var(--gray3);
+}
+
+.bloc-metric-val {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+}
+
+.bloc-metric-val.green { color: var(--green); }
+.bloc-metric-val.orange { color: var(--orange); }
+
+.bloc-card-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  padding-top: 14px;
+  border-top: 1px solid var(--gray2);
+}
+
+.bloc-card-cta i { font-size: 15px; }
+
+/* ─── CHANTIERS RÉCENTS ─── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-family: var(--ff);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--black);
+}
+
+.section-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.section-link:hover { text-decoration: underline; }
+.section-link i { font-size: 14px; }
+
+.chantiers-list {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.chantier-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--gray2);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.chantier-row:last-child { border-bottom: none; }
+.chantier-row:hover { background: var(--gray-bg); }
+
+.chantier-row-header {
+  padding: 10px 22px;
+  border-bottom: 1px solid var(--gray2);
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 16px;
+  background: var(--gray-bg);
+}
+
+.ch-hd {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--gray3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ch-hd.right { text-align: right; }
+
+.chantier-info {}
+
+.chantier-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--black);
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.chantier-meta {
+  font-size: 12px;
+  color: var(--gray3);
+}
+
+.chantier-marge {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.chantier-marge.good { color: var(--green); }
+.chantier-marge.warn { color: var(--orange); }
+
+.chantier-pv {
+  font-size: 12px;
+  color: var(--gray3);
+  text-align: center;
+}
+
+.chantier-pv.active {
+  color: var(--orange);
+  font-weight: 500;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  border: 1px solid;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-pill i { font-size: 11px; }
+
+.pill-green { background: var(--green-light); color: var(--green-dark); border-color: var(--green-b); }
+.pill-orange { background: var(--orange-bg); color: var(--orange); border-color: var(--orange-b); }
+.pill-gray { background: var(--gray-bg); color: var(--gray4); border-color: var(--gray2); }
+.pill-red { background: var(--red-bg); color: var(--red); border-color: var(--red-b); }
+
+.chantier-arrow { color: var(--gray3); font-size: 16px; }
+
+/* ─── MÉTRIQUES GLOBALES ─── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.metric-card {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.metric-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--gray3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.metric-val {
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--black);
+  letter-spacing: -0.02em;
+  margin-bottom: 2px;
+}
+
+.metric-val.green { color: var(--green); }
+.metric-val.orange { color: var(--orange); }
+
+.metric-sub {
+  font-size: 12px;
+  color: var(--gray3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.metric-sub i { font-size: 12px; }
+.metric-trend-up { color: var(--green); }
+.metric-trend-down { color: var(--red); }
+
+/* ─── BOTTOM NAV MOBILE ─── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: var(--white);
+  border-top: 1px solid var(--gray2);
+  z-index: 100;
+}
+
+.bottom-nav-list {
+  display: flex;
+  height: 100%;
+  align-items: stretch;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  color: var(--gray3);
+  font-size: 9px;
+  font-family: var(--ff);
+  letter-spacing: -0.01em;
+  min-height: 48px;
+  transition: color 0.15s;
+}
+
+.bottom-nav-item i { font-size: 20px; }
+.bottom-nav-item.active { color: var(--green); }
+
+/* ─── NOTIFICATIONS BANNER ─── */
+.notif-banner {
+  background: var(--orange-bg);
+  border: 1px solid var(--orange-b);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.notif-banner i { font-size: 18px; color: var(--orange); flex-shrink: 0; }
+
+.notif-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--orange);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.notif-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--orange);
+  font-size: 16px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.notif-close:hover { background: rgba(196,90,10,0.1); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 24px 16px 80px; }
+  .bottom-nav { display: block; }
+  .blocs-grid { grid-template-columns: 1fr; }
+  .metrics-row { grid-template-columns: 1fr 1fr; }
+  .bl-body { grid-template-columns: 1fr; }
+  .chantier-row { grid-template-columns: 1fr auto auto; }
+  .chantier-pv, .chantier-arrow, .ch-hd:nth-child(4) { display: none; }
+  .chantier-row-header { grid-template-columns: 1fr auto auto; }
+  .greeting { flex-direction: column; gap: 16px; align-items: flex-start; }
+  .topbar-user .user-info { display: none; }
+}
+
+@media (max-width: 500px) {
+  .metrics-row { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── TOPBAR ─── -->
+<header class="topbar">
+  <div class="logo">SOCLE<span class="logo-dot"></span></div>
+  <div class="topbar-right">
+    <div class="topbar-notif">
+      <i class="ti ti-bell" aria-hidden="true"></i>
+      <div class="notif-badge"></div>
+    </div>
+    <div class="topbar-user">
+      <div class="user-avatar">BG</div>
+      <div class="user-info">
+        <div class="user-name">Benjamin G.</div>
+        <div class="user-plan">Plan Pro · Bêta</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Principal</div>
+      <div class="nav-item active" onclick="setActive(this)">
+        <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
+        Dashboard
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Construction</div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-checklist" aria-hidden="true"></i>
+        Checklist
+        <span class="nav-badge">4 restants</span>
+      </div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-file-description" aria-hidden="true"></i>
+        CGV
+      </div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-chart-bar" aria-hidden="true"></i>
+        Prévisionnel
+      </div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-clock-hour-4" aria-hidden="true"></i>
+        Taux Horaire
+      </div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-shield-check" aria-hidden="true"></i>
+        Décennale
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Chantier</div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-package" aria-hidden="true"></i>
+        Prix Matériaux
+      </div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-file-text" aria-hidden="true"></i>
+        Devis
+        <span class="nav-badge">2</span>
+      </div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-receipt" aria-hidden="true"></i>
+        Facture
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Après</div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-clipboard-check" aria-hidden="true"></i>
+        PV Réception
+      </div>
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-book" aria-hidden="true"></i>
+        Bibliothèque DTU
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="nav-item" onclick="setActive(this)">
+        <i class="ti ti-settings" aria-hidden="true"></i>
+        Paramètres
+      </div>
+      <div class="nav-item" style="color:var(--gray3);">
+        <i class="ti ti-logout" aria-hidden="true" style="color:var(--gray3);"></i>
+        Déconnexion
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN ─── -->
+  <main class="main">
+    <div class="main-inner">
+
+      <!-- NOTIFICATION BANNER -->
+      <div class="notif-banner" id="notif-banner">
+        <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+        <div class="notif-text">
+          <strong>Garantie décennale</strong> — Pense à souscrire avant de démarrer ton premier chantier. Obligation légale en BTP.
+        </div>
+        <button class="notif-close" onclick="document.getElementById('notif-banner').style.display='none'">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <!-- GREETING -->
+      <div class="greeting">
+        <div class="greeting-left">
+          <div class="greeting-date" id="today-date"></div>
+          <div class="greeting-name">Bonjour, <em>Benjamin.</em></div>
+        </div>
+        <div class="greeting-right">
+          <button class="btn-new">
+            <i class="ti ti-plus" aria-hidden="true"></i>
+            Nouveau chantier
+          </button>
+        </div>
+      </div>
+
+      <!-- MÉTRIQUES -->
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-label">Marge moyenne</div>
+          <div class="metric-val green">28,4%</div>
+          <div class="metric-sub">
+            <i class="ti ti-trending-up metric-trend-up" aria-hidden="true"></i>
+            <span style="color:var(--green);">+2,1% ce mois</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Chantiers en cours</div>
+          <div class="metric-val">2</div>
+          <div class="metric-sub">1 PV à finaliser</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Devis en attente</div>
+          <div class="metric-val orange">2</div>
+          <div class="metric-sub">Réponse attendue</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">CA facturable</div>
+          <div class="metric-val">8 400 €</div>
+          <div class="metric-sub">HT · Mois en cours</div>
+        </div>
+      </div>
+
+      <!-- BLOC LANCEMENT -->
+      <div class="bloc-lancement" id="bloc-lancement">
+        <div class="bl-header">
+          <div class="bl-header-left">
+            <div class="bl-icon"><i class="ti ti-rocket" aria-hidden="true"></i></div>
+            <div class="bl-header-content">
+              <div class="bl-label">Bloc 01 · Lancement</div>
+              <div class="bl-title">Lance ton entreprise du BTP</div>
+            </div>
+          </div>
+          <div class="bl-header-right">
+            <button class="btn-hide" onclick="retractBloc()" title="Masquer quand tu es opérationnel">
+              <i class="ti ti-eye-off" aria-hidden="true"></i>
+              Masquer
+            </button>
+            <button class="btn-continuer">
+              Continuer
+              <i class="ti ti-arrow-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="bl-body">
+          <div class="bl-progress-col">
+            <div class="bl-prog-top">
+              <div class="bl-prog-label">Progression</div>
+              <div class="bl-prog-count">8 / 12 étapes</div>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" style="width: 66.6%"></div>
+            </div>
+            <div class="bl-phases">
+              <div class="bl-phase done">
+                <div class="bl-phase-dot"></div>
+                Phase 1 · Avant immatriculation
+                <span class="bl-phase-count">4/4 <i class="ti ti-check" style="font-size:11px;color:var(--green);vertical-align:middle;" aria-hidden="true"></i></span>
+              </div>
+              <div class="bl-phase done">
+                <div class="bl-phase-dot"></div>
+                Phase 2 · Après immatriculation
+                <span class="bl-phase-count">4/5</span>
+              </div>
+              <div class="bl-phase active">
+                <div class="bl-phase-dot"></div>
+                Phase 3 · Avant premier chantier
+                <span class="bl-phase-count">0/3</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bl-next-col">
+            <div class="bl-next-label">Prochaines étapes</div>
+            <div class="bl-next-item">
+              <div class="bl-next-check"></div>
+              <div class="bl-next-text">Affilier l'entreprise à l'OPPBTP</div>
+              <i class="ti ti-chevron-right bl-next-arrow" aria-hidden="true"></i>
+            </div>
+            <div class="bl-next-item">
+              <div class="bl-next-check"></div>
+              <div class="bl-next-text">Configurer mon taux horaire</div>
+              <i class="ti ti-chevron-right bl-next-arrow" aria-hidden="true"></i>
+            </div>
+            <div class="bl-next-item">
+              <div class="bl-next-check"></div>
+              <div class="bl-next-text">Préparer mes modèles de devis</div>
+              <i class="ti ti-chevron-right bl-next-arrow" aria-hidden="true"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 BLOCS PRINCIPAUX -->
+      <div class="blocs-grid">
+
+        <!-- Bloc Construction -->
+        <div class="bloc-card">
+          <div class="bloc-card-header">
+            <div class="bloc-card-icon green">
+              <i class="ti ti-calculator" aria-hidden="true"></i>
+            </div>
+            <div class="bloc-card-num">02</div>
+          </div>
+          <div class="bloc-card-name">Construction des prix</div>
+          <div class="bloc-card-metrics">
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">Taux horaire</span>
+              <span class="bloc-metric-val">32 €/h</span>
+            </div>
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">Marge objectif</span>
+              <span class="bloc-metric-val green">30%</span>
+            </div>
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">Coeff FG</span>
+              <span class="bloc-metric-val">1,305</span>
+            </div>
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">TVA par défaut</span>
+              <span class="bloc-metric-val">10%</span>
+            </div>
+          </div>
+          <div class="bloc-card-cta">
+            <i class="ti ti-arrow-right" aria-hidden="true"></i>
+            Nouveau chiffrage
+          </div>
+        </div>
+
+        <!-- Bloc Devis -->
+        <div class="bloc-card">
+          <div class="bloc-card-header">
+            <div class="bloc-card-icon orange">
+              <i class="ti ti-file-text" aria-hidden="true"></i>
+            </div>
+            <div class="bloc-card-num">03</div>
+          </div>
+          <div class="bloc-card-name">Devis & Facturation</div>
+          <div class="bloc-card-metrics">
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">En attente de réponse</span>
+              <span class="bloc-metric-val orange">2 devis</span>
+            </div>
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">Signés ce mois</span>
+              <span class="bloc-metric-val green">1 devis</span>
+            </div>
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">Valeur en attente</span>
+              <span class="bloc-metric-val">5 200 €</span>
+            </div>
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">Factures à émettre</span>
+              <span class="bloc-metric-val">1</span>
+            </div>
+          </div>
+          <div class="bloc-card-cta">
+            <i class="ti ti-arrow-right" aria-hidden="true"></i>
+            Créer un devis
+          </div>
+        </div>
+
+        <!-- Bloc Fin de chantier -->
+        <div class="bloc-card">
+          <div class="bloc-card-header">
+            <div class="bloc-card-icon gray">
+              <i class="ti ti-clipboard-check" aria-hidden="true"></i>
+            </div>
+            <div class="bloc-card-num">04</div>
+          </div>
+          <div class="bloc-card-name">Fin de chantier</div>
+          <div class="bloc-card-metrics">
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">PV à finaliser</span>
+              <span class="bloc-metric-val orange">1 PV</span>
+            </div>
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">PV signés</span>
+              <span class="bloc-metric-val green">3 PV</span>
+            </div>
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">DTU consultées</span>
+              <span class="bloc-metric-val">7 fiches</span>
+            </div>
+            <div class="bloc-metric">
+              <span class="bloc-metric-label">Points de contrôle</span>
+              <span class="bloc-metric-val">74 vérifiés</span>
+            </div>
+          </div>
+          <div class="bloc-card-cta">
+            <i class="ti ti-arrow-right" aria-hidden="true"></i>
+            Nouveau PV de réception
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CHANTIERS RÉCENTS -->
+      <div class="section-header">
+        <div class="section-title">Chantiers récents</div>
+        <a class="section-link">
+          Voir tout <i class="ti ti-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+
+      <div class="chantiers-list">
+        <div class="chantier-row-header">
+          <div class="ch-hd">Chantier</div>
+          <div class="ch-hd right">Marge</div>
+          <div class="ch-hd right">PV</div>
+          <div class="ch-hd right">Statut</div>
+          <div class="ch-hd"></div>
+        </div>
+
+        <div class="chantier-row">
+          <div class="chantier-info">
+            <div class="chantier-name">Chantier Bretagne — RDC béton</div>
+            <div class="chantier-meta">SDB, VMC, chape · Mis à jour il y a 2 jours</div>
+          </div>
+          <div class="chantier-marge warn">24,1%</div>
+          <div class="chantier-pv active">
+            <i class="ti ti-alert-circle" style="font-size:14px;" aria-hidden="true"></i> En cours
+          </div>
+          <div><span class="status-pill pill-orange"><i class="ti ti-clock" aria-hidden="true"></i>En cours</span></div>
+          <div class="chantier-arrow"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
+
+        <div class="chantier-row">
+          <div class="chantier-info">
+            <div class="chantier-name">Rénovation cuisine — Meaux</div>
+            <div class="chantier-meta">Carrelage, peinture · Devis envoyé le 12/05</div>
+          </div>
+          <div class="chantier-marge good">31,2%</div>
+          <div class="chantier-pv">—</div>
+          <div><span class="status-pill pill-orange"><i class="ti ti-mail" aria-hidden="true"></i>Devis envoyé</span></div>
+          <div class="chantier-arrow"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
+
+        <div class="chantier-row">
+          <div class="chantier-info">
+            <div class="chantier-name">Réfection toiture — Trilport</div>
+            <div class="chantier-meta">Charpente, couverture · Terminé le 02/05</div>
+          </div>
+          <div class="chantier-marge good">28,8%</div>
+          <div class="chantier-pv"><i class="ti ti-circle-check" style="font-size:14px;color:var(--green);" aria-hidden="true"></i></div>
+          <div><span class="status-pill pill-green"><i class="ti ti-circle-check" aria-hidden="true"></i>Terminé</span></div>
+          <div class="chantier-arrow"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
+
+        <div class="chantier-row">
+          <div class="chantier-info">
+            <div class="chantier-name">Salle de bain — Lagny-sur-Marne</div>
+            <div class="chantier-meta">Carrelage, plomberie · Devis refusé</div>
+          </div>
+          <div class="chantier-marge" style="color:var(--gray3);">—</div>
+          <div class="chantier-pv">—</div>
+          <div><span class="status-pill pill-gray"><i class="ti ti-x" aria-hidden="true"></i>Refusé</span></div>
+          <div class="chantier-arrow"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ─── BOTTOM NAV MOBILE ─── -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-list">
+    <div class="bottom-nav-item active"><i class="ti ti-layout-dashboard" aria-hidden="true"></i><span>Dashboard</span></div>
+    <div class="bottom-nav-item"><i class="ti ti-calculator" aria-hidden="true"></i><span>Chiffrage</span></div>
+    <div class="bottom-nav-item"><i class="ti ti-file-text" aria-hidden="true"></i><span>Devis</span></div>
+    <div class="bottom-nav-item"><i class="ti ti-clipboard-check" aria-hidden="true"></i><span>PV</span></div>
+    <div class="bottom-nav-item"><i class="ti ti-book" aria-hidden="true"></i><span>DTU</span></div>
+  </div>
+</nav>
+
+<script>
+// Date
+const d = new Date();
+const opts = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
+document.getElementById('today-date').textContent =
+  d.toLocaleDateString('fr-FR', opts).replace(/^\w/, c => c.toUpperCase());
+
+// Navigation active
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Masquer bloc lancement
+function retractBloc() {
+  const bl = document.getElementById('bloc-lancement');
+  bl.style.opacity = '0';
+  bl.style.transform = 'translateY(-8px)';
+  bl.style.transition = 'opacity 0.25s, transform 0.25s';
+  setTimeout(() => {
+    bl.style.display = 'none';
+    // Ajouter un lien de rappel dans la sidebar
+    const recall = document.createElement('div');
+    recall.className = 'nav-item';
+    recall.style.fontSize = '13px';
+    recall.innerHTML = '<i class="ti ti-rocket" style="font-size:16px;" aria-hidden="true"></i> Bloc lancement <span style="font-size:10px;color:var(--gray3);margin-left:auto;">masqué</span>';
+    recall.onclick = () => {
+      bl.style.display = '';
+      bl.style.opacity = '';
+      bl.style.transform = '';
+      recall.remove();
+    };
+    document.querySelector('.sidebar-section:nth-child(2)').appendChild(recall);
+  }, 250);
+}
+</script>
+
+</body>
+</html>

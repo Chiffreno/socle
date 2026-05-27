@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChiffReno — Rentabilité chantier</title>
+<style>
+:root{--vert:#1a5c35;--vert-mid:#2a7a48;--vert-light:#e8f5ee;--vert-border:#b8ddc8;--orange:#d4580a;--orange-light:#fef0e6;--rouge:#c0392b;--rouge-light:#fdecea;--bleu:#1a4a8a;--bleu-light:#e8f0fb;--bg:#f4f5f0;--surface:#ffffff;--surface2:#f9faf7;--text:#1a1e17;--text2:#5a6354;--text3:#8a9484;--border:#dde2d8;--radius:10px;--radius-lg:16px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);padding:0 0 4rem;}
+header{background:var(--vert);padding:1.25rem 2rem;display:flex;align-items:center;gap:1rem;}
+.logo{font-size:1.4rem;font-weight:700;color:#fff;letter-spacing:-0.02em;}.logo span{color:#6ecf96;}
+.badge{font-size:11px;font-weight:600;background:rgba(255,255,255,.15);color:#fff;padding:3px 10px;border-radius:20px;}
+.container{max-width:940px;margin:0 auto;padding:2rem 1.5rem;}
+.top-bar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;}
+input.name-input{font-size:1.4rem;font-weight:700;border:none;border-bottom:2px solid var(--border);border-radius:0;padding:0 0 4px;width:380px;background:transparent;color:var(--text);outline:none;font-family:inherit;}
+input.name-input:focus{border-bottom-color:var(--vert-mid);}
+.chantier-lbl{font-size:13px;color:var(--text2);margin-bottom:5px;}
+.btn-reset{background:none;border:1px solid var(--border);border-radius:var(--radius);padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer;font-family:inherit;}
+.btn-reset:hover{background:var(--bg);}
+.stitle{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:1.5rem 0 .6rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.field{margin-bottom:1rem;}.field:last-child{margin-bottom:0;}
+label{display:block;font-size:13px;color:var(--text2);margin-bottom:5px;font-weight:500;}
+input[type=number],input[type=text],select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:15px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s;font-family:inherit;}
+input:focus,select:focus{border-color:var(--vert-mid);box-shadow:0 0 0 3px rgba(42,122,72,.1);}
+.iu{position:relative;}.iu input{padding-right:44px;}.iu .u{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text3);pointer-events:none;}
+.sl-row{display:flex;align-items:center;gap:10px;}
+.sl-row input[type=range]{flex:1;height:4px;accent-color:var(--vert-mid);cursor:pointer;padding:0;}
+.slv{min-width:56px;text-align:right;font-size:22px;font-weight:700;letter-spacing:-0.02em;flex-shrink:0;color:var(--text);}
+.slv.g{color:var(--vert);}.slv.o{color:var(--orange);}
+.hint{font-size:12px;color:var(--text3);margin-top:4px;}
+.tbl-hd{display:grid;gap:8px;margin-bottom:4px;}
+.tbl-row{display:grid;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--border);}
+.tbl-lbl{font-size:14px;font-weight:500;}.tbl-sub{font-size:12px;color:var(--text3);}
+.tbl-r{font-size:15px;font-weight:500;text-align:right;}
+.tbl-foot{display:grid;gap:8px;align-items:center;padding:10px 0 2px;border-top:2px solid var(--border);margin-top:4px;}
+.mode-toggle{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:3px;gap:3px;margin-bottom:1.25rem;}
+.mode-btn{flex:1;padding:8px;font-size:13px;font-weight:600;border:none;border-radius:8px;cursor:pointer;background:transparent;color:var(--text3);font-family:inherit;transition:all .15s;}
+.mode-btn.active{background:var(--surface);color:var(--vert);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.mg4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;}
+.ml{font-size:12px;color:var(--text3);margin-bottom:4px;}
+.mv{font-size:22px;font-weight:700;letter-spacing:-0.02em;}
+.ms{font-size:12px;color:var(--text3);margin-top:2px;}
+.cc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1rem;}
+.cr{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.5rem;border-bottom:1px solid var(--border);}
+.cr:last-child{border-bottom:none;}.cr.sub{background:var(--surface2);}.cr.tot{background:var(--vert-light);border-top:2px solid var(--vert-border);}
+.cl{font-size:14px;color:var(--text2);display:flex;align-items:center;gap:8px;}
+.step{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:var(--bg);border:1px solid var(--border);border-radius:50%;font-size:11px;font-weight:700;color:var(--text3);flex-shrink:0;}
+.cr.tot .step{background:var(--vert-mid);border-color:var(--vert-mid);color:#fff;}
+.cf{font-size:12px;color:var(--text3);font-family:'Courier New',monospace;margin-left:30px;}
+.cv{font-size:16px;font-weight:600;white-space:nowrap;}.cr.tot .cv{font-size:18px;color:var(--vert);}
+.mbw{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;}
+.bar-track{height:10px;background:var(--bg);border-radius:99px;overflow:hidden;margin:10px 0 6px;}
+.bar-fill{height:100%;border-radius:99px;transition:width .3s,background .3s;}
+.bar-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);}
+.verdict{margin-top:12px;padding:10px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;}
+.verdict.ok{background:var(--vert-light);color:var(--vert);}.verdict.warn{background:var(--orange-light);color:var(--orange);}.verdict.nok{background:var(--rouge-light);color:var(--rouge);}
+.fourchette{margin-top:8px;padding:10px 14px;background:var(--bg);border-radius:var(--radius);font-size:13px;color:var(--text2);}
+.rs{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.rc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;}
+.rc-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:1rem;}
+.rl{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);}
+.rl:last-child{border-bottom:none;}.rl-l{font-size:13px;color:var(--text2);}.rl-v{font-size:15px;font-weight:600;}
+.rl.hi .rl-v{color:var(--vert);font-size:18px;}.rl.net .rl-v{color:var(--bleu);font-size:16px;}
+.acc-btn{width:100%;background:none;border:1px solid var(--border);border-radius:var(--radius);padding:9px 14px;font-size:13px;color:var(--text2);cursor:pointer;font-family:inherit;text-align:left;display:flex;justify-content:space-between;align-items:center;}
+.acc-btn:hover{background:var(--bg);}
+.acc-body{display:none;margin-top:10px;padding:12px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);}
+.acc-body.open{display:block;}
+.tpl-btns{display:flex;gap:6px;margin-top:10px;}
+.tpl-btn{flex:1;padding:6px 8px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;font-family:inherit;color:var(--text2);}
+.tpl-btn:hover{background:var(--vert-light);border-color:var(--vert-border);color:var(--vert);}
+.pvc{background:var(--bleu-light);border:1px solid #b8ccee;border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;}
+.kg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.kpi{padding:.75rem 1rem;}.kpi-l{font-size:12px;color:var(--text3);margin-bottom:4px;}.kpi-v{font-size:18px;font-weight:600;}.kpi-s{font-size:12px;color:var(--text3);margin-top:2px;}
+@media(max-width:700px){.g2,.g3,.mg4,.rs,.kg{grid-template-columns:1fr;}.container{padding:1rem;}input.name-input{width:100%;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Chiff<span>Reno</span></div>
+  <div class="badge">Rentabilité chantier v2</div>
+</header>
+
+<div class="container">
+
+  <div class="top-bar">
+    <div>
+      <div class="chantier-lbl">Nom du chantier</div>
+      <input class="name-input" type="text" id="nom" value="Rénovation RDC – La Ferté">
+    </div>
+    <button class="btn-reset" onclick="reset()">↺ Réinitialiser</button>
+  </div>
+
+  <!-- 1 MATÉRIAUX -->
+  <p class="stitle">1 — Coût matériaux (depuis ChiffReno)</p>
+  <div class="card">
+    <div class="tbl-hd" style="grid-template-columns:1.6fr 1fr 1.4fr 1fr;">
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Catégorie</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:right;">Coût HT</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;">Perte</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:right;">Total</span>
+    </div>
+
+    <div class="tbl-row" style="grid-template-columns:1.6fr 1fr 1.4fr 1fr;">
+      <div><div class="tbl-lbl">Gros œuvre / maçonnerie</div><div class="tbl-sub">Béton, parpaings, mortier</div></div>
+      <div class="iu"><input type="number" id="m_go" value="2200" min="0" step="50" oninput="calc()"><span class="u">€</span></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input type="range" id="p_go_s" min="0" max="20" value="5" step="1" style="flex:1;height:4px;accent-color:var(--vert-mid);" oninput="sp('p_go','p_go_s','p_go_d','%')">
+        <span id="p_go_d" style="font-size:16px;font-weight:700;min-width:38px;text-align:right;">5%</span>
+        <input type="number" id="p_go" value="5" min="0" max="20" style="display:none;">
+      </div>
+      <div class="tbl-r" id="t_go">—</div>
+    </div>
+
+    <div class="tbl-row" style="grid-template-columns:1.6fr 1fr 1.4fr 1fr;">
+      <div><div class="tbl-lbl">Revêtements / carrelage</div><div class="tbl-sub">Carrelage, parquet, faïence</div></div>
+      <div class="iu"><input type="number" id="m_rev" value="1500" min="0" step="50" oninput="calc()"><span class="u">€</span></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input type="range" id="p_rev_s" min="0" max="25" value="12" step="1" style="flex:1;height:4px;accent-color:var(--vert-mid);" oninput="sp('p_rev','p_rev_s','p_rev_d','%')">
+        <span id="p_rev_d" style="font-size:16px;font-weight:700;min-width:38px;text-align:right;">12%</span>
+        <input type="number" id="p_rev" value="12" min="0" max="25" style="display:none;">
+      </div>
+      <div class="tbl-r" id="t_rev">—</div>
+    </div>
+
+    <div class="tbl-row" style="grid-template-columns:1.6fr 1fr 1.4fr 1fr;">
+      <div><div class="tbl-lbl">Peinture / plâtrerie</div><div class="tbl-sub">BA13, enduit, peinture</div></div>
+      <div class="iu"><input type="number" id="m_pei" value="1120" min="0" step="50" oninput="calc()"><span class="u">€</span></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input type="range" id="p_pei_s" min="0" max="20" value="10" step="1" style="flex:1;height:4px;accent-color:var(--vert-mid);" oninput="sp('p_pei','p_pei_s','p_pei_d','%')">
+        <span id="p_pei_d" style="font-size:16px;font-weight:700;min-width:38px;text-align:right;">10%</span>
+        <input type="number" id="p_pei" value="10" min="0" max="20" style="display:none;">
+      </div>
+      <div class="tbl-r" id="t_pei">—</div>
+    </div>
+
+    <div class="tbl-foot" style="grid-template-columns:1.6fr 1fr 1.4fr 1fr;">
+      <span style="font-size:14px;font-weight:700;">Total matériaux</span>
+      <span style="font-size:14px;text-align:right;color:var(--text3);" id="t_brut">—</span>
+      <span></span>
+      <span style="font-size:17px;font-weight:700;text-align:right;color:var(--vert);" id="t_mat">—</span>
+    </div>
+  </div>
+
+  <!-- 2 MAIN D'ŒUVRE -->
+  <p class="stitle">2 — Main d'œuvre</p>
+  <div class="card">
+    <div class="g3" style="margin-bottom:1rem;">
+      <div class="field">
+        <label>Durée estimée</label>
+        <div class="iu"><input type="number" id="jours" value="12" min=".5" step=".5" oninput="calc()"><span class="u">j</span></div>
+      </div>
+      <div class="field">
+        <label>Nb ouvriers</label>
+        <div class="iu"><input type="number" id="ouv" value="1" min="1" max="20" oninput="calc()"><span class="u">pers.</span></div>
+      </div>
+      <div class="field">
+        <label>Taux horaire chargé</label>
+        <div class="iu"><input type="number" id="taux" value="32" min="15" max="120" step=".5" oninput="calc()"><span class="u">€/h</span></div>
+        <div class="hint">Salaire brut + charges (~79%)</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Productivité réelle <span style="font-weight:400;color:var(--text3);">— h produites sur 8h présentes</span></label>
+      <div class="sl-row">
+        <input type="range" id="prod_s" min="55" max="100" value="80" step="5" oninput="spd('prod_d',this.value,'%');calc()">
+        <span id="prod_d" class="slv">80%</span>
+      </div>
+      <div class="hint">Standard : 80% · Chantier simple : 85–90% · Contraintes fortes : 65–70%</div>
+    </div>
+
+    <div class="field" style="margin-top:.75rem;">
+      <label>Majoration MO <span style="font-weight:400;color:var(--text3);">— conditions difficiles</span></label>
+      <div class="sl-row">
+        <input type="range" id="majo_s" min="0" max="50" value="0" step="5" oninput="spd('majo_d',this.value,'%');calc()">
+        <span id="majo_d" class="slv">0%</span>
+      </div>
+      <div class="hint">+10% local occupé · +30% rampant toiture · 0% standard</div>
+    </div>
+
+    <div class="field" style="margin-top:.75rem;">
+      <label>Buffer dépassement de délai <span style="font-weight:400;color:var(--text3);">— aléas réalistes, MO + frais journaliers uniquement</span></label>
+      <div class="sl-row">
+        <input type="range" id="buf_s" min="0" max="50" value="15" step="5" oninput="spd('buf_d',this.value,'%');calc()">
+        <span id="buf_d" class="slv o">15%</span>
+      </div>
+      <div class="hint">Rénovation ancienne : 15–25% · Neuf maîtrisé : 5–10% · Matériaux non affectés</div>
+    </div>
+  </div>
+
+  <!-- 3 FRAIS -->
+  <p class="stitle">3 — Frais divers</p>
+  <div class="card">
+    <div class="tbl-hd" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Poste</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:right;">€/jour</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:right;">Jours réels</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:right;">Total</span>
+    </div>
+    <div class="tbl-row" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+      <div><div class="tbl-lbl">Déplacements</div><div class="tbl-sub">Carburant + péages</div></div>
+      <div class="iu"><input type="number" id="f_dep" value="18" min="0" step="1" oninput="calc()"><span class="u">€</span></div>
+      <div style="text-align:right;padding-right:12px;font-size:14px;color:var(--text2);" id="f_dep_j">—</div>
+      <div class="tbl-r" id="f_dep_t">—</div>
+    </div>
+    <div class="tbl-row" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+      <div><div class="tbl-lbl">Consommables</div><div class="tbl-sub">Disques, forets, bâches…</div></div>
+      <div class="iu"><input type="number" id="f_con" value="12" min="0" step="1" oninput="calc()"><span class="u">€</span></div>
+      <div style="text-align:right;padding-right:12px;font-size:14px;color:var(--text2);" id="f_con_j">—</div>
+      <div class="tbl-r" id="f_con_t">—</div>
+    </div>
+    <div class="tbl-row" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+      <div><div class="tbl-lbl">Location matériel</div><div class="tbl-sub">Échafaudage, bétonnière…</div></div>
+      <div class="iu"><input type="number" id="f_loc" value="0" min="0" step="5" oninput="calc()"><span class="u">€</span></div>
+      <div style="text-align:right;padding-right:12px;font-size:14px;color:var(--text2);" id="f_loc_j">—</div>
+      <div class="tbl-r" id="f_loc_t">—</div>
+    </div>
+    <div class="tbl-row" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+      <div><div class="tbl-lbl">Benne / évacuation</div><div class="tbl-sub">Forfait unique</div></div>
+      <div class="iu"><input type="number" id="f_ben" value="280" min="0" step="10" oninput="calc()"><span class="u">€</span></div>
+      <div style="text-align:right;padding-right:12px;font-size:14px;color:var(--text3);">forfait</div>
+      <div class="tbl-r" id="f_ben_t">—</div>
+    </div>
+    <div class="tbl-row" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+      <div><div class="tbl-lbl">Sous-traitance / divers</div><div class="tbl-sub">Intervention ponctuelle</div></div>
+      <div class="iu"><input type="number" id="f_st" value="0" min="0" step="50" oninput="calc()"><span class="u">€</span></div>
+      <div style="text-align:right;padding-right:12px;font-size:14px;color:var(--text3);">forfait</div>
+      <div class="tbl-r" id="f_st_t">—</div>
+    </div>
+    <div class="tbl-foot" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+      <span style="font-size:14px;font-weight:700;">Total frais divers</span>
+      <span></span><span></span>
+      <span style="font-size:17px;font-weight:700;text-align:right;color:var(--vert);" id="f_tot">—</span>
+    </div>
+  </div>
+
+  <!-- 4 PARAMÈTRES -->
+  <p class="stitle">4 — Paramètres entreprise</p>
+  <div class="card">
+    <div class="g2">
+      <div class="field">
+        <label>Coefficient frais généraux</label>
+        <input type="number" id="cfg" value="1.305" min="1" max="2" step=".01" oninput="calc()">
+        <div class="hint">1,305 standard · 1,25 micro-entreprise</div>
+        <div style="margin-top:10px;">
+          <button class="acc-btn" onclick="togFG()">
+            <span>Calculer mon coefficient ▸</span>
+            <span id="fg_res" style="font-weight:700;color:var(--vert);"></span>
+          </button>
+          <div class="acc-body" id="fg_body">
+            <div class="g2" style="margin-bottom:8px;">
+              <div class="field" style="margin-bottom:0;">
+                <label>Charges fixes annuelles</label>
+                <div class="iu"><input type="number" id="fg_ch" value="18000" min="0" step="500" oninput="calcFG()"><span class="u">€</span></div>
+                <div class="hint">Assurances, véhicule, comptable…</div>
+              </div>
+              <div class="field" style="margin-bottom:0;">
+                <label>CA annuel estimé</label>
+                <div class="iu"><input type="number" id="fg_ca" value="95000" min="1" step="1000" oninput="calcFG()"><span class="u">€</span></div>
+              </div>
+            </div>
+            <div class="tpl-btns">
+              <button class="tpl-btn" onclick="setFG(12000,55000)">Artisan solo</button>
+              <button class="tpl-btn" onclick="setFG(25000,110000)">TPE 2–3 pers.</button>
+              <button class="tpl-btn" onclick="setFG(55000,250000)">PME 5–10 pers.</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <label>Marge objectif</label>
+          <div class="sl-row">
+            <input type="range" id="marge_s" min="5" max="50" value="30" step="1" oninput="spd('marge_d',this.value,'%');document.getElementById('marge').value=this.value;calc()">
+            <span id="marge_d" class="slv g">30%</span>
+            <input type="number" id="marge" value="30" min="5" max="50" style="display:none;" oninput="document.getElementById('marge_s').value=this.value;spd('marge_d',this.value,'%');calc()">
+          </div>
+        </div>
+        <div class="field" style="margin-top:.5rem;">
+          <label>TVA applicable</label>
+          <select id="tva" onchange="calc()">
+            <option value="5.5">5,5% — Rénovation énergétique / logement &gt;2 ans</option>
+            <option value="10" selected>10% — Travaux logement &gt;2 ans (standard)</option>
+            <option value="20">20% — Taux plein / neuf / pro</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RÉSULTATS -->
+  <p class="stitle">Résultats</p>
+
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn_c" onclick="setMode('c')">Calculer mon prix de vente</button>
+    <button class="mode-btn" id="btn_i" onclick="setMode('i')">Analyser un prix proposé par le client</button>
+  </div>
+
+  <div id="pvc" class="pvc" style="display:none;">
+    <div class="g2" style="align-items:center;">
+      <div>
+        <label style="color:var(--bleu);font-weight:600;">Prix proposé par le client HT</label>
+        <div class="iu"><input type="number" id="pv_c" value="11000" min="0" step="100" oninput="calc()"><span class="u">€</span></div>
+        <div class="hint">L'outil calcule la marge que ce prix génère sur vos coûts réels</div>
+      </div>
+      <div id="pvc_v" style="padding:12px 16px;border-radius:var(--radius);font-size:14px;font-weight:500;"></div>
+    </div>
+  </div>
+
+  <div class="mg4">
+    <div class="metric">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;"><div class="ml">Déboursé sec</div><span id="ds_pct" style="font-size:12px;font-weight:600;color:var(--text3);background:var(--bg);border-radius:20px;padding:2px 8px;">—</span></div>
+      <div class="mv" id="m_ds">—</div><div class="ms">Coût direct réel</div>
+    </div>
+    <div class="metric">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;"><div class="ml">Prix de revient</div><span id="pr_pct" style="font-size:12px;font-weight:600;color:var(--text3);background:var(--bg);border-radius:20px;padding:2px 8px;">—</span></div>
+      <div class="mv" id="m_pr">—</div><div class="ms">Après frais généraux</div>
+    </div>
+    <div class="metric">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;"><div class="ml" id="lbl_pv">Prix de vente HT</div><span style="font-size:12px;font-weight:600;color:var(--vert);background:var(--vert-light);border-radius:20px;padding:2px 8px;">100 %</span></div>
+      <div class="mv" id="m_pv" style="color:var(--vert);">—</div><div class="ms" id="sub_pv">Base de référence</div>
+    </div>
+    <div class="metric">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;"><div class="ml">Marge brute</div><span id="mb_b" style="font-size:12px;font-weight:600;border-radius:20px;padding:2px 8px;">—</span></div>
+      <div class="mv" id="m_mb">—</div><div class="ms">sur prix de vente</div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rc">
+      <div class="rc-t">Ce que tu factures</div>
+      <div class="rl hi"><span class="rl-l">Prix de vente HT</span><span class="rl-v" id="r_ht">—</span></div>
+      <div class="rl"><span class="rl-l" id="r_tva_l">TVA (10%)</span><span class="rl-v" id="r_tva">—</span></div>
+      <div class="rl hi"><span class="rl-l">Prix de vente TTC</span><span class="rl-v" id="r_ttc">—</span></div>
+    </div>
+    <div class="rc">
+      <div class="rc-t">Ce que tu gardes</div>
+      <div class="rl"><span class="rl-l">Marge brute chantier</span><span class="rl-v" id="r_mb">—</span></div>
+      <div class="rl"><span class="rl-l">IS estimé (15% taux PME)</span><span class="rl-v" id="r_is" style="color:var(--rouge);">—</span></div>
+      <div class="rl net"><span class="rl-l" style="font-weight:600;">Résultat net estimé</span><span class="rl-v" id="r_net">—</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;">⚠ Marge brute ≠ bénéfice net. L'IS s'applique au résultat fiscal de l'entreprise, pas à ce seul chantier.</div>
+    </div>
+  </div>
+
+  <div class="cc">
+    <div class="cr"><div><div class="cl"><span class="step">1</span>Matériaux (pertes par catégorie)</div><div class="cf" id="cf_mat">—</div></div><div class="cv" id="cv_mat">—</div></div>
+    <div class="cr"><div><div class="cl"><span class="step">2</span>Main d'œuvre réelle</div><div class="cf" id="cf_mo">—</div></div><div class="cv" id="cv_mo">—</div></div>
+    <div class="cr"><div><div class="cl"><span class="step">3</span>Frais divers (buffer inclus)</div><div class="cf" id="cf_fr">—</div></div><div class="cv" id="cv_fr">—</div></div>
+    <div class="cr sub"><div><div class="cl"><span class="step" style="font-weight:700;">=</span>Déboursé sec</div><div class="cf">Mat. + MO + Frais</div></div><div class="cv" id="cv_ds">—</div></div>
+    <div class="cr"><div><div class="cl"><span class="step">4</span>Frais généraux</div><div class="cf" id="cf_fg">—</div></div><div class="cv" id="cv_fg">—</div></div>
+    <div class="cr sub"><div><div class="cl"><span class="step" style="font-weight:700;">=</span>Prix de revient</div><div class="cf">DS × coeff. FG</div></div><div class="cv" id="cv_pr">—</div></div>
+    <div class="cr"><div><div class="cl"><span class="step">5</span>Marge & aléas</div><div class="cf" id="cf_mb">—</div></div><div class="cv" id="cv_mb">—</div></div>
+    <div class="cr tot"><div><div class="cl"><span class="step">✓</span><strong>Prix de vente HT</strong></div><div class="cf" id="cf_pv">—</div></div><div class="cv" id="cv_pv">—</div></div>
+  </div>
+
+  <div class="mbw">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+      <span style="font-size:13px;font-weight:600;color:var(--text2);">Marge brute sur prix de vente</span>
+      <span style="font-size:26px;font-weight:700;letter-spacing:-0.02em;" id="bar_pct">—</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="bar_fill" style="width:0%;"></div></div>
+    <div class="bar-lbl"><span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40%</span><span>50%</span></div>
+    <div class="verdict" id="verdict"></div>
+    <div class="fourchette" id="fourchette"></div>
+  </div>
+
+  <div class="card">
+    <div class="rc-t" style="margin-bottom:.75rem;">Analyse complémentaire</div>
+    <div class="kg">
+      <div class="kpi"><div class="kpi-l">Ratio MO / Matériaux</div><div class="kpi-v" id="k_ratio">—</div><div class="kpi-s">Équilibré entre 0,5 et 1,5</div></div>
+      <div class="kpi"><div class="kpi-l">Coût journalier réel</div><div class="kpi-v" id="k_cj">—</div><div class="kpi-s">DS ÷ jours réels (buffer inclus)</div></div>
+      <div class="kpi"><div class="kpi-l">CA journalier facturé</div><div class="kpi-v" id="k_caj">—</div><div class="kpi-s">PV HT ÷ jours réels</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let mode='c';
+function f(n,d=2){return n.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d})+' €';}
+function p(n){return n.toFixed(1)+' %';}
+function g(id){return parseFloat(document.getElementById(id).value)||0;}
+function s(id,v){document.getElementById(id).textContent=v;}
+
+function spd(did,val,suf){document.getElementById(did).textContent=val+suf;}
+function sp(nid,sid,did,suf){
+  const v=document.getElementById(sid).value;
+  document.getElementById(nid).value=v;
+  document.getElementById(did).textContent=v+suf;
+  calc();
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('btn_c').className='mode-btn'+(m==='c'?' active':'');
+  document.getElementById('btn_i').className='mode-btn'+(m==='i'?' active':'');
+  document.getElementById('pvc').style.display=m==='i'?'block':'none';
+  document.getElementById('lbl_pv').textContent=m==='i'?'Prix proposé HT':'Prix de vente HT';
+  document.getElementById('sub_pv').textContent=m==='i'?'Saisi par le client':'Base de référence';
+  calc();
+}
+
+function togFG(){document.getElementById('fg_body').classList.toggle('open');calcFG();}
+function calcFG(){
+  const ch=g('fg_ch'),ca=g('fg_ca')||1;
+  const coeff=(1+ch/(ca-ch));
+  document.getElementById('fg_res').textContent='→ '+coeff.toFixed(3);
+  document.getElementById('cfg').value=coeff.toFixed(3);
+  calc();
+}
+function setFG(ch,ca){document.getElementById('fg_ch').value=ch;document.getElementById('fg_ca').value=ca;calcFG();}
+
+function calc(){
+  const m_go=g('m_go'),m_rev=g('m_rev'),m_pei=g('m_pei');
+  const p_go=g('p_go_s'),p_rev=g('p_rev_s'),p_pei=g('p_pei_s');
+  const t_go=m_go*(1+p_go/100),t_rev=m_rev*(1+p_rev/100),t_pei=m_pei*(1+p_pei/100);
+  const mat_brut=m_go+m_rev+m_pei, mat=t_go+t_rev+t_pei;
+  s('t_go',f(t_go,0));s('t_rev',f(t_rev,0));s('t_pei',f(t_pei,0));
+  s('t_brut',f(mat_brut,0));s('t_mat',f(mat,0));
+
+  const jours=g('jours'),ouv=g('ouv')||1,taux=g('taux');
+  const prod=parseFloat(document.getElementById('prod_s').value)||80;
+  const majo=parseFloat(document.getElementById('majo_s').value)||0;
+  const buf=parseFloat(document.getElementById('buf_s').value)||0;
+  const jr=jours*(1+buf/100);
+  const mo=jr*8*ouv*(prod/100)*taux*(1+majo/100);
+
+  const fd=g('f_dep'),fc=g('f_con'),fl=g('f_loc'),fb=g('f_ben'),fs=g('f_st');
+  const td=fd*jr,tc=fc*jr,tl=fl*jr;
+  const frais=td+tc+tl+fb+fs;
+  s('f_dep_j',jr.toFixed(1)+' j');s('f_con_j',jr.toFixed(1)+' j');s('f_loc_j',jr.toFixed(1)+' j');
+  s('f_dep_t',f(td,0));s('f_con_t',f(tc,0));s('f_loc_t',f(tl,0));
+  s('f_ben_t',f(fb,0));s('f_st_t',f(fs,0));s('f_tot',f(frais,0));
+
+  const cfg=g('cfg')||1.305,mobj=g('marge')||30;
+  const tva_t=parseFloat(document.getElementById('tva').value)||10;
+  const ds=mat+mo+frais,pr=ds*cfg;
+  const cben=1/(1-mobj/100);
+
+  let pv,mr;
+  if(mode==='c'){
+    pv=pr*cben; mr=(pv-pr)/pv*100;
+  } else {
+    pv=g('pv_c'); mr=pv>0?(pv-pr)/pv*100:0;
+    const vc=document.getElementById('pvc_v');
+    if(pv<=pr){vc.style.background='var(--rouge-light)';vc.style.color='var(--rouge)';vc.textContent='✗ Insuffisant — en dessous du prix de revient ('+f(pr,0)+')';}
+    else if(mr<15){vc.style.background='var(--orange-light)';vc.style.color='var(--orange)';vc.textContent='⚠ Marge très faible : '+p(mr)+'  — risque élevé';}
+    else if(mr<mobj){vc.style.background='var(--orange-light)';vc.style.color='var(--orange)';vc.textContent='⚠ Marge de '+p(mr)+' — sous l\'objectif de '+mobj+'%';}
+    else{vc.style.background='var(--vert-light)';vc.style.color='var(--vert)';vc.textContent='✓ Prix viable — marge de '+p(mr)+' (objectif '+mobj+'%)';}
+  }
+
+  const mb=pv-pr,fg_m=pr-ds;
+  const tva=pv*tva_t/100,ttc=pv+tva,is=mb*.15,net=mb-is;
+
+  s('m_ds',f(ds,0));s('m_pr',f(pr,0));s('m_pv',f(pv,0));s('m_mb',f(mb,0));
+  const pds=pv>0?ds/pv*100:0,ppr=pv>0?pr/pv*100:0;
+  s('ds_pct',pds.toFixed(1)+'%');s('pr_pct',ppr.toFixed(1)+'%');
+  const bb=document.getElementById('mb_b');
+  bb.textContent=mr.toFixed(1)+'%';
+  if(mr>=25){bb.style.background='var(--vert-light)';bb.style.color='var(--vert)';}
+  else if(mr>=15){bb.style.background='var(--orange-light)';bb.style.color='var(--orange)';}
+  else{bb.style.background='var(--rouge-light)';bb.style.color='var(--rouge)';}
+
+  s('r_ht',f(pv,0));
+  document.getElementById('r_tva_l').textContent='TVA ('+tva_t+'%)';
+  s('r_tva',f(tva,0));s('r_ttc',f(ttc,0));
+  s('r_mb',f(mb,0)+' ('+p(mr)+')');s('r_is','− '+f(is,0));s('r_net',f(net,0));
+
+  s('cf_mat','GO: '+f(t_go,0)+' · Rev: '+f(t_rev,0)+' · Pei: '+f(t_pei,0));s('cv_mat',f(mat,0));
+  s('cf_mo',jr.toFixed(1)+'j × 8h × '+ouv+' × '+taux+'€ × '+prod+'%'+(majo>0?' × '+(1+majo/100).toFixed(2):'')+(buf>0?' [buffer +'+buf+'%]':''));s('cv_mo',f(mo,0));
+  const fd_det=[td>0?'dep. '+f(td,0):null,tc>0?'conso. '+f(tc,0):null,tl>0?'loc. '+f(tl,0):null,fb>0?'benne '+f(fb,0):null,fs>0?'ST '+f(fs,0):null].filter(Boolean).join(' · ')||'aucun';
+  s('cf_fr',fd_det);s('cv_fr',f(frais,0));s('cv_ds',f(ds,0));
+  s('cf_fg',f(ds,0)+' × ('+cfg.toFixed(3)+' − 1)');s('cv_fg','+ '+f(fg_m,0));s('cv_pr',f(pr,0));
+  s('cf_mb',mode==='c'?'coeff '+cben.toFixed(3)+' ('+mobj+'% obj.)':'prix client analysé');s('cv_mb','+ '+f(mb,0));
+  s('cf_pv',mode==='c'?f(pr,0)+' × '+cben.toFixed(3):'prix proposé par le client');s('cv_pv',f(pv,0));
+
+  const bw=Math.min(Math.max(mr/50*100,0),100);
+  let bc='#1a5c35';if(mr<15)bc='#c0392b';else if(mr<25)bc='#d4580a';
+  document.getElementById('bar_fill').style.width=bw+'%';document.getElementById('bar_fill').style.background=bc;
+  s('bar_pct',p(mr));document.getElementById('bar_pct').style.color=bc;
+
+  const v=document.getElementById('verdict');
+  if(mr>=25){v.className='verdict ok';v.textContent='✓ Chantier rentable — marge de '+p(mr)+'. Objectif de '+mobj+'% atteint.';}
+  else if(mr>=15){v.className='verdict warn';v.textContent='⚠ Marge insuffisante ('+p(mr)+'). Objectif '+mobj+'%. Revoyez les postes ou augmentez le prix de vente.';}
+  else{v.className='verdict nok';v.textContent='✗ Chantier non rentable. Marge de '+p(mr)+' pour un objectif de '+mobj+'%.';}
+
+  const fmin=Math.max(mr-22,0),fmax=Math.max(mr-12,0);
+  document.getElementById('fourchette').innerHTML='<strong>Fourchette réaliste</strong> (aléas non modélisés : −12 à −22 pts) : <strong>'+fmin.toFixed(0)+'% → '+fmax.toFixed(0)+'%</strong> de marge effective probable.';
+
+  const ratio=mo>0&&mat>0?mo/mat:0;
+  s('k_ratio',ratio.toFixed(2));document.getElementById('k_ratio').style.color=(ratio>=.5&&ratio<=1.5)?'var(--vert)':'var(--orange)';
+  s('k_cj',jr>0?f(ds/jr,0)+'/j':'—');s('k_caj',jr>0?f(pv/jr,0)+'/j':'—');
+}
+
+function reset(){
+  document.getElementById('nom').value='Nouveau chantier';
+  ['m_go','m_rev','m_pei'].forEach((id,i)=>document.getElementById(id).value=[2200,1500,1120][i]);
+  [['p_go_s','p_go_d',5],['p_rev_s','p_rev_d',12],['p_pei_s','p_pei_d',10]].forEach(([s,d,v])=>{document.getElementById(s).value=v;document.getElementById(d).textContent=v+'%';});
+  document.getElementById('jours').value=12;document.getElementById('ouv').value=1;document.getElementById('taux').value=32;
+  document.getElementById('prod_s').value=80;spd('prod_d',80,'%');
+  document.getElementById('majo_s').value=0;spd('majo_d',0,'%');
+  document.getElementById('buf_s').value=15;spd('buf_d',15,'%');
+  ['f_dep','f_con','f_loc','f_ben','f_st'].forEach((id,i)=>document.getElementById(id).value=[18,12,0,280,0][i]);
+  document.getElementById('cfg').value=1.305;
+  document.getElementById('marge_s').value=30;document.getElementById('marge').value=30;spd('marge_d',30,'%');
+  document.getElementById('tva').value='10';
+  setMode('c');
+}
+
+calc();
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+/* ============================================================
+   SOCLE — Générateur de CGV BTP (page-specific styles)
+   Préfixe .cgv-tool · zéro border-radius (sauf 50% dot) · zéro box-shadow · zéro gradient
+   ============================================================ */
+
+/* MAIN / HEADER */
+.cgv-tool .page-eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--green); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+.cgv-tool .page-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--green); }
+.cgv-tool .page-title { font-weight: 700; font-size: clamp(1.8rem, 3vw, 2.4rem); letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 10px; }
+.cgv-tool .page-sub { font-size: 15px; color: var(--gray4); line-height: 1.6; max-width: 560px; margin-bottom: 28px; }
+
+.cgv-tool .disclaimer { background: var(--orange-bg); border: 1px solid var(--orange-b); border-left: 3px solid var(--orange); padding: 12px 18px; margin-bottom: 32px; font-size: 13px; color: var(--orange); line-height: 1.6; }
+.cgv-tool .disclaimer strong { font-weight: 700; }
+
+/* GRILLE */
+.cgv-tool .sim-grid { display: grid; grid-template-columns: 1fr 480px; gap: 24px; align-items: start; }
+
+/* FORM */
+.cgv-tool .form-col { display: flex; flex-direction: column; gap: 14px; }
+.cgv-tool .card { background: var(--white); border: 1px solid var(--gray2); padding: 24px; }
+.cgv-tool .card-title { font-weight: 700; font-size: .95rem; letter-spacing: -0.01em; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.cgv-tool .card-title i { font-size: 18px; color: var(--green); }
+.cgv-tool .card-sub { font-size: 13px; color: var(--gray3); margin-bottom: 18px; line-height: 1.5; }
+
+.cgv-tool .field { margin-bottom: 14px; }
+.cgv-tool .field:last-child { margin-bottom: 0; }
+.cgv-tool .field-label { font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 7px; letter-spacing: -0.01em; }
+.cgv-tool .field-label .opt { font-weight: 400; color: var(--gray3); font-size: 11px; }
+.cgv-tool .field-input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray2); font-size: 14px; font-family: var(--ff); font-weight: 400; color: var(--black); background: var(--white); outline: none; transition: border-color .15s; -webkit-appearance: none; }
+.cgv-tool .field-input:focus { border-color: var(--black); }
+.cgv-tool .field-input::placeholder { color: var(--gray3); }
+.cgv-tool .field-select { cursor: pointer; }
+.cgv-tool .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cgv-tool .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+/* Pills client */
+.cgv-tool .client-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.cgv-tool .cpill { padding: 9px 16px; border: 1.5px solid var(--gray2); background: var(--white); font-size: 13px; font-weight: 600; color: var(--gray4); cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 7px; font-family: var(--ff); }
+.cgv-tool .cpill:hover { border-color: var(--gray3); color: var(--black); }
+.cgv-tool .cpill.active { background: var(--green-light); border-color: var(--green); color: var(--green); }
+.cgv-tool .cpill i { font-size: 16px; }
+
+/* Toggles clauses optionnelles */
+.cgv-tool .toggles-grid { display: flex; flex-direction: column; gap: 8px; }
+.cgv-tool .toggle-row { display: flex; align-items: flex-start; gap: 14px; padding: 12px 14px; border: 1px solid var(--gray2); background: var(--white); cursor: pointer; transition: all .15s; user-select: none; }
+.cgv-tool .toggle-row:hover { border-color: var(--gray3); }
+.cgv-tool .toggle-row.on { background: var(--green-light); border-color: var(--green-b); }
+.cgv-tool .toggle-check { width: 18px; height: 18px; border: 1.5px solid var(--gray2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; transition: all .15s; background: var(--white); }
+.cgv-tool .toggle-row.on .toggle-check { background: var(--green); border-color: var(--green); }
+.cgv-tool .toggle-check i { display: none; font-size: 12px; color: var(--white); }
+.cgv-tool .toggle-row.on .toggle-check i { display: block; }
+.cgv-tool .toggle-info { flex: 1; }
+.cgv-tool .toggle-name { font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 2px; }
+.cgv-tool .toggle-row.on .toggle-name { color: var(--green-dark); }
+.cgv-tool .toggle-desc { font-size: 11px; color: var(--gray3); line-height: 1.4; }
+
+/* Sous-champs conditionnels */
+.cgv-tool .sub-field { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--gray2); }
+.cgv-tool .sub-field.visible { display: block; }
+
+/* PREVIEW */
+.cgv-tool .preview-col { position: sticky; top: 72px; }
+.cgv-tool .preview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cgv-tool .preview-label { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--gray3); }
+.cgv-tool .preview-meta { font-family: var(--mono); font-size: 11px; color: var(--gray3); }
+
+.cgv-tool .btn-print { display: inline-flex; align-items: center; gap: 8px; background: var(--green); color: var(--white); border: none; padding: 10px 18px; font-family: var(--ff); font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; letter-spacing: -0.01em; }
+.cgv-tool .btn-print:hover { background: var(--green-dark); }
+.cgv-tool .btn-print:active { transform: scale(.98); }
+.cgv-tool .btn-print i { font-size: 16px; }
+
+.cgv-tool .preview-card { background: var(--white); border: 1px solid var(--gray2); overflow: hidden; max-height: 72vh; overflow-y: auto; }
+
+/* CGV DOCUMENT */
+.cgv-tool .cgv-doc { padding: 32px 36px; font-size: 12.5px; line-height: 1.7; color: var(--black); font-family: 'Georgia', serif; }
+.cgv-tool .cgv-doc .cgv-title { font-family: var(--ff); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.01em; text-align: center; margin-bottom: 4px; }
+.cgv-tool .cgv-doc .cgv-subtitle { font-family: var(--ff); font-size: 12px; color: var(--gray4); text-align: center; margin-bottom: 22px; line-height: 1.5; }
+.cgv-tool .cgv-doc .cgv-id { background: var(--gray-bg); padding: 12px 16px; font-family: var(--ff); font-size: 12px; color: var(--gray4); margin-bottom: 22px; line-height: 1.7; }
+.cgv-tool .cgv-doc h2 { font-family: var(--ff); font-weight: 700; font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; margin-top: 20px; margin-bottom: 7px; padding-bottom: 5px; border-bottom: 1px solid var(--gray2); color: var(--black); }
+.cgv-tool .cgv-doc p { margin-bottom: 7px; }
+.cgv-tool .cgv-doc ul { padding-left: 18px; margin-bottom: 7px; }
+.cgv-tool .cgv-doc ul li { margin-bottom: 3px; }
+.cgv-tool .cgv-doc .hi { background: var(--green-light); border: 1px solid var(--green-b); padding: 7px 12px; margin: 8px 0; font-size: 12px; color: var(--green-dark); }
+.cgv-tool .cgv-doc .ph { color: var(--orange); font-style: italic; background: var(--orange-bg); padding: 0 3px; }
+.cgv-tool .cgv-doc .cgv-footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--gray2); font-family: var(--ff); font-size: 11px; color: var(--gray3); text-align: center; line-height: 1.5; }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) { .cgv-tool .sim-grid { grid-template-columns: 1fr 420px; } }
+@media (max-width: 900px) {
+  .cgv-tool .sim-grid { grid-template-columns: 1fr; }
+  .cgv-tool .preview-col { position: static; }
+}
+@media (max-width: 600px) {
+  .cgv-tool .field-row { grid-template-columns: 1fr; }
+  .cgv-tool .field-row-3 { grid-template-columns: 1fr 1fr; }
+}
+
+/* PRINT */
+@media print {
+  .cgv-tool .page-eyebrow, .cgv-tool .page-title, .cgv-tool .page-sub,
+  .cgv-tool .disclaimer, .cgv-tool .form-col, .cgv-tool .preview-header { display: none !important; }
+  .cgv-tool .sim-grid { display: block; }
+  .cgv-tool .preview-col { position: static; }
+  .cgv-tool .preview-card { border: none; max-height: none; overflow: visible; }
+  .cgv-tool .cgv-doc { padding: 18mm 20mm; font-size: 9.5pt; line-height: 1.6; }
+  .cgv-tool .cgv-doc h2 { font-size: 7.5pt; margin-top: 14pt; page-break-after: avoid; }
+  .cgv-tool .cgv-doc p, .cgv-tool .cgv-doc li { font-size: 9pt; page-break-inside: avoid; orphans: 3; widows: 3; }
+  .cgv-tool .cgv-doc .cgv-title { font-size: 15pt; }
+  .cgv-tool .cgv-doc .ph { background: none; color: var(--gray3); }
+  .cgv-tool .cgv-doc .hi { background: var(--gray-bg); border: 1px solid var(--gray2); }
+}

@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOCLE — Lancement d'entreprise BTP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:        #0a0a09;
+  --white:        #fafaf8;
+  --green:        #1a7a3c;
+  --green-dark:   #0f4f26;
+  --green-light:  #e8f5ee;
+  --green-border: #b8ddc8;
+  --gray-bg:      #f0efeb;
+  --gray2:        #e0dfd8;
+  --gray3:        #999990;
+  --gray4:        #5a5a54;
+  --orange:       #c45a0a;
+  --orange-bg:    #fef3eb;
+  --orange-text:  #7a3806;
+  --orange-border:#f0c8a0;
+  --red:          #b83030;
+  --red-bg:       #fdf0f0;
+  --red-text:     #7a1818;
+  --red-border:   #f0b8b8;
+  --ff:           'Figtree', sans-serif;
+  --mono:         'DM Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--ff);
+  font-weight: 400;
+  line-height: 1.6;
+  background: var(--gray-bg);
+  color: var(--black);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════════════════════════════
+   TOPBAR
+   ═══════════════════════════════════════ */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 52px;
+  background: var(--black);
+  color: var(--white);
+}
+
+.logo {
+  font-family: var(--ff);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: var(--white);
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.logo-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topbar-user i { font-size: 16px; }
+
+/* ═══════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════ */
+.layout {
+  display: flex;
+  padding-top: 52px;
+  min-height: 100vh;
+}
+
+/* ═══════════════════════════════════════
+   SIDEBAR (desktop)
+   ═══════════════════════════════════════ */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 52px;
+  bottom: 0;
+  width: 220px;
+  background: var(--white);
+  border-right: 1px solid var(--gray2);
+  padding: 16px 0;
+  overflow-y: auto;
+}
+
+.nav-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray3);
+  padding: 8px 20px 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--gray4);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: background 0.12s, color 0.12s;
+  position: relative;
+}
+
+.nav-item i {
+  font-size: 18px;
+  flex-shrink: 0;
+  color: var(--gray3);
+}
+
+.nav-item:hover {
+  background: var(--gray-bg);
+  color: var(--black);
+}
+
+.nav-item:hover i { color: var(--gray4); }
+
+.nav-item.active {
+  background: var(--green-light);
+  color: var(--green);
+  border-left-color: var(--green);
+  font-weight: 600;
+}
+
+.nav-item.active i { color: var(--green); }
+
+/* ═══════════════════════════════════════
+   MAIN
+   ═══════════════════════════════════════ */
+.main {
+  flex: 1;
+  margin-left: 220px;
+  padding: 40px 32px 80px;
+}
+
+.container {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+/* ═══════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════ */
+.page-header { margin-bottom: 40px; }
+
+.page-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--green);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-tag::before {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 1px;
+  background: var(--green);
+}
+
+.page-title {
+  font-family: var(--ff);
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin-bottom: 14px;
+}
+
+.page-title .accent { color: var(--green); }
+
+.page-sub {
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--gray4);
+  line-height: 1.6;
+  max-width: 540px;
+}
+
+/* ═══════════════════════════════════════
+   CARDS
+   ═══════════════════════════════════════ */
+.card {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 12px;
+  padding: 22px 26px;
+}
+
+.card + .card { margin-top: 14px; }
+
+/* ═══════════════════════════════════════
+   COMPLETION BANNER
+   ═══════════════════════════════════════ */
+.completion-banner {
+  display: none;
+  background: var(--green-light);
+  border: 1px solid var(--green-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.completion-banner.visible { display: flex; }
+
+.completion-icon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.completion-icon i {
+  font-size: 22px;
+  color: var(--green);
+}
+
+.completion-content { flex: 1; }
+
+.completion-title {
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--green-dark);
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.completion-desc {
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--gray4);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════
+   PROGRESS CARD
+   ═══════════════════════════════════════ */
+.progress-card { margin-bottom: 20px; }
+
+.progress-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.progress-label {
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--gray4);
+}
+
+.progress-count {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--black);
+}
+
+.progress-track {
+  height: 4px;
+  background: var(--gray-bg);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.progress-phases {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.phase-mini {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--gray3);
+  letter-spacing: 0.04em;
+}
+
+.phase-mini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gray2);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.phase-mini.active .phase-mini-dot,
+.phase-mini.done .phase-mini-dot {
+  background: var(--green);
+}
+
+.phase-mini.active,
+.phase-mini.done {
+  color: var(--gray4);
+}
+
+/* ═══════════════════════════════════════
+   BUDGET CARD
+   ═══════════════════════════════════════ */
+.budget-card { margin-bottom: 32px; }
+
+.budget-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.budget-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--gray4);
+}
+
+.budget-title i {
+  font-size: 16px;
+  color: var(--gray3);
+}
+
+.budget-status-select {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--ff);
+  font-weight: 400;
+  padding: 6px 10px;
+  color: var(--gray4);
+  cursor: pointer;
+  outline: none;
+  min-height: 32px;
+}
+
+.budget-status-select:focus { border-color: var(--green); }
+
+.budget-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.budget-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--gray4);
+  padding: 2px 0;
+}
+
+.budget-line-amount {
+  font-family: var(--mono);
+  font-weight: 500;
+  color: var(--black);
+  font-size: 13px;
+}
+
+.budget-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 14px;
+  border-top: 1px solid var(--gray2);
+}
+
+.budget-total-label {
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--black);
+}
+
+.budget-total-amount {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--green);
+  letter-spacing: -0.01em;
+}
+
+/* ═══════════════════════════════════════
+   HELP CTA
+   ═══════════════════════════════════════ */
+.help-cta {
+  background: var(--black);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.help-cta-content { flex: 1; color: var(--white); }
+
+.help-cta-eyebrow {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.help-cta-title {
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  margin-bottom: 4px;
+}
+
+.help-cta-desc {
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.55;
+}
+
+.btn-primary {
+  background: var(--green);
+  color: var(--white);
+  padding: 11px 20px;
+  border-radius: 6px;
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+}
+
+.btn-primary:hover { background: var(--green-dark); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--green);
+  border: 1px solid var(--green);
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+}
+
+.btn-secondary:hover {
+  background: var(--green);
+  color: var(--white);
+}
+
+/* ═══════════════════════════════════════
+   PHASE SECTION
+   ═══════════════════════════════════════ */
+.phase { margin-bottom: 48px; }
+
+.phase-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.phase-number {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--gray3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.phase-title {
+  font-family: var(--ff);
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  color: var(--black);
+}
+
+.phase-sub {
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--gray4);
+  margin-bottom: 20px;
+  line-height: 1.55;
+}
+
+/* ═══════════════════════════════════════
+   STEP
+   ═══════════════════════════════════════ */
+.step {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 14px;
+  transition: border-color 0.15s;
+  cursor: pointer;
+  user-select: none;
+  min-height: 48px;
+}
+
+.step:hover { border-color: var(--gray3); }
+
+.step.done {
+  background: var(--green-light);
+  border-color: var(--green-border);
+}
+
+.step-checkbox {
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--gray2);
+  border-radius: 6px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+  transition: all 0.15s;
+}
+
+.step:hover .step-checkbox { border-color: var(--gray3); }
+
+.step.done .step-checkbox {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.step-check-icon {
+  display: none;
+  color: var(--white);
+  font-size: 14px;
+}
+
+.step.done .step-check-icon { display: block; }
+
+.step-content { flex: 1; min-width: 0; }
+
+.step-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.step-num {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--gray3);
+  flex-shrink: 0;
+}
+
+.step-title {
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--black);
+  line-height: 1.4;
+}
+
+.step.done .step-title {
+  color: var(--gray4);
+  text-decoration: line-through;
+  text-decoration-color: var(--green-border);
+}
+
+.step-desc {
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--gray4);
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.step-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+}
+
+.badge-cost {
+  background: var(--gray-bg);
+  color: var(--gray4);
+  border-color: var(--gray2);
+}
+
+.step.done .badge-cost {
+  background: var(--green-light);
+  color: var(--green-dark);
+  border-color: var(--green-border);
+}
+
+.badge-required {
+  background: var(--red-bg);
+  color: var(--red-text);
+  border-color: var(--red-border);
+  text-transform: uppercase;
+}
+
+.step-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--green);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.step-link:hover {
+  color: var(--green-dark);
+  text-decoration: underline;
+}
+
+.step-link i { font-size: 13px; }
+
+/* ═══════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,9,0.65);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal-overlay.visible {
+  display: flex;
+}
+
+.modal {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 12px;
+  max-width: 680px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 32px 36px;
+}
+
+.modal-close {
+  float: right;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--gray3);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  min-width: 48px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover { color: var(--black); }
+
+.modal-title {
+  font-family: var(--ff);
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.modal-sub {
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--gray4);
+  margin-bottom: 26px;
+}
+
+.modal-step { margin-bottom: 22px; }
+
+.modal-step-label {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 10px;
+  color: var(--gray3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.modal-options { display: grid; gap: 8px; }
+
+.modal-option {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 8px;
+  padding: 13px 16px;
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--black);
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 48px;
+}
+
+.modal-option:hover { border-color: var(--gray3); }
+
+.modal-option.selected {
+  background: var(--green-light);
+  border-color: var(--green);
+  color: var(--green-dark);
+  font-weight: 600;
+}
+
+.modal-recommend {
+  background: var(--green-light);
+  border: 1px solid var(--green-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-top: 22px;
+  display: none;
+}
+
+.modal-recommend.visible { display: block; }
+
+.recommend-eyebrow {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.recommend-title {
+  font-family: var(--ff);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--green-dark);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.recommend-desc {
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--gray4);
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  margin-top: 14px;
+}
+
+.compare-table th {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 10px;
+  color: var(--gray3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--gray-bg);
+  border: 1px solid var(--gray2);
+  border-right: none;
+}
+
+.compare-table th:first-child { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+.compare-table th:last-child  { border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-right: 1px solid var(--gray2); }
+
+.compare-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--gray2);
+  color: var(--gray4);
+  font-weight: 400;
+}
+
+.compare-table td:first-child {
+  font-weight: 600;
+  color: var(--black);
+}
+
+.compare-table .v-good { color: var(--green); font-weight: 600; }
+.compare-table .v-bad  { color: var(--red); }
+
+.compare-table .v-mono { font-family: var(--mono); font-weight: 500; }
+
+.disclaimer {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: var(--gray-bg);
+  border: 1px solid var(--gray2);
+  border-radius: 8px;
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--gray4);
+  line-height: 1.6;
+}
+
+.disclaimer strong { color: var(--black); font-weight: 600; }
+
+/* ═══════════════════════════════════════
+   BOTTOM NAV (mobile)
+   ═══════════════════════════════════════ */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--white);
+  border-top: 1px solid var(--gray2);
+  z-index: 100;
+  padding: 0 4px;
+}
+
+.bottom-nav-list {
+  display: flex;
+  height: 100%;
+  align-items: stretch;
+  justify-content: space-around;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-decoration: none;
+  color: var(--gray3);
+  font-family: var(--ff);
+  font-weight: 400;
+  font-size: 9px;
+  min-height: 48px;
+  letter-spacing: -0.01em;
+}
+
+.bottom-nav-item i { font-size: 20px; }
+.bottom-nav-item.active { color: var(--green); }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 28px 18px 80px; }
+  .bottom-nav { display: block; }
+  body { padding-bottom: 60px; }
+  .topbar-user span { display: none; }
+
+  .help-cta { flex-direction: column; align-items: stretch; }
+  .help-cta .btn-primary { width: 100%; justify-content: center; }
+  .progress-phases { grid-template-columns: 1fr; gap: 8px; }
+  .completion-banner { flex-direction: column; align-items: stretch; }
+  .modal { padding: 24px 20px; }
+  .modal-option { font-size: 16px; }
+  .budget-status-select { font-size: 16px; padding: 8px 12px; min-height: 40px; }
+  .compare-table { font-size: 11px; }
+  .compare-table th, .compare-table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ TOPBAR ═══ -->
+<header class="topbar">
+  <a href="#" class="logo" aria-label="SOCLE">SOCLE<span class="logo-dot"></span></a>
+  <div class="topbar-user">
+    <i class="ti ti-user-circle" aria-hidden="true"></i>
+    <span>Benjamin · SASU</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="nav-label">Construction</div>
+    <a href="#" class="nav-item">
+      <i class="ti ti-calculator" aria-hidden="true"></i>
+      <span>Chiffrage</span>
+    </a>
+    <a href="#" class="nav-item">
+      <i class="ti ti-chart-bar" aria-hidden="true"></i>
+      <span>Rentabilité</span>
+    </a>
+
+    <div class="nav-label" style="margin-top:8px;">Documents</div>
+    <a href="#" class="nav-item">
+      <i class="ti ti-file-text" aria-hidden="true"></i>
+      <span>Devis</span>
+    </a>
+    <a href="#" class="nav-item">
+      <i class="ti ti-clipboard-check" aria-hidden="true"></i>
+      <span>PV Réception</span>
+    </a>
+
+    <div class="nav-label" style="margin-top:8px;">Ressources</div>
+    <a href="#" class="nav-item">
+      <i class="ti ti-book" aria-hidden="true"></i>
+      <span>Bibliothèque DTU</span>
+    </a>
+    <a href="#" class="nav-item active">
+      <i class="ti ti-checklist" aria-hidden="true"></i>
+      <span>Checklist</span>
+    </a>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+    <div class="container">
+
+      <div class="page-header">
+        <div class="page-tag">Bloc 1 sur 4 · Lancement</div>
+        <h1 class="page-title">Lance ton <span class="accent">entreprise</span><br>du BTP.</h1>
+        <p class="page-sub">13 étapes pour démarrer ton activité dans les règles, structurées en 3 phases. Avance à ton rythme — SOCLE garde ta progression.</p>
+      </div>
+
+      <!-- Completion banner -->
+      <div class="completion-banner" id="completion-banner">
+        <div class="completion-icon"><i class="ti ti-circle-check" aria-hidden="true"></i></div>
+        <div class="completion-content">
+          <div class="completion-title">Toutes les étapes sont validées</div>
+          <div class="completion-desc">Tu peux masquer ce bloc — il restera accessible depuis le menu.</div>
+        </div>
+        <button class="btn-secondary" onclick="alert('Bloc Lancement masqué — fonctionnalité à venir')">Masquer ce bloc</button>
+      </div>
+
+      <!-- Progress -->
+      <div class="card progress-card">
+        <div class="progress-top">
+          <div class="progress-label">Progression globale</div>
+          <div class="progress-count"><span id="done-count">0</span> / 13 étapes</div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <div class="progress-phases">
+          <div class="phase-mini" id="mini-1">
+            <div class="phase-mini-dot"></div>
+            <span>Phase 1 · Avant immat. (<span id="p1-count">0</span>/5)</span>
+          </div>
+          <div class="phase-mini" id="mini-2">
+            <div class="phase-mini-dot"></div>
+            <span>Phase 2 · Après immat. (<span id="p2-count">0</span>/5)</span>
+          </div>
+          <div class="phase-mini" id="mini-3">
+            <div class="phase-mini-dot"></div>
+            <span>Phase 3 · Avant chantier (<span id="p3-count">0</span>/3)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget -->
+      <div class="card budget-card">
+        <div class="budget-head">
+          <div class="budget-title">
+            <i class="ti ti-wallet" aria-hidden="true"></i>
+            <span>Budget de lancement estimé</span>
+          </div>
+          <select class="budget-status-select" id="status-select" onchange="updateBudget()">
+            <option value="sasu">Statut : SASU</option>
+            <option value="eurl">Statut : EURL</option>
+            <option value="micro">Statut : Micro-entrepreneur</option>
+          </select>
+        </div>
+        <div class="budget-lines" id="budget-lines"></div>
+        <div class="budget-total">
+          <div class="budget-total-label">Total estimé</div>
+          <div class="budget-total-amount" id="budget-total">—</div>
+        </div>
+      </div>
+
+      <!-- Help CTA -->
+      <div class="help-cta">
+        <div class="help-cta-content">
+          <div class="help-cta-eyebrow">Tu hésites sur le statut ?</div>
+          <div class="help-cta-title">Trouve le statut adapté à ta situation en 30 secondes</div>
+          <div class="help-cta-desc">Réponds à 3 questions, on te recommande le bon statut avec un comparatif détaillé.</div>
+        </div>
+        <button class="btn-primary" onclick="openModal()">
+          Aide au choix
+          <i class="ti ti-arrow-right" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <!-- Phase 1 -->
+      <div class="phase">
+        <div class="phase-header">
+          <div class="phase-number">Phase 01</div>
+          <div class="phase-title">Avant l'immatriculation</div>
+        </div>
+        <div class="phase-sub">Les décisions et préparatifs à faire avant de déposer ton dossier au greffe.</div>
+        <div id="phase-1-steps"></div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="phase">
+        <div class="phase-header">
+          <div class="phase-number">Phase 02</div>
+          <div class="phase-title">Après l'immatriculation</div>
+        </div>
+        <div class="phase-sub">Tout ce qui se met en place dans les 30 jours qui suivent ton KBIS.</div>
+        <div id="phase-2-steps"></div>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="phase">
+        <div class="phase-header">
+          <div class="phase-number">Phase 03</div>
+          <div class="phase-title">Avant le premier chantier</div>
+        </div>
+        <div class="phase-sub">Les éléments opérationnels pour facturer légalement et commencer à travailler.</div>
+        <div id="phase-3-steps"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ═══ BOTTOM NAV (mobile) ═══ -->
+<nav class="bottom-nav" aria-label="Navigation mobile">
+  <div class="bottom-nav-list">
+    <a href="#" class="bottom-nav-item"><i class="ti ti-calculator" aria-hidden="true"></i><span>Chiffrage</span></a>
+    <a href="#" class="bottom-nav-item"><i class="ti ti-chart-bar" aria-hidden="true"></i><span>Renta</span></a>
+    <a href="#" class="bottom-nav-item"><i class="ti ti-file-text" aria-hidden="true"></i><span>Devis</span></a>
+    <a href="#" class="bottom-nav-item"><i class="ti ti-clipboard-check" aria-hidden="true"></i><span>PV</span></a>
+    <a href="#" class="bottom-nav-item"><i class="ti ti-book" aria-hidden="true"></i><span>DTU</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="ti ti-checklist" aria-hidden="true"></i><span>Checklist</span></a>
+  </div>
+</nav>
+
+<!-- ═══ MODAL STATUS HELPER ═══ -->
+<div class="modal-overlay" id="status-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()" aria-label="Fermer">
+      <i class="ti ti-x" aria-hidden="true"></i>
+    </button>
+    <h2 class="modal-title">Quel statut pour ton activité BTP ?</h2>
+    <p class="modal-sub">3 questions, une recommandation argumentée.</p>
+
+    <div class="modal-step">
+      <div class="modal-step-label">01 · Quel CA vises-tu en première année ?</div>
+      <div class="modal-options">
+        <button class="modal-option" data-q="ca" data-v="low"  onclick="selectOpt(this)">Moins de 40 000 €</button>
+        <button class="modal-option" data-q="ca" data-v="mid"  onclick="selectOpt(this)">Entre 40 000 € et 80 000 €</button>
+        <button class="modal-option" data-q="ca" data-v="high" onclick="selectOpt(this)">Plus de 80 000 €</button>
+      </div>
+    </div>
+
+    <div class="modal-step">
+      <div class="modal-step-label">02 · Tu veux protéger ton patrimoine personnel ?</div>
+      <div class="modal-options">
+        <button class="modal-option" data-q="patrimoine" data-v="oui"   onclick="selectOpt(this)">Oui, c'est important</button>
+        <button class="modal-option" data-q="patrimoine" data-v="non"   onclick="selectOpt(this)">Pas indispensable</button>
+        <button class="modal-option" data-q="patrimoine" data-v="nsp"   onclick="selectOpt(this)">Je ne sais pas</button>
+      </div>
+    </div>
+
+    <div class="modal-step">
+      <div class="modal-step-label">03 · Tu prévois de travailler seul ou avec des associés/salariés ?</div>
+      <div class="modal-options">
+        <button class="modal-option" data-q="equipe" data-v="solo"      onclick="selectOpt(this)">Solo pour l'instant</button>
+        <button class="modal-option" data-q="equipe" data-v="evolution" onclick="selectOpt(this)">Solo mais équipe envisagée</button>
+      </div>
+    </div>
+
+    <div class="modal-recommend" id="recommendation">
+      <div class="recommend-eyebrow">Recommandation</div>
+      <div class="recommend-title" id="recommend-title">—</div>
+      <div class="recommend-desc" id="recommend-desc">—</div>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Critère</th>
+            <th>Micro</th>
+            <th>EURL</th>
+            <th>SASU</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Plafond CA</td>
+            <td class="v-mono v-bad">77 700 €</td>
+            <td class="v-good">Illimité</td>
+            <td class="v-good">Illimité</td>
+          </tr>
+          <tr>
+            <td>Charges sociales</td>
+            <td class="v-mono v-good">~22%</td>
+            <td class="v-mono">~45%</td>
+            <td class="v-mono">~80%</td>
+          </tr>
+          <tr>
+            <td>Protection patrimoine</td>
+            <td class="v-bad">Limitée</td>
+            <td class="v-good">Oui</td>
+            <td class="v-good">Oui</td>
+          </tr>
+          <tr>
+            <td>Comptabilité</td>
+            <td class="v-good">Très simple</td>
+            <td>Complète</td>
+            <td>Complète</td>
+          </tr>
+          <tr>
+            <td>Coût création</td>
+            <td class="v-mono v-good">~0 €</td>
+            <td class="v-mono">~200 €</td>
+            <td class="v-mono">~250 €</td>
+          </tr>
+          <tr>
+            <td>Régime social</td>
+            <td>TNS</td>
+            <td>TNS</td>
+            <td class="v-good">Assimilé salarié</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="disclaimer">
+        <strong>Important.</strong> Cette recommandation est indicative. Le choix du statut a des implications fiscales et juridiques durables — consulte un expert-comptable avant de finaliser ton choix.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  { id: 1, phase: 1, title: "Choisir son statut juridique",
+    desc: "Le choix structurant qui conditionne charges, fiscalité, protection patrimoniale et plafonds de CA. Utilise l'aide au choix ci-dessus si tu hésites.",
+    cost: null,
+    link: { url: "https://entreprendre.service-public.fr/vosdroits/F23844", label: "Comparer les statuts" }
+  },
+  { id: 2, phase: 1, title: "Vérifier ses qualifications professionnelles",
+    desc: "En BTP la plupart des activités sont réglementées. Il faut justifier d'un diplôme (CAP, BP, BTS) ou de 3 ans d'expérience. Sans ça, immatriculation refusée.",
+    cost: null,
+    link: { url: "https://www.economie.gouv.fr/cedef/qualifications-artisanat", label: "Liste des qualifications" }
+  },
+  { id: 3, phase: 1, title: "Choisir et vérifier la disponibilité du nom",
+    desc: "Recherche INPI pour vérifier que le nom n'est pas déposé en marque. Recherche INSEE pour l'unicité du nom d'entreprise.",
+    cost: null,
+    link: { url: "https://data.inpi.fr/", label: "Vérifier sur INPI" }
+  },
+  { id: 4, phase: 1, title: "Identifier son code NAF",
+    desc: "Le code NAF est attribué par l'INSEE selon ton activité principale déclarée. Il détermine ta convention collective, certaines obligations et peut influencer ton assurance décennale. Codes BTP courants : 4321A Électricité, 4322A Plomberie, 4331Z Plâtrerie, 4332A Menuiserie, 4333Z Parquets, 4334Z Peinture, 4339Z Autres finitions, 4120A Construction maisons, 4399B Maçonnerie.",
+    cost: null,
+    link: { url: "https://www.insee.fr/fr/information/2120875", label: "Nomenclature NAF — INSEE" }
+  },
+  { id: 5, phase: 1, title: "Préparer le dossier d'immatriculation",
+    desc: "SASU/EURL : statuts rédigés, capital déposé sur compte bloqué, justificatif domicile siège, attestation non-condamnation. Micro : formulaire P0 simplifié en ligne.",
+    cost: { sasu: 250, eurl: 200, micro: 0 },
+    link: { url: "https://www.formalites.entreprises.gouv.fr/", label: "Guichet unique" }
+  },
+  { id: 6, phase: 2, title: "Ouvrir un compte bancaire professionnel",
+    desc: "Obligatoire pour SASU/EURL dès le KBIS reçu. Recommandé pour micro-entrepreneur dès 10 000 € de CA. Compare les néobanques (Qonto, Shine) vs banques traditionnelles.",
+    cost: { sasu: 240, eurl: 240, micro: 60 },
+    link: { url: "https://www.qonto.com/fr", label: "Comparer les comptes pro" }
+  },
+  { id: 7, phase: 2, title: "Souscrire l'assurance RC Pro",
+    desc: "Obligatoire avant tout démarrage d'activité. Couvre les dommages causés à des tiers pendant l'activité professionnelle.",
+    cost: { sasu: 450, eurl: 450, micro: 350 },
+    link: { url: "https://www.april.fr/professionnels/assurance-rc-pro", label: "Comparer les assureurs" }
+  },
+  { id: 8, phase: 2, title: "Souscrire la Garantie Décennale",
+    desc: "Obligation légale absolue en BTP. Démarrer un chantier sans décennale est un délit. Couvre les dommages pendant 10 ans après réception. Coût variable selon corps d'état.",
+    cost: { sasu: 2200, eurl: 2200, micro: 1800 },
+    link: { url: "https://www.hiscox.fr/garantie-decennale", label: "Devis décennale en ligne" },
+    needed: true
+  },
+  { id: 9, phase: 2, title: "S'inscrire à la Chambre de Métiers",
+    desc: "Obligatoire pour les activités artisanales. Le Stage de Préparation à l'Installation (SPI) n'est plus obligatoire depuis 2019 mais reste recommandé.",
+    cost: { sasu: 130, eurl: 130, micro: 0 },
+    link: { url: "https://www.artisanat.fr/", label: "CMA — site officiel" }
+  },
+  { id: 10, phase: 2, title: "Affilier l'entreprise à l'OPPBTP et PRO BTP",
+    desc: "OPPBTP (prévention) : obligatoire dès le premier salarié, recommandé même solo. PRO BTP : caisse de retraite, congés payés, prévoyance, obligatoire dès embauche.",
+    cost: null,
+    link: { url: "https://www.preventionbtp.fr/", label: "OPPBTP" }
+  },
+  { id: 11, phase: 3, title: "Configurer son taux horaire et sa marge",
+    desc: "Calcule ton taux horaire viable (salaire net souhaité + charges + jours non facturables) et définis ta marge objectif. La TVA applicable se configure aussi maintenant.",
+    cost: null,
+    link: { url: "#", label: "Simulateur de taux horaire" }
+  },
+  { id: 12, phase: 3, title: "Préparer ses modèles de devis et CGV",
+    desc: "Conditions Générales de Vente conformes avec mentions obligatoires. Modèle de devis avec SIREN, RM, N° d'assurance décennale, TVA, délai de rétractation 14j pour particuliers.",
+    cost: null,
+    link: { url: "#", label: "Générateur de devis" }
+  },
+  { id: 13, phase: 3, title: "Mettre en place sa comptabilité",
+    desc: "Choisir entre tenir sa compta soi-même (Pennylane, Indy, Tiime) ou prendre un expert-comptable. Décision structurante à prendre avant le premier devis.",
+    cost: { sasu: 1200, eurl: 1000, micro: 300 },
+    link: { url: "https://www.indy.fr/", label: "Comparer les solutions" }
+  },
+];
+
+let state = { status: 'sasu', done: {} };
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('socle_lancement');
+    if (saved) state = { ...state, ...JSON.parse(saved) };
+  } catch(e) {}
+}
+
+function saveState() {
+  try { localStorage.setItem('socle_lancement', JSON.stringify(state)); }
+  catch(e) {}
+}
+
+function renderSteps() {
+  [1, 2, 3].forEach(phase => {
+    const container = document.getElementById(`phase-${phase}-steps`);
+    container.innerHTML = '';
+
+    STEPS.filter(s => s.phase === phase).forEach(s => {
+      const done = state.done[s.id] === true;
+      const cost = s.cost ? s.cost[state.status] : null;
+
+      const step = document.createElement('div');
+      step.className = 'step' + (done ? ' done' : '');
+      step.onclick = (e) => {
+        if (e.target.tagName !== 'A' && !e.target.closest('a')) toggleStep(s.id);
+      };
+
+      step.innerHTML = `
+        <div class="step-checkbox"><i class="ti ti-check step-check-icon" aria-hidden="true"></i></div>
+        <div class="step-content">
+          <div class="step-head">
+            <span class="step-num">${String(s.id).padStart(2,'0')}</span>
+            <div class="step-title">${s.title}</div>
+          </div>
+          <div class="step-desc">${s.desc}</div>
+          <div class="step-meta">
+            ${cost ? `<span class="badge badge-cost">~${cost.toLocaleString('fr-FR')} €</span>` : ''}
+            ${s.needed ? `<span class="badge badge-required">Obligatoire</span>` : ''}
+            ${s.link ? `<a href="${s.link.url}" target="_blank" rel="noopener" class="step-link">
+              ${s.link.label}
+              <i class="ti ti-external-link" aria-hidden="true"></i>
+            </a>` : ''}
+          </div>
+        </div>
+      `;
+      container.appendChild(step);
+    });
+  });
+}
+
+function toggleStep(id) {
+  state.done[id] = !state.done[id];
+  saveState();
+  renderSteps();
+  updateProgress();
+}
+
+function updateProgress() {
+  let total = STEPS.length;
+  let done = 0;
+  let phaseCounts = { 1: 0, 2: 0, 3: 0 };
+  let phaseDone = { 1: 0, 2: 0, 3: 0 };
+
+  STEPS.forEach(s => {
+    phaseCounts[s.phase]++;
+    if (state.done[s.id]) {
+      done++;
+      phaseDone[s.phase]++;
+    }
+  });
+
+  const pct = total > 0 ? (done / total * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('done-count').textContent = done;
+  document.getElementById('p1-count').textContent = phaseDone[1];
+  document.getElementById('p2-count').textContent = phaseDone[2];
+  document.getElementById('p3-count').textContent = phaseDone[3];
+
+  [1, 2, 3].forEach(p => {
+    const el = document.getElementById(`mini-${p}`);
+    el.classList.remove('active', 'done');
+    if (phaseDone[p] === phaseCounts[p]) el.classList.add('done');
+    else if (phaseDone[p] > 0) el.classList.add('active');
+  });
+
+  document.getElementById('completion-banner').classList.toggle('visible', done === total);
+}
+
+function updateBudget() {
+  state.status = document.getElementById('status-select').value;
+  saveState();
+  renderBudget();
+  renderSteps();
+}
+
+function renderBudget() {
+  const lines = document.getElementById('budget-lines');
+  lines.innerHTML = '';
+  let total = 0;
+
+  STEPS.forEach(s => {
+    if (s.cost && s.cost[state.status]) {
+      const amount = s.cost[state.status];
+      total += amount;
+      const line = document.createElement('div');
+      line.className = 'budget-line';
+      line.innerHTML = `
+        <span>${s.title}</span>
+        <span class="budget-line-amount">${amount.toLocaleString('fr-FR')} €</span>
+      `;
+      lines.appendChild(line);
+    }
+  });
+
+  document.getElementById('budget-total').textContent = total.toLocaleString('fr-FR') + ' €';
+}
+
+const modalAnswers = {};
+
+function openModal() {
+  document.getElementById('status-modal').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('status-modal').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+function selectOpt(btn) {
+  const q = btn.dataset.q;
+  document.querySelectorAll(`.modal-option[data-q="${q}"]`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  modalAnswers[q] = btn.dataset.v;
+  checkRecommendation();
+}
+
+function checkRecommendation() {
+  if (modalAnswers.ca && modalAnswers.patrimoine && modalAnswers.equipe) {
+    showRecommendation();
+  }
+}
+
+function showRecommendation() {
+  const { ca, patrimoine, equipe } = modalAnswers;
+  let recommendation = '';
+  let reasoning = '';
+
+  if (ca === 'low' && patrimoine !== 'oui' && equipe === 'solo') {
+    recommendation = 'Micro-entrepreneur';
+    reasoning = "Avec un CA prévu sous 40 000 € et une activité solo, la micro-entreprise est la solution la plus simple et la moins coûteuse. Charges sociales réduites (~22%), comptabilité ultra-simplifiée, création gratuite. Tu pourras toujours basculer en SASU ou EURL plus tard si ton activité grossit.";
+  } else if (ca === 'high' || (patrimoine === 'oui' && equipe === 'evolution')) {
+    recommendation = 'SASU';
+    reasoning = "La SASU offre la meilleure combinaison protection patrimoniale + flexibilité d'évolution. Tu seras assimilé salarié (meilleure protection sociale, mais charges plus élevées ~80%). Idéale si tu prévois de grossir, de prendre des salariés, ou de te verser des dividendes pour optimiser ta fiscalité.";
+  } else if (patrimoine === 'oui' && ca !== 'high') {
+    recommendation = 'EURL';
+    reasoning = "L'EURL protège ton patrimoine personnel tout en gardant des charges sociales modérées (~45% en TNS). C'est un bon compromis si tu veux la sécurité juridique d'une société sans le coût social de la SASU. Tu peux opter pour l'IS pour optimiser la fiscalité.";
+  } else {
+    recommendation = 'EURL';
+    reasoning = "L'EURL est un statut équilibré pour ton profil : protection patrimoniale, plafond de CA illimité, fiscalité modulable (IR ou IS). Bon choix par défaut si tu n'es pas dans un cas extrême.";
+  }
+
+  document.getElementById('recommend-title').textContent = '→ ' + recommendation;
+  document.getElementById('recommend-desc').textContent = reasoning;
+  document.getElementById('recommendation').classList.add('visible');
+}
+
+document.getElementById('status-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'status-modal') closeModal();
+});
+
+loadState();
+document.getElementById('status-select').value = state.status;
+renderBudget();
+renderSteps();
+updateProgress();
+</script>
+
+</body>
+</html>

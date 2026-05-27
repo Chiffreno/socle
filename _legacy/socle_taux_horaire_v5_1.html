@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOCLE — Simulateur taux horaire</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:       #0a0a0a;
+  --white:       #ffffff;
+  --green:       #1a7a3c;
+  --green-dark:  #156430;
+  --gray-bg:     #fafafa;
+  --gray2:       #e8e8e8;
+  --gray3:       #a3a3a3;
+  --gray4:       #525252;
+  --orange:      #c45a0a;
+  --orange-bg:   #fef3eb;
+  --orange-b:    #f0c8a0;
+  --red:         #dc2626;
+  --red-bg:      #fef2f2;
+  --red-b:       #fecaca;
+  --ff:          'Figtree', sans-serif;
+  --mono:        'DM Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--ff);
+  background: var(--gray-bg);
+  color: var(--black);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100; height: 52px;
+  background: var(--black);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+}
+.logo { font-family: var(--ff); font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--white); display: flex; align-items: baseline; }
+.logo-dot { display: inline-block; width: 8px; height: 8px; background: var(--green); border-radius: 50%; margin-left: 1px; }
+.tb-right { display: flex; align-items: center; gap: 4px; }
+.tb-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 0; cursor: pointer; color: rgba(255,255,255,0.45); transition: all .15s; }
+.tb-btn:hover { background: rgba(255,255,255,0.06); color: var(--white); }
+.tb-btn i { font-size: 18px; }
+.tb-user { display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 4px 10px 4px 4px; border-radius: 0; margin-left: 6px; transition: background .15s; }
+.tb-user:hover { background: rgba(255,255,255,0.06); }
+.tb-avatar { width: 28px; height: 28px; border-radius: 0; background: var(--green); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--white); }
+.tb-name { font-size: 12px; font-weight: 500; color: var(--white); }
+.tb-plan { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.4); letter-spacing: .12em; text-transform: uppercase; }
+
+/* ── LAYOUT ── */
+.layout { display: flex; padding-top: 52px; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed; left: 0; top: 52px; bottom: 0; width: 240px;
+  background: var(--white); border-right: 1px solid var(--gray2);
+  display: flex; flex-direction: column; padding: 24px 0 16px; overflow-y: auto;
+}
+.sb-group { margin-bottom: 24px; }
+.sb-label { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); padding: 0 24px 8px; }
+.sb-item { display: flex; align-items: center; gap: 11px; padding: 8px 24px 8px 21px; font-family: var(--ff); font-weight: 400; font-size: 14px; color: var(--gray4); border-left: 3px solid transparent; cursor: pointer; transition: all .12s; }
+.sb-item i { font-size: 17px; color: var(--gray3); flex-shrink: 0; }
+.sb-item:hover { color: var(--black); background: var(--gray-bg); }
+.sb-item:hover i { color: var(--gray4); }
+.sb-item.active { background: var(--gray-bg); color: var(--green); border-left-color: var(--green); font-weight: 500; }
+.sb-item.active i { color: var(--green); }
+.sb-badge { margin-left: auto; font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--orange); background: var(--orange-bg); border: 1px solid var(--orange-b); border-radius: 0; padding: 1px 7px; }
+.sb-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--gray2); }
+
+/* ── MAIN ── */
+.main { flex: 1; margin-left: 240px; padding: 40px 40px 80px; }
+
+/* ── PAGE HEADER ── */
+.page-header { margin-bottom: 40px; }
+.page-eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--gray3); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+.page-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gray3); }
+.page-title { font-family: var(--ff); font-weight: 700; font-size: clamp(1.8rem, 3vw, 2.4rem); letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 10px; }
+.page-sub { font-size: 15px; color: var(--gray4); line-height: 1.6; max-width: 560px; }
+
+/* ── GRID ── */
+.sim-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── INPUTS ── */
+.inputs-col { display: flex; flex-direction: column; gap: 16px; }
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  padding: 24px;
+}
+
+.card-title { font-family: var(--ff); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; color: var(--black); margin-bottom: 6px; display: flex; align-items: baseline; gap: 12px; }
+.card-num { font-family: var(--mono); font-weight: 500; font-size: 12px; color: var(--gray3); letter-spacing: 0; flex-shrink: 0; }
+.card-sub { font-size: 13px; color: var(--gray4); margin-bottom: 20px; line-height: 1.55; }
+
+/* Field */
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
+.field-label { display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; font-weight: 500; color: var(--black); margin-bottom: 8px; letter-spacing: -0.01em; }
+.field-label-hint { font-weight: 400; font-family: var(--mono); font-size: 11px; color: var(--gray4); }
+.input-row { display: flex; gap: 10px; align-items: center; }
+
+.input-num {
+  width: 120px; flex-shrink: 0;
+  padding: 10px 12px; border: 1px solid var(--gray2); border-radius: 0;
+  font-size: 15px; font-family: var(--mono); font-weight: 500; color: var(--black);
+  background: var(--white); outline: none; transition: border-color .15s;
+  -webkit-appearance: none; text-align: right;
+}
+.input-num:focus { border-color: var(--black); }
+
+.input-slider {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 4px; background: var(--gray2); border-radius: 0; outline: none; cursor: pointer;
+}
+.input-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2px solid var(--white); box-shadow: 0 0 0 1px var(--green); }
+.input-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2px solid var(--white); }
+
+.input-suffix { font-family: var(--mono); font-size: 12px; color: var(--gray3); flex-shrink: 0; }
+
+/* Statut pills */
+.statut-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill-btn {
+  padding: 9px 16px; border-radius: 0; border: 1px solid var(--gray2);
+  background: var(--white); font-family: var(--ff); font-size: 13px; font-weight: 500;
+  color: var(--gray4); cursor: pointer; transition: all .15s;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+}
+.pill-btn:hover { border-color: var(--gray3); color: var(--black); }
+.pill-btn.active { background: var(--white); border-color: var(--green); color: var(--green); }
+.pill-btn-sub { font-size: 10px; font-family: var(--mono); font-weight: 400; color: var(--gray3); letter-spacing: .04em; }
+.pill-btn.active .pill-btn-sub { color: var(--green); }
+
+/* Jours NF */
+.nf-items { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.nf-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 0; border: 1px solid var(--gray2);
+  background: var(--white); cursor: pointer; transition: all .15s; user-select: none;
+}
+.nf-item:hover { border-color: var(--gray3); }
+.nf-item.active { background: var(--white); border-color: var(--green); }
+.nf-check { width: 18px; height: 18px; border: 1.5px solid var(--gray2); border-radius: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--white); transition: all .15s; }
+.nf-item.active .nf-check { background: var(--green); border-color: var(--green); }
+.nf-check i { display: none; font-size: 12px; color: var(--white); }
+.nf-item.active .nf-check i { display: block; }
+.nf-info { flex: 1; }
+.nf-name { font-size: 13px; font-weight: 500; color: var(--black); margin-bottom: 1px; }
+.nf-desc { font-size: 11px; color: var(--gray3); line-height: 1.4; }
+.nf-item.active .nf-name { color: var(--black); }
+.nf-days { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--gray3); flex-shrink: 0; }
+.nf-item.active .nf-days { color: var(--green); }
+
+.nf-total { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 14px; background: var(--gray-bg); border-radius: 0; font-size: 13px; }
+.nf-total-label { color: var(--gray4); font-weight: 500; }
+.nf-total-val { font-family: var(--mono); font-weight: 500; color: var(--black); }
+
+/* Charges fixes */
+.charges-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.charge-row { display: flex; align-items: center; gap: 10px; }
+.charge-name { font-size: 13px; color: var(--gray4); flex: 1; }
+.charge-input { width: 100px; padding: 7px 10px; border: 1px solid var(--gray2); border-radius: 0; font-size: 13px; font-family: var(--mono); font-weight: 500; color: var(--black); background: var(--white); outline: none; text-align: right; transition: border-color .15s; }
+.charge-input:focus { border-color: var(--black); }
+.charge-unit { font-family: var(--mono); font-size: 11px; color: var(--gray3); width: 20px; }
+.charges-total { display: flex; justify-content: space-between; padding: 10px 14px; background: var(--gray-bg); border-radius: 0; font-size: 13px; }
+.charges-total-label { color: var(--gray4); font-weight: 500; }
+.charges-total-val { font-family: var(--mono); font-weight: 500; color: var(--black); }
+
+/* ── RÉSULTAT ── */
+.result-col { position: sticky; top: 72px; }
+
+.result-card {
+  background: var(--white);
+  border: 1px solid var(--black);
+  border-radius: 0;
+  padding: 28px;
+  color: var(--black);
+}
+
+.result-eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+.result-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gray3); }
+
+.taux-grid { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--gray2); margin-bottom: 20px; }
+.taux-item { padding: 18px 0; border-bottom: 1px solid var(--gray2); background: transparent; }
+.taux-item.featured { background: transparent; }
+.taux-label { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.taux-label.green { color: var(--green); }
+.taux-val { font-family: var(--mono); font-size: 2.2rem; font-weight: 500; letter-spacing: -0.03em; line-height: 1; color: var(--black); }
+.taux-val .unit { font-size: .55em; color: var(--gray3); margin-left: 3px; }
+.taux-item.featured .taux-val { color: var(--green); }
+.taux-desc { font-size: 12px; color: var(--gray4); margin-top: 6px; line-height: 1.5; }
+
+.taux-alert { background: var(--orange-bg); border: 1px solid var(--orange-b); border-radius: 0; padding: 12px 14px; margin-bottom: 16px; display: none; }
+.taux-alert.visible { display: block; }
+.taux-alert-text { font-size: 12px; color: var(--orange); line-height: 1.5; }
+
+.result-summary { background: var(--gray-bg); border-radius: 0; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: var(--gray4); line-height: 1.65; }
+.result-summary strong { color: var(--black); font-weight: 500; }
+.result-summary em { font-style: normal; color: var(--green); font-family: var(--mono); }
+
+.btn-detail { width: 100%; padding: 11px; background: var(--white); border: 1px solid var(--gray2); border-radius: 0; font-family: var(--ff); font-size: 13px; font-weight: 500; color: var(--gray4); cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 7px; }
+.btn-detail:hover { background: var(--gray-bg); color: var(--black); border-color: var(--gray3); }
+.btn-detail i { font-size: 15px; transition: transform .2s; }
+.btn-detail.open i { transform: rotate(180deg); }
+
+.detail-panel { display: none; margin-top: 14px; }
+.detail-panel.visible { display: block; }
+.detail-line { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--gray2); font-size: 12px; }
+.detail-line:last-child { border-bottom: none; }
+.detail-line-label { color: var(--gray4); }
+.detail-line-val { font-family: var(--mono); font-weight: 500; color: var(--black); }
+.detail-line.total { padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--black); border-bottom: none; }
+.detail-line.total .detail-line-label { color: var(--black); font-weight: 500; }
+.detail-line.total .detail-line-val { color: var(--black); font-size: 13px; }
+
+.hours-alert { margin-top: 14px; padding: 12px 14px; background: var(--red-bg); border: 1px solid var(--red-b); border-radius: 0; font-size: 12px; color: var(--red); line-height: 1.5; display: none; }
+.hours-alert.visible { display: block; }
+
+.btn-inject { width: 100%; padding: 13px; margin-top: 14px; background: var(--green); color: var(--white); border: none; border-radius: 0; font-family: var(--ff); font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-inject:hover { background: var(--green-dark); }
+.btn-inject:active { transform: scale(0.98); }
+.btn-inject i { font-size: 16px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) { .sim-grid { grid-template-columns: 1fr 340px; } }
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 28px 20px 80px; }
+  .sim-grid { grid-template-columns: 1fr; }
+  .result-col { position: static; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">SOCLE<span class="logo-dot"></span></div>
+  <div class="tb-right">
+    <div class="tb-btn"><i class="ti ti-search" aria-hidden="true"></i></div>
+    <div class="tb-btn"><i class="ti ti-bell" aria-hidden="true"></i></div>
+    <div class="tb-user">
+      <div class="tb-avatar">BG</div>
+      <div>
+        <div class="tb-name">Benjamin G.</div>
+        <div class="tb-plan">Plan Pro</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sb-group">
+      <div class="sb-label">Principal</div>
+      <div class="sb-item"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Lancement</div>
+      <div class="sb-item"><i class="ti ti-checklist" aria-hidden="true"></i>Checklist<span class="sb-badge">4</span></div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Prix &amp; Marges</div>
+      <div class="sb-item active"><i class="ti ti-clock-dollar" aria-hidden="true"></i>Taux horaire</div>
+      <div class="sb-item"><i class="ti ti-calculator" aria-hidden="true"></i>Chiffrage matériaux</div>
+      <div class="sb-item"><i class="ti ti-chart-bar" aria-hidden="true"></i>Rentabilité</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Terrain</div>
+      <div class="sb-item"><i class="ti ti-file-text" aria-hidden="true"></i>Devis<span class="sb-badge">2</span></div>
+      <div class="sb-item"><i class="ti ti-receipt" aria-hidden="true"></i>Factures</div>
+      <div class="sb-item"><i class="ti ti-clipboard-check" aria-hidden="true"></i>PV de réception</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-label">Technique</div>
+      <div class="sb-item"><i class="ti ti-book" aria-hidden="true"></i>Bibliothèque DTU</div>
+      <div class="sb-item"><i class="ti ti-folder" aria-hidden="true"></i>Admin &amp; documents</div>
+    </div>
+    <div class="sb-bottom">
+      <div class="sb-item"><i class="ti ti-settings" aria-hidden="true"></i>Paramètres</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="page-eyebrow">Prix &amp; Marges · Étape 1</div>
+      <h1 class="page-title">Ton taux horaire viable</h1>
+      <p class="page-sub">Ce que tu dois facturer à l'heure pour couvrir toutes tes charges et te verser le salaire que tu veux. La base de tous tes devis.</p>
+    </div>
+
+    <div class="sim-grid">
+
+      <div class="inputs-col">
+
+        <div class="card">
+          <div class="card-title"><span class="card-num">01</span>Statut juridique</div>
+          <div class="card-sub">Les cotisations sociales varient fortement selon ton statut — elles déterminent une grande partie de ton taux horaire.</div>
+          <div class="statut-pills">
+            <button class="pill-btn" data-statut="micro" onclick="setStatut(this)">
+              Micro-entrepreneur
+              <span class="pill-btn-sub">~22% de charges</span>
+            </button>
+            <button class="pill-btn" data-statut="eurl" onclick="setStatut(this)">
+              EURL
+              <span class="pill-btn-sub">~45% de charges</span>
+            </button>
+            <button class="pill-btn active" data-statut="sasu" onclick="setStatut(this)">
+              SASU
+              <span class="pill-btn-sub">~82% de charges</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="card-num">02</span>Salaire net visé</div>
+          <div class="card-sub">Ce que tu veux réellement toucher chaque mois, après impôts. Sois honnête — c'est la base de tout le calcul.</div>
+          <div class="field">
+            <div class="field-label">
+              Salaire net visé
+              <span class="field-label-hint" id="salaire-display">2 500 €/mois</span>
+            </div>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="salaire-slider" min="1000" max="6000" step="100" value="2500" oninput="syncSalaire('slider')">
+              <input type="number" class="input-num" id="salaire-input" value="2500" min="500" max="10000" step="100" oninput="syncSalaire('input')">
+              <span class="input-suffix">€/mois</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="card-num">03</span>Congés annuels</div>
+          <div class="card-sub">Les jours que tu ne travailles pas dans l'année. Plus tu prends de congés, moins tu as d'heures pour récupérer tes charges — donc ton taux monte.</div>
+          <div class="field">
+            <div class="field-label">
+              Semaines de congés par an
+              <span class="field-label-hint" id="conges-display">5 semaines</span>
+            </div>
+            <div class="input-row">
+              <input type="range" class="input-slider" id="conges-slider" min="2" max="10" step="1" value="5" oninput="syncConges('slider')">
+              <input type="number" class="input-num" id="conges-input" value="5" min="1" max="12" step="1" oninput="syncConges('input')">
+              <span class="input-suffix">sem.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="card-num">04</span>Jours non facturables</div>
+          <div class="card-sub">C'est la variable la plus sous-estimée par les artisans. Ces jours tu travailles — mais tu ne factures pas. Coche tout ce qui s'applique à ton activité.</div>
+          <div class="nf-items">
+            <div class="nf-item active" data-days="3" onclick="toggleNF(this)">
+              <div class="nf-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="nf-info">
+                <div class="nf-name">Devis, préparation de chantier</div>
+                <div class="nf-desc">Métrés, estimations, appels clients, visites techniques non payées</div>
+              </div>
+              <div class="nf-days">~3 j/mois</div>
+            </div>
+            <div class="nf-item active" data-days="1" onclick="toggleNF(this)">
+              <div class="nf-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="nf-info">
+                <div class="nf-name">SAV et reprises</div>
+                <div class="nf-desc">Retours sur chantier, corrections, garanties exercées</div>
+              </div>
+              <div class="nf-days">~1 j/mois</div>
+            </div>
+            <div class="nf-item active" data-days="1" onclick="toggleNF(this)">
+              <div class="nf-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="nf-info">
+                <div class="nf-name">Administration et comptabilité</div>
+                <div class="nf-desc">Factures fournisseurs, déclarations, suivi de trésorerie</div>
+              </div>
+              <div class="nf-days">~1 j/mois</div>
+            </div>
+            <div class="nf-item" data-days="2" onclick="toggleNF(this)">
+              <div class="nf-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="nf-info">
+                <div class="nf-name">Déplacements non facturés</div>
+                <div class="nf-desc">Trajets chantier-fournisseur, livraisons, reconnaissance de site</div>
+              </div>
+              <div class="nf-days">~2 j/mois</div>
+            </div>
+            <div class="nf-item" data-days="1" onclick="toggleNF(this)">
+              <div class="nf-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="nf-info">
+                <div class="nf-name">Prospection et formation</div>
+                <div class="nf-desc">Recherche de clients, réseautage, montée en compétences</div>
+              </div>
+              <div class="nf-days">~1 j/mois</div>
+            </div>
+            <div class="nf-item" data-days="1" onclick="toggleNF(this)">
+              <div class="nf-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+              <div class="nf-info">
+                <div class="nf-name">Pannes, intempéries, imprévus</div>
+                <div class="nf-desc">Chantiers décalés, matériaux attendus, mauvais temps</div>
+              </div>
+              <div class="nf-days">~1 j/mois</div>
+            </div>
+          </div>
+          <div class="nf-total">
+            <span class="nf-total-label">Jours non facturables / mois</span>
+            <span class="nf-total-val" id="nf-total">5 jours</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="card-num">05</span>Charges fixes</div>
+          <div class="card-sub">Tout ce que tu paies chaque mois que tu travailles ou non. Ajuste selon ta situation réelle.</div>
+          <div class="charges-list">
+            <div class="charge-row">
+              <span class="charge-name">Véhicule (leasing, carburant, assurance)</span>
+              <input type="number" class="charge-input" id="ch-vehicule" value="600" min="0" step="50" oninput="calcul()">
+              <span class="charge-unit">€</span>
+            </div>
+            <div class="charge-row">
+              <span class="charge-name">RC Pro + Garantie décennale</span>
+              <input type="number" class="charge-input" id="ch-assurance" value="200" min="0" step="10" oninput="calcul()">
+              <span class="charge-unit">€</span>
+            </div>
+            <div class="charge-row">
+              <span class="charge-name">Outillage et consommables</span>
+              <input type="number" class="charge-input" id="ch-outils" value="150" min="0" step="10" oninput="calcul()">
+              <span class="charge-unit">€</span>
+            </div>
+            <div class="charge-row">
+              <span class="charge-name">Expert-comptable</span>
+              <input type="number" class="charge-input" id="ch-compta" value="100" min="0" step="10" oninput="calcul()">
+              <span class="charge-unit">€</span>
+            </div>
+            <div class="charge-row">
+              <span class="charge-name">Téléphone, logiciels, divers</span>
+              <input type="number" class="charge-input" id="ch-divers" value="80" min="0" step="10" oninput="calcul()">
+              <span class="charge-unit">€</span>
+            </div>
+          </div>
+          <div class="charges-total">
+            <span class="charges-total-label">Total charges fixes / mois</span>
+            <span class="charges-total-val" id="charges-total">1 130 €</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RÉSULTAT -->
+      <div class="result-col">
+        <div class="result-card">
+          <div class="result-eyebrow">Résultat</div>
+
+          <div class="taux-alert" id="taux-alert">
+            <div class="taux-alert-text" id="taux-alert-text"></div>
+          </div>
+
+          <div class="taux-grid">
+            <div class="taux-item">
+              <div class="taux-label">Taux minimum viable</div>
+              <div class="taux-val" id="taux-min">—<span class="unit">€/h</span></div>
+              <div class="taux-desc">En dessous de ce taux, tu travailles à perte.</div>
+            </div>
+            <div class="taux-item featured">
+              <div class="taux-label green">Taux recommandé</div>
+              <div class="taux-val" id="taux-reco">—<span class="unit">€/h</span></div>
+              <div class="taux-desc">+20% pour absorber les imprévus. À utiliser pour tes devis standards.</div>
+            </div>
+            <div class="taux-item">
+              <div class="taux-label">Taux chantier technique / urgence</div>
+              <div class="taux-val" id="taux-tech">—<span class="unit">€/h</span></div>
+              <div class="taux-desc">+40% pour les chantiers complexes, les urgences, les conditions difficiles.</div>
+            </div>
+          </div>
+
+          <div class="result-summary" id="result-summary"></div>
+
+          <div class="hours-alert" id="hours-alert"></div>
+
+          <button class="btn-detail" id="btn-detail" onclick="toggleDetail()">
+            <i class="ti ti-chevron-down" aria-hidden="true"></i>
+            Voir le détail du calcul
+          </button>
+
+          <div class="detail-panel" id="detail-panel">
+            <div class="detail-line"><span class="detail-line-label">Salaire net mensuel visé</span><span class="detail-line-val" id="d-salaire-net">—</span></div>
+            <div class="detail-line"><span class="detail-line-label">Cotisations sociales (<span id="d-taux-charges">—</span>)</span><span class="detail-line-val" id="d-cotisations">—</span></div>
+            <div class="detail-line"><span class="detail-line-label">Charges fixes mensuelles</span><span class="detail-line-val" id="d-charges-fixes">—</span></div>
+            <div class="detail-line total"><span class="detail-line-label">Coût total mensuel à couvrir</span><span class="detail-line-val" id="d-cout-total">—</span></div>
+            <div class="detail-line"><span class="detail-line-label">Jours ouvrés/an (hors congés)</span><span class="detail-line-val" id="d-jours-ouvres">—</span></div>
+            <div class="detail-line"><span class="detail-line-label">Jours non facturables/an</span><span class="detail-line-val" id="d-jours-nf">—</span></div>
+            <div class="detail-line"><span class="detail-line-label">Jours réellement facturables/an</span><span class="detail-line-val" id="d-jours-fact">—</span></div>
+            <div class="detail-line total"><span class="detail-line-label">Heures facturables/an (×7h/j)</span><span class="detail-line-val" id="d-heures">—</span></div>
+            <div class="detail-line"><span class="detail-line-label">Taux minimum (coût / heures)</span><span class="detail-line-val" id="d-tmin">—</span></div>
+            <div class="detail-line"><span class="detail-line-label">Taux recommandé (×1,20)</span><span class="detail-line-val" id="d-treco">—</span></div>
+            <div class="detail-line"><span class="detail-line-label">Taux technique (×1,40)</span><span class="detail-line-val" id="d-ttech">—</span></div>
+          </div>
+
+          <button class="btn-inject" onclick="alert('Taux injecté dans le calculateur de rentabilité.\n(À connecter via Supabase)')">
+            <i class="ti ti-arrow-right" aria-hidden="true"></i>
+            Utiliser dans le calculateur de rentabilité
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const CHARGES_SOCIALES = { micro: 0.22, eurl: 0.45, sasu: 0.82 };
+const state = { statut: 'sasu', salaire: 2500, conges: 5, nfDays: 5 };
+
+function setStatut(btn) {
+  document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.statut = btn.dataset.statut;
+  calcul();
+}
+
+function syncSalaire(from) {
+  const v = from === 'slider'
+    ? parseInt(document.getElementById('salaire-slider').value)
+    : parseInt(document.getElementById('salaire-input').value) || 0;
+  state.salaire = v;
+  document.getElementById('salaire-slider').value = v;
+  document.getElementById('salaire-input').value = v;
+  document.getElementById('salaire-display').textContent = v.toLocaleString('fr-FR') + ' €/mois';
+  calcul();
+}
+
+function syncConges(from) {
+  const v = from === 'slider'
+    ? parseInt(document.getElementById('conges-slider').value)
+    : parseInt(document.getElementById('conges-input').value) || 0;
+  state.conges = v;
+  document.getElementById('conges-slider').value = v;
+  document.getElementById('conges-input').value = v;
+  document.getElementById('conges-display').textContent = v + ' semaine' + (v > 1 ? 's' : '');
+  calcul();
+}
+
+function toggleNF(el) {
+  el.classList.toggle('active');
+  let total = 0;
+  document.querySelectorAll('.nf-item.active').forEach(e => { total += parseInt(e.dataset.days); });
+  state.nfDays = total;
+  document.getElementById('nf-total').textContent = total + ' jour' + (total > 1 ? 's' : '');
+  calcul();
+}
+
+function getCharges() {
+  return ['ch-vehicule','ch-assurance','ch-outils','ch-compta','ch-divers']
+    .reduce((s, id) => s + (parseFloat(document.getElementById(id).value) || 0), 0);
+}
+
+function calcul() {
+  const charges = getCharges();
+  const taux = CHARGES_SOCIALES[state.statut];
+  const salaireBrut = state.statut === 'micro'
+    ? state.salaire / (1 - taux)
+    : state.salaire * (1 + taux);
+  const coutMensuel = salaireBrut + charges;
+  const coutAnnuel  = coutMensuel * 12;
+  const joursOuvres = (52 - state.conges) * 5;
+  const joursNFAn   = state.nfDays * 12;
+  const joursFact   = Math.max(joursOuvres - joursNFAn, 1);
+  const heuresFact  = joursFact * 7;
+  const tauxMin  = coutAnnuel / heuresFact;
+  const tauxReco = tauxMin * 1.20;
+  const tauxTech = tauxMin * 1.40;
+  const fmt = v => Math.round(v).toLocaleString('fr-FR');
+
+  document.getElementById('taux-min').innerHTML  = fmt(tauxMin)  + '<span class="unit"> €/h</span>';
+  document.getElementById('taux-reco').innerHTML = fmt(tauxReco) + '<span class="unit"> €/h</span>';
+  document.getElementById('taux-tech').innerHTML = fmt(tauxTech) + '<span class="unit"> €/h</span>';
+  document.getElementById('charges-total').textContent = fmt(charges) + ' €';
+
+  const jFMois = Math.round(joursFact / 12 * 10) / 10;
+  document.getElementById('result-summary').innerHTML =
+    `Avec <strong>${state.conges} semaine${state.conges > 1 ? 's' : ''}</strong> de congés et <strong>${state.nfDays} jours/mois</strong> non facturés, tu travailles réellement <strong>${jFMois} jours facturables par mois</strong> — soit <strong>${fmt(heuresFact)} heures par an</strong>. Pour couvrir ton salaire net de <em>${fmt(state.salaire)} €</em> et tes charges, tu dois facturer au minimum <em>${fmt(tauxMin)} €/h</em>.`;
+
+  const hoursAlert = document.getElementById('hours-alert');
+  if (joursFact < 130) {
+    hoursAlert.classList.add('visible');
+    hoursAlert.textContent = `⚠ Attention : tu n'as que ${joursFact} jours facturables par an (${jFMois}/mois). C'est très bas — vérifies tes jours non facturables et tes congés.`;
+  } else { hoursAlert.classList.remove('visible'); }
+
+  const alert = document.getElementById('taux-alert');
+  const alertText = document.getElementById('taux-alert-text');
+  if (tauxMin > 80) {
+    alert.classList.add('visible');
+    alertText.textContent = `Ton taux minimum est élevé. C'est normal avec un statut ${state.statut.toUpperCase()} et un salaire visé de ${fmt(state.salaire)} €. Vérifie que tu peux te positionner à ce niveau sur ton marché local.`;
+  } else { alert.classList.remove('visible'); }
+
+  const cotisations = Math.round(state.statut === 'micro' ? salaireBrut - state.salaire : state.salaire * taux);
+  document.getElementById('d-salaire-net').textContent  = fmt(state.salaire) + ' €/mois';
+  document.getElementById('d-taux-charges').textContent = Math.round(taux * 100) + '%';
+  document.getElementById('d-cotisations').textContent  = fmt(cotisations) + ' €/mois';
+  document.getElementById('d-charges-fixes').textContent = fmt(charges) + ' €/mois';
+  document.getElementById('d-cout-total').textContent   = fmt(Math.round(coutMensuel)) + ' €/mois';
+  document.getElementById('d-jours-ouvres').textContent = joursOuvres + ' jours';
+  document.getElementById('d-jours-nf').textContent     = joursNFAn + ' jours';
+  document.getElementById('d-jours-fact').textContent   = joursFact + ' jours';
+  document.getElementById('d-heures').textContent       = heuresFact + ' heures';
+  document.getElementById('d-tmin').textContent  = fmt(tauxMin)  + ' €/h';
+  document.getElementById('d-treco').textContent = fmt(tauxReco) + ' €/h';
+  document.getElementById('d-ttech').textContent = fmt(tauxTech) + ' €/h';
+  window._taux_reco = Math.round(tauxReco);
+}
+
+function toggleDetail() {
+  document.getElementById('detail-panel').classList.toggle('visible');
+  document.getElementById('btn-detail').classList.toggle('open');
+}
+
+// Init
+let total = 0;
+document.querySelectorAll('.nf-item.active').forEach(e => { total += parseInt(e.dataset.days); });
+state.nfDays = total;
+calcul();
+</script>
+
+</body>
+</html>

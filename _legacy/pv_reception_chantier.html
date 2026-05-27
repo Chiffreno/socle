@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ChiffReno — Réception chantier</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0e;
+  --surface: #1a1a18;
+  --surface2: #222220;
+  --border: #2e2e2b;
+  --border2: #3a3a36;
+  --text: #f0efea;
+  --text2: #a0a09a;
+  --text3: #606058;
+  --green: #2ecc71;
+  --green-bg: #0d2e1a;
+  --green-border: #1a5c35;
+  --orange: #f39c12;
+  --orange-bg: #2a1f08;
+  --orange-border: #7a5010;
+  --red: #e74c3c;
+  --red-bg: #2a0f0d;
+  --red-border: #7a2018;
+  --mono: 'DM Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+  --body: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: var(--body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── ÉCRAN ── */
+.screen { display: none; flex-direction: column; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ── HEADER ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.logo {
+  font-family: var(--display);
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+
+.logo span { color: var(--green); }
+
+.topbar-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+  font-family: var(--body);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-back span { font-size: 13px; }
+
+/* ── CONTENU ── */
+.content { flex: 1; padding: 24px 20px; overflow-y: auto; }
+
+/* ── ÉCRAN 1 — ACCUEIL ── */
+.home-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.home-title {
+  font-family: var(--display);
+  font-size: 3.5rem;
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.home-sub {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+
+.chantier-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+.chantier-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chantier-card:hover { border-color: var(--border2); background: var(--surface2); }
+
+.chantier-card-info { flex: 1; }
+
+.chantier-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.chantier-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.chantier-arrow {
+  color: var(--text3);
+  font-size: 18px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  background: var(--green);
+  color: #0a1a0f;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--body);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: -0.01em;
+}
+
+.btn-primary:hover { background: #27ae60; }
+
+.btn-secondary {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--body);
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.15s;
+}
+
+.btn-secondary:hover { border-color: var(--text3); color: var(--text); }
+
+/* ── ÉCRAN 2 — NOUVEAU CHANTIER ── */
+.form-group { margin-bottom: 20px; }
+
+label.field-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+input[type=text], input[type=date], select, textarea {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: var(--body);
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--green);
+}
+
+input::placeholder, textarea::placeholder { color: var(--text3); }
+
+select option { background: var(--surface2); }
+
+.lot-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lot-chip {
+  padding: 8px 14px;
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  font-size: 13px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--surface);
+  user-select: none;
+}
+
+.lot-chip:hover { border-color: var(--text3); }
+.lot-chip.selected {
+  background: var(--green-bg);
+  border-color: var(--green-border);
+  color: var(--green);
+}
+
+/* ── ÉCRAN 3 — PV ── */
+.pv-header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.pv-chantier {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  letter-spacing: 0.03em;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.pv-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.7;
+}
+
+.pv-meta strong { color: var(--text2); }
+
+/* Lot section */
+.lot-section { margin-bottom: 28px; }
+
+.lot-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.lot-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.lot-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.lot-ref {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+}
+
+/* Point de contrôle */
+.point-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.point-card.conforme { border-color: var(--green-border); }
+.point-card.reserve  { border-color: var(--orange-border); }
+.point-card.refus    { border-color: var(--red-border); }
+
+.point-main {
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.point-number {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  flex-shrink: 0;
+  margin-top: 2px;
+  min-width: 20px;
+}
+
+.point-content { flex: 1; }
+
+.point-text {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.45;
+  margin-bottom: 4px;
+}
+
+.point-val {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--surface2);
+  padding: 2px 7px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* Boutons 3 états */
+.point-actions {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 14px;
+}
+
+.state-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--body);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: var(--text3);
+}
+
+.state-btn:hover { border-color: var(--border2); }
+
+.state-btn.ok.active {
+  background: var(--green-bg);
+  border-color: var(--green-border);
+  color: var(--green);
+}
+
+.state-btn.rr.active {
+  background: var(--orange-bg);
+  border-color: var(--orange-border);
+  color: var(--orange);
+}
+
+.state-btn.ko.active {
+  background: var(--red-bg);
+  border-color: var(--red-border);
+  color: var(--red);
+}
+
+/* Commentaire & photo expandables */
+.point-extra {
+  display: none;
+  padding: 0 16px 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+  padding-top: 12px;
+}
+
+.point-card.reserve .point-extra,
+.point-card.refus .point-extra { display: block; }
+
+.extra-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+
+.comment-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text);
+  font-family: var(--body);
+  resize: none;
+  outline: none;
+  min-height: 60px;
+  margin-bottom: 10px;
+}
+
+.comment-input:focus { border-color: var(--orange); }
+.point-card.refus .comment-input:focus { border-color: var(--red); }
+
+.photo-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border: 1px dashed var(--border2);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text3);
+  cursor: pointer;
+  width: 100%;
+  font-family: var(--body);
+  transition: all 0.15s;
+}
+
+.photo-btn:hover { border-color: var(--text3); color: var(--text2); }
+.photo-btn input { display: none; }
+
+.photo-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.photo-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border2);
+}
+
+/* Progress sticky */
+.progress-bar-wrap {
+  position: sticky;
+  top: 57px;
+  z-index: 40;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+}
+
+.progress-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.progress-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.stat-dot.g { background: var(--green); }
+.stat-dot.o { background: var(--orange); }
+.stat-dot.r { background: var(--red); }
+
+.progress-track {
+  height: 3px;
+  background: var(--surface2);
+  border-radius: 99px;
+  display: flex;
+  overflow: hidden;
+  gap: 1px;
+}
+
+.prog-seg {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.prog-seg.g { background: var(--green); }
+.prog-seg.o { background: var(--orange); }
+.prog-seg.r { background: var(--red); }
+
+/* CTA générer */
+.generate-wrap {
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  bottom: 0;
+}
+
+/* ── ÉCRAN 4 — PV GÉNÉRÉ ── */
+.pv-result {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.pv-result-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.pv-result-title {
+  font-family: var(--display);
+  font-size: 2rem;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.pv-result-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.8;
+}
+
+.pv-result-meta b { color: var(--text2); }
+
+.pv-lot-result { margin-bottom: 20px; }
+
+.pv-lot-result-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pv-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.pv-line:last-child { border-bottom: none; }
+
+.pv-line-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pv-line-badge.ok { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.pv-line-badge.rr { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
+.pv-line-badge.ko { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+
+.pv-line-text { flex: 1; color: var(--text2); line-height: 1.4; }
+.pv-line-comment { font-size: 12px; color: var(--text3); margin-top: 3px; font-style: italic; }
+
+.pv-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pv-sum-box {
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.pv-sum-box.g { background: var(--green-bg); border: 1px solid var(--green-border); }
+.pv-sum-box.o { background: var(--orange-bg); border: 1px solid var(--orange-border); }
+.pv-sum-box.r { background: var(--red-bg); border: 1px solid var(--red-border); }
+
+.pv-sum-n {
+  font-family: var(--display);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.pv-sum-box.g .pv-sum-n { color: var(--green); }
+.pv-sum-box.o .pv-sum-n { color: var(--orange); }
+.pv-sum-box.r .pv-sum-n { color: var(--red); }
+
+.pv-sum-l {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.verdict-banner {
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.verdict-banner.ok { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.verdict-banner.warn { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
+.verdict-banner.ko { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+
+/* ── MISC ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+
+@media print {
+  body { background: white; color: black; max-width: 100%; }
+  .topbar, .progress-bar-wrap, .generate-wrap, .btn-primary, .btn-secondary { display: none !important; }
+  .screen#screen-result { display: flex !important; }
+  .pv-result { border: 1px solid #ccc; background: white; }
+  .pv-result-title, .lot-name { color: black; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════ -->
+<!-- ÉCRAN 1 — ACCUEIL               -->
+<!-- ════════════════════════════════ -->
+<div class="screen active" id="screen-home">
+
+  <div class="topbar">
+    <div class="logo">Chiff<span>Reno</span></div>
+    <div class="topbar-tag">Réception</div>
+  </div>
+
+  <div class="content">
+    <div class="home-eyebrow">Outil de réception</div>
+    <h1 class="home-title">PV<br>CHANTIER</h1>
+    <p class="home-sub">Valide les points critiques lot par lot.<br>Génère un constat daté et opposable.</p>
+
+    <div class="section-label">Chantiers récents</div>
+
+    <div class="chantier-list" id="chantier-list">
+      <div class="chantier-card" onclick="openChantier('La Ferté-sous-Jouarre', 'Rénovation RDC 88m²')">
+        <div class="chantier-card-info">
+          <div class="chantier-name">La Ferté-sous-Jouarre</div>
+          <div class="chantier-meta">Rénovation RDC 88m² — en cours</div>
+        </div>
+        <div class="chantier-arrow">›</div>
+      </div>
+      <div class="chantier-card" onclick="openChantier('Chantier Bretagne', 'SDB RDC béton')">
+        <div class="chantier-card-info">
+          <div class="chantier-name">Chantier Bretagne</div>
+          <div class="chantier-meta">SDB RDC béton — en cours</div>
+        </div>
+        <div class="chantier-arrow">›</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="goTo('screen-new')">+ Nouveau chantier</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- ÉCRAN 2 — NOUVEAU CHANTIER      -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="screen-new">
+
+  <div class="topbar">
+    <button class="btn-back" onclick="goTo('screen-home')">← <span>Retour</span></button>
+    <div class="topbar-tag">Nouveau chantier</div>
+  </div>
+
+  <div class="content">
+    <div class="form-group">
+      <label class="field-label">Nom du chantier</label>
+      <input type="text" id="new-nom" placeholder="Ex. Rénovation appartement Meaux">
+    </div>
+    <div class="form-group">
+      <label class="field-label">Adresse</label>
+      <input type="text" id="new-adresse" placeholder="Rue, ville">
+    </div>
+    <div class="form-group">
+      <label class="field-label">Date de réception</label>
+      <input type="date" id="new-date">
+    </div>
+    <div class="form-group">
+      <label class="field-label">Artisan / Entreprise</label>
+      <input type="text" id="new-artisan" placeholder="Nom ou raison sociale" value="B. Gomes — SASU">
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label class="field-label">Lots à réceptionner</label>
+      <div class="lot-chips" id="lot-chips">
+        <div class="lot-chip" data-lot="chape" onclick="toggleLot(this)">🪨 Chapes</div>
+        <div class="lot-chip" data-lot="carrelage" onclick="toggleLot(this)">🟫 Carrelage</div>
+        <div class="lot-chip" data-lot="platrerie" onclick="toggleLot(this)">🧱 Plâtrerie BA13</div>
+        <div class="lot-chip" data-lot="isolation" onclick="toggleLot(this)">🌡️ Isolation combles</div>
+        <div class="lot-chip" data-lot="vmc" onclick="toggleLot(this)">⚡ VMC</div>
+        <div class="lot-chip" data-lot="peinture-int" onclick="toggleLot(this)">🖌️ Peinture intérieure</div>
+        <div class="lot-chip" data-lot="peinture-ext" onclick="toggleLot(this)">🏠 Peinture façade</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="startPV()" style="margin-top:8px;">Démarrer la réception →</button>
+    <button class="btn-secondary" onclick="goTo('screen-home')">Annuler</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- ÉCRAN 3 — SAISIE PV             -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="screen-pv">
+
+  <div class="topbar">
+    <button class="btn-back" onclick="goTo('screen-new')">← <span>Modifier</span></button>
+    <div class="topbar-tag" id="pv-topbar-tag">PV en cours</div>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-stats">
+      <div style="display:flex;gap:12px;">
+        <div class="progress-stat"><div class="stat-dot g"></div><span id="cnt-ok" style="color:var(--green);">0</span></div>
+        <div class="progress-stat"><div class="stat-dot o"></div><span id="cnt-rr" style="color:var(--orange);">0</span></div>
+        <div class="progress-stat"><div class="stat-dot r"></div><span id="cnt-ko" style="color:var(--red);">0</span></div>
+      </div>
+      <div class="progress-stat" style="color:var(--text3);font-size:11px;" id="cnt-total">0 / 0 points</div>
+    </div>
+    <div class="progress-track">
+      <div class="prog-seg g" id="prog-g" style="width:0%"></div>
+      <div class="prog-seg o" id="prog-o" style="width:0%"></div>
+      <div class="prog-seg r" id="prog-r" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="content" id="pv-content"></div>
+
+  <div class="generate-wrap">
+    <button class="btn-primary" onclick="generatePV()">Générer le PV de réception →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- ÉCRAN 4 — PV GÉNÉRÉ             -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="screen-result">
+
+  <div class="topbar">
+    <button class="btn-back" onclick="goTo('screen-pv')">← <span>Modifier</span></button>
+    <div class="topbar-tag">PV généré</div>
+  </div>
+
+  <div class="content">
+    <div id="result-content"></div>
+    <button class="btn-primary" onclick="window.print()">🖨 Imprimer / Sauvegarder PDF</button>
+    <button class="btn-secondary" onclick="goTo('screen-home')">Nouveau chantier</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════
+// DATA — Points de contrôle par lot
+// ═══════════════════════════════════
+
+const LOTS = {
+  chape: {
+    name: 'Chapes et dalles',
+    ref: 'DTU 26.2',
+    icon: '🪨',
+    points: [
+      { text: 'Support propre — sans laitance ni huile', val: null },
+      { text: 'Épaisseur chape', val: '≥ 30 mm adhérente / ≥ 50 mm flottante' },
+      { text: 'Bande résiliente périphérique posée', val: '8–10 mm' },
+      { text: 'Planéité finie', val: '≤ 5 mm / 2 m' },
+      { text: 'Fractionnement réalisé', val: 'tous les 25 m²' },
+      { text: 'Délai de séchage respecté avant recouvrement', val: '≥ 28 j (ciment 40 mm)' },
+      { text: 'Résistance mécanique suffisante', val: '≥ 16 MPa' },
+    ]
+  },
+  carrelage: {
+    name: 'Carrelage collé',
+    ref: 'DTU 52.2',
+    icon: '🟫',
+    points: [
+      { text: 'Humidité résiduelle du support vérifiée', val: '< 5% HR' },
+      { text: 'Planéité support réceptionné', val: '≤ 5 mm / 2 m' },
+      { text: 'Joint périphérique posé en fond de pièce', val: '5–10 mm' },
+      { text: 'Encollage double-face carreaux ≥ 30×30 cm', val: null },
+      { text: 'Taux de collage contrôlé', val: '≥ 65% (sec) / ≥ 80% (humide)' },
+      { text: 'Classe de colle adaptée au support', val: 'C2S1 mini zone humide' },
+      { text: 'Membrane SPEC posée en zone EB+', val: null },
+      { text: 'Largeur de joint de pose', val: '≥ 2 mm — jamais joint vif' },
+    ]
+  },
+  platrerie: {
+    name: 'Plâtrerie — Cloisons BA13',
+    ref: 'DTU 25.41',
+    icon: '🧱',
+    points: [
+      { text: 'Gros œuvre terminé, hors d\'eau hors d\'air', val: null },
+      { text: 'Entraxe montants ossature', val: '≤ 60 cm' },
+      { text: 'Bande acoustique sous rails sol et plafond', val: null },
+      { text: 'Joint désolidarisant périphérique (sol, plafond, murs)', val: null },
+      { text: 'Décalage des plaques entre les deux faces', val: '≥ 1/3 hauteur' },
+      { text: 'Armature bande sur joints avant enduit', val: null },
+      { text: 'Délai entre passes d\'enduit respecté', val: '≥ 24h' },
+    ]
+  },
+  isolation: {
+    name: 'Isolation combles',
+    ref: 'DTU 45.1',
+    icon: '🌡️',
+    points: [
+      { text: 'Charpente saine vérifiée avant intervention', val: null },
+      { text: 'Pare-vapeur continu côté intérieur', val: 'Sd ≥ 18 m' },
+      { text: 'Raccords pare-vapeur collés au ruban', val: null },
+      { text: 'Lame d\'air ventilée conservée sous couverture', val: '≥ 2 cm' },
+      { text: 'Isolation continue jusqu\'aux sablières', val: null },
+      { text: 'Coffrage autour des spots et luminaires', val: null },
+      { text: 'Résistance thermique atteinte', val: 'R ≥ 7 m².K/W' },
+    ]
+  },
+  vmc: {
+    name: 'VMC — Ventilation',
+    ref: 'DTU 68.1',
+    icon: '⚡',
+    points: [
+      { text: 'Bouches d\'extraction dans toutes pièces humides', val: 'SDB, WC, cuisine' },
+      { text: 'Débits vérifiés à la mise en service', val: 'cuisine 45 / SDB 15 m³/h' },
+      { text: 'Conduits non écrasés, pente vers extracteur', val: '≥ 0,5 cm/m' },
+      { text: 'Sortie terminale correctement positionnée', val: '≥ 40 cm du faîtage' },
+      { text: 'Entrées d\'air présentes en menuiseries', val: null },
+      { text: 'Détalonnage des portes intérieures', val: '≥ 1 cm sous porte' },
+      { text: 'Niveau sonore acceptable', val: '≤ 25 dB(A) en chambre' },
+    ]
+  },
+  'peinture-int': {
+    name: 'Peinture intérieure',
+    ref: 'DTU 59.1',
+    icon: '🖌️',
+    points: [
+      { text: 'Support sec avant application', val: '< 5% HR' },
+      { text: 'Primaire / sous-couche appliqué sur support neuf', val: null },
+      { text: 'Rebouchage et ponçage réalisés', val: null },
+      { text: 'Nombre de couches finition', val: '≥ 2 couches sur neuf' },
+      { text: 'Délai entre couches respecté', val: '≥ 4h à 20°C' },
+      { text: 'Peinture hydrofuge en zone humide', val: null },
+      { text: 'Teinte conforme à la validation client', val: null },
+    ]
+  },
+  'peinture-ext': {
+    name: 'Peinture façade',
+    ref: 'DTU 59.3',
+    icon: '🏠',
+    points: [
+      { text: 'Nettoyage HP réalisé et séchage respecté', val: '≥ 48h' },
+      { text: 'Traitement fongicide si mousses présentes', val: null },
+      { text: 'Fissures > 0,2 mm traitées avant peinture', val: null },
+      { text: 'Primaire / fixateur appliqué', val: null },
+      { text: 'Application par pan entier sans reprise à sec', val: null },
+      { text: 'Nombre de couches', val: '≥ 2 couches' },
+      { text: 'Teinte conforme à la validation client', val: null },
+    ]
+  }
+};
+
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+
+let state = {
+  chantier: { nom: '', adresse: '', date: '', artisan: '' },
+  lots: [],
+  points: {},  // { lotId_pointIdx: 'ok'|'rr'|'ko'|null }
+  comments: {},
+  photos: {},
+};
+
+// ═══════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════
+
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function openChantier(nom, desc) {
+  document.getElementById('new-nom').value = nom;
+  document.getElementById('new-adresse').value = desc;
+  document.getElementById('new-date').value = new Date().toISOString().split('T')[0];
+  goTo('screen-new');
+}
+
+// ═══════════════════════════════════
+// SÉLECTION LOTS
+// ═══════════════════════════════════
+
+function toggleLot(el) {
+  el.classList.toggle('selected');
+}
+
+// ═══════════════════════════════════
+// DÉMARRER PV
+// ═══════════════════════════════════
+
+function startPV() {
+  const nom = document.getElementById('new-nom').value.trim();
+  if (!nom) { alert('Saisissez un nom de chantier.'); return; }
+
+  const selectedLots = [...document.querySelectorAll('.lot-chip.selected')].map(el => el.dataset.lot);
+  if (selectedLots.length === 0) { alert('Sélectionnez au moins un lot.'); return; }
+
+  state.chantier = {
+    nom, 
+    adresse: document.getElementById('new-adresse').value,
+    date: document.getElementById('new-date').value || new Date().toISOString().split('T')[0],
+    artisan: document.getElementById('new-artisan').value,
+  };
+  state.lots = selectedLots;
+  state.points = {};
+  state.comments = {};
+  state.photos = {};
+
+  renderPV();
+  goTo('screen-pv');
+}
+
+// ═══════════════════════════════════
+// RENDER PV
+// ═══════════════════════════════════
+
+function renderPV() {
+  const d = state.chantier;
+  const dateStr = d.date ? new Date(d.date + 'T12:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) : '—';
+
+  document.getElementById('pv-topbar-tag').textContent = d.nom;
+
+  const content = document.getElementById('pv-content');
+  content.innerHTML = '';
+
+  // Header info
+  const hdr = document.createElement('div');
+  hdr.className = 'pv-header';
+  hdr.innerHTML = `
+    <div class="pv-chantier">${d.nom}</div>
+    <div class="pv-meta">
+      <strong>Date</strong> ${dateStr}<br>
+      <strong>Artisan</strong> ${d.artisan || '—'}<br>
+      <strong>Adresse</strong> ${d.adresse || '—'}
+    </div>
+  `;
+  content.appendChild(hdr);
+
+  // Lots
+  state.lots.forEach(lotId => {
+    const lot = LOTS[lotId];
+    if (!lot) return;
+
+    const section = document.createElement('div');
+    section.className = 'lot-section';
+    section.innerHTML = `
+      <div class="lot-title">
+        <div class="lot-icon">${lot.icon}</div>
+        <div>
+          <div class="lot-name">${lot.name}</div>
+          <div class="lot-ref">${lot.ref}</div>
+        </div>
+      </div>
+    `;
+
+    lot.points.forEach((pt, i) => {
+      const key = `${lotId}_${i}`;
+      const current = state.points[key] || null;
+
+      const card = document.createElement('div');
+      card.className = 'point-card' + (current ? ' ' + current : '');
+      card.id = `card-${key}`;
+
+      card.innerHTML = `
+        <div class="point-main">
+          <span class="point-number">${String(i+1).padStart(2,'0')}</span>
+          <div class="point-content">
+            <div class="point-text">${pt.text}</div>
+            ${pt.val ? `<span class="point-val">${pt.val}</span>` : ''}
+          </div>
+        </div>
+        <div class="point-actions">
+          <button class="state-btn ok${current==='ok'?' active':''}" onclick="setState('${key}','ok',this)">
+            ✓ Conforme
+          </button>
+          <button class="state-btn rr${current==='rr'?' active':''}" onclick="setState('${key}','rr',this)">
+            ! Réserve
+          </button>
+          <button class="state-btn ko${current==='ko'?' active':''}" onclick="setState('${key}','ko',this)">
+            ✗ Refus
+          </button>
+        </div>
+        <div class="point-extra" id="extra-${key}">
+          <div class="extra-label">Commentaire</div>
+          <textarea class="comment-input" id="comment-${key}" 
+            placeholder="${current==='rr'?'Décrire la réserve…':'Motif de refus…'}"
+            oninput="state.comments['${key}']=this.value">${state.comments[key]||''}</textarea>
+          <label class="photo-btn">
+            <input type="file" accept="image/*" capture="environment" multiple onchange="handlePhoto('${key}',this)">
+            📷 Ajouter une photo
+          </label>
+          <div class="photo-thumbs" id="thumbs-${key}"></div>
+        </div>
+      `;
+
+      // Restaurer les photos
+      setTimeout(() => {
+        const thumbs = document.getElementById(`thumbs-${key}`);
+        if (thumbs && state.photos[key]) {
+          state.photos[key].forEach(src => {
+            const img = document.createElement('img');
+            img.className = 'photo-thumb';
+            img.src = src;
+            thumbs.appendChild(img);
+          });
+        }
+      }, 50);
+
+      section.appendChild(card);
+    });
+
+    content.appendChild(section);
+  });
+
+  updateProgress();
+}
+
+// ═══════════════════════════════════
+// ÉTAT DES POINTS
+// ═══════════════════════════════════
+
+function setState(key, val, btn) {
+  // Toggle si déjà actif
+  const prev = state.points[key];
+  const newVal = prev === val ? null : val;
+  state.points[key] = newVal;
+
+  const card = document.getElementById(`card-${key}`);
+  card.className = 'point-card' + (newVal ? ' ' + newVal : '');
+
+  // Boutons
+  card.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+  if (newVal) btn.classList.add('active');
+
+  // Commentaire visible si réserve ou refus
+  const extra = document.getElementById(`extra-${key}`);
+  if (extra) extra.style.display = (newVal === 'rr' || newVal === 'ko') ? 'block' : 'none';
+
+  updateProgress();
+}
+
+function handlePhoto(key, input) {
+  if (!input.files.length) return;
+  if (!state.photos[key]) state.photos[key] = [];
+  const thumbs = document.getElementById(`thumbs-${key}`);
+
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      state.photos[key].push(e.target.result);
+      const img = document.createElement('img');
+      img.className = 'photo-thumb';
+      img.src = e.target.result;
+      thumbs.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ═══════════════════════════════════
+// PROGRESS
+// ═══════════════════════════════════
+
+function updateProgress() {
+  let ok = 0, rr = 0, ko = 0, total = 0;
+
+  state.lots.forEach(lotId => {
+    const lot = LOTS[lotId];
+    if (!lot) return;
+    lot.points.forEach((_, i) => {
+      total++;
+      const v = state.points[`${lotId}_${i}`];
+      if (v === 'ok') ok++;
+      else if (v === 'rr') rr++;
+      else if (v === 'ko') ko++;
+    });
+  });
+
+  document.getElementById('cnt-ok').textContent = ok;
+  document.getElementById('cnt-rr').textContent = rr;
+  document.getElementById('cnt-ko').textContent = ko;
+  document.getElementById('cnt-total').textContent = `${ok+rr+ko} / ${total} points`;
+
+  const pOk = total > 0 ? ok/total*100 : 0;
+  const pRr = total > 0 ? rr/total*100 : 0;
+  const pKo = total > 0 ? ko/total*100 : 0;
+
+  document.getElementById('prog-g').style.width = pOk + '%';
+  document.getElementById('prog-o').style.width = pRr + '%';
+  document.getElementById('prog-r').style.width = pKo + '%';
+}
+
+// ═══════════════════════════════════
+// GÉNÉRER PV
+// ═══════════════════════════════════
+
+function generatePV() {
+  const d = state.chantier;
+  const dateStr = d.date ? new Date(d.date + 'T12:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) : new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+
+  let totalOk = 0, totalRr = 0, totalKo = 0, totalAll = 0;
+
+  let lotsHTML = '';
+
+  state.lots.forEach(lotId => {
+    const lot = LOTS[lotId];
+    if (!lot) return;
+
+    let lotOk = 0, lotRr = 0, lotKo = 0;
+    let linesHTML = '';
+
+    lot.points.forEach((pt, i) => {
+      const key = `${lotId}_${i}`;
+      const v = state.points[key];
+      const comment = state.comments[key] || '';
+      const photos = state.photos[key] || [];
+
+      if (v === 'ok') { lotOk++; totalOk++; }
+      else if (v === 'rr') { lotRr++; totalRr++; }
+      else if (v === 'ko') { lotKo++; totalKo++; }
+      totalAll++;
+
+      const badgeClass = v === 'ok' ? 'ok' : v === 'rr' ? 'rr' : v === 'ko' ? 'ko' : 'rr';
+      const badgeLabel = v === 'ok' ? '✓ Conforme' : v === 'rr' ? '! Réserve' : v === 'ko' ? '✗ Refus' : '— N/A';
+      const badgeCls = v ? badgeClass : 'rr';
+
+      linesHTML += `
+        <div class="pv-line">
+          <span class="pv-line-badge ${badgeCls}">${badgeLabel}</span>
+          <div class="pv-line-text">
+            ${pt.text}${pt.val ? ` <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">${pt.val}</span>` : ''}
+            ${comment ? `<div class="pv-line-comment">→ ${comment}</div>` : ''}
+            ${photos.length ? `<div style="display:flex;gap:6px;margin-top:6px;">${photos.map(s=>`<img src="${s}" style="width:56px;height:56px;border-radius:6px;object-fit:cover;border:1px solid var(--border);">`).join('')}</div>` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    lotsHTML += `
+      <div class="pv-lot-result">
+        <div class="pv-lot-result-title">${lot.icon} ${lot.name} — ${lot.ref}</div>
+        ${linesHTML}
+      </div>
+    `;
+  });
+
+  // Verdict global
+  let verdict, verdictClass;
+  if (totalKo > 0) {
+    verdict = `⛔ Réception refusée — ${totalKo} point${totalKo>1?'s':''} bloquant${totalKo>1?'s':''} à lever avant signature.`;
+    verdictClass = 'ko';
+  } else if (totalRr > 0) {
+    verdict = `⚠ Réception avec réserves — ${totalRr} point${totalRr>1?'s':''} à lever sous 30 jours.`;
+    verdictClass = 'warn';
+  } else {
+    verdict = `✓ Réception sans réserve — ${totalOk} points conformes. Garanties applicables à compter de ce jour.`;
+    verdictClass = 'ok';
+  }
+
+  const html = `
+    <div class="verdict-banner ${verdictClass}">${verdict}</div>
+
+    <div class="pv-result">
+      <div class="pv-result-header">
+        <div class="pv-result-title">PV de Réception</div>
+        <div class="pv-result-meta">
+          <b>Chantier</b> ${d.nom}<br>
+          <b>Adresse</b> ${d.adresse || '—'}<br>
+          <b>Date</b> ${dateStr}<br>
+          <b>Artisan / Entreprise</b> ${d.artisan || '—'}<br>
+          <b>Lots réceptionnés</b> ${state.lots.map(id => LOTS[id]?.name).join(', ')}
+        </div>
+        <div class="pv-summary">
+          <div class="pv-sum-box g">
+            <div class="pv-sum-n">${totalOk}</div>
+            <div class="pv-sum-l">Conformes</div>
+          </div>
+          <div class="pv-sum-box o">
+            <div class="pv-sum-n">${totalRr}</div>
+            <div class="pv-sum-l">Réserves</div>
+          </div>
+          <div class="pv-sum-box r">
+            <div class="pv-sum-n">${totalKo}</div>
+            <div class="pv-sum-l">Refus</div>
+          </div>
+        </div>
+      </div>
+
+      ${lotsHTML}
+
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:16px;">Signatures</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Artisan / Entreprise</div>
+            <div style="height:60px;border-bottom:1px solid var(--border2);"></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px;">${d.artisan || '—'}</div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Maître d'ouvrage</div>
+            <div style="height:60px;border-bottom:1px solid var(--border2);"></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px;">Signature</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;font-family:var(--mono);font-size:10px;color:var(--text3);text-align:center;line-height:1.7;">
+        Document généré par ChiffReno · ${dateStr} · Basé sur les NF DTU applicables
+      </div>
+    </div>
+  `;
+
+  document.getElementById('result-content').innerHTML = html;
+  goTo('screen-result');
+}
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+
+document.getElementById('new-date').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>

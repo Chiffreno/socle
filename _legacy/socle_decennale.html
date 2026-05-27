@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOCLE — Simulateur Décennale</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+  :root{
+    --black:#0a0a09; --white:#fafaf8;
+    --green:#1a7a3c; --green-dark:#0f4f26; --green-light:#e8f5ee; --green-b:#b8ddc8;
+    --gray-bg:#f0efeb; --gray2:#e0dfd8; --gray3:#999990; --gray4:#5a5a54;
+    --orange:#c45a0a; --red:#b83030;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--gray-bg);color:var(--black);font-family:'Figtree',sans-serif;font-weight:400;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'DM Mono',monospace;font-weight:500;font-feature-settings:"tnum";}
+
+  /* Layout */
+  .wrap{max-width:880px;margin:0 auto;padding:32px 24px 96px;}
+  @media (max-width:640px){.wrap{padding:24px 16px 64px;}}
+
+  /* Header */
+  .header{display:flex;align-items:center;justify-content:space-between;padding-bottom:24px;border-bottom:1px solid var(--gray2);margin-bottom:48px;}
+  .logo{font-family:'Figtree',sans-serif;font-weight:700;font-size:18px;letter-spacing:-0.02em;display:inline-flex;align-items:center;gap:0;color:var(--black);}
+  .logo::after{content:"";width:8px;height:8px;background:var(--green);border-radius:50%;margin-left:2px;align-self:flex-end;margin-bottom:4px;}
+  .breadcrumb{font-size:13px;color:var(--gray4);display:flex;align-items:center;gap:8px;}
+  .breadcrumb i{font-size:14px;color:var(--gray3);}
+  @media (max-width:480px){.breadcrumb span:first-child{display:none;}}
+
+  /* Titre principal */
+  .title-block{margin-bottom:64px;}
+  .title-block h1{font-family:'Figtree',sans-serif;font-weight:700;font-size:32px;line-height:1.15;letter-spacing:-0.02em;color:var(--black);margin-bottom:12px;}
+  .title-block p{font-size:15px;color:var(--gray4);max-width:600px;}
+  @media (max-width:640px){.title-block h1{font-size:26px;}}
+
+  /* Sections */
+  section{margin-bottom:64px;}
+  .section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid var(--gray2);}
+  .section-num{font-family:'DM Mono',monospace;font-weight:500;font-size:12px;color:var(--gray3);letter-spacing:0.05em;}
+  .section-head h2{font-family:'Figtree',sans-serif;font-weight:700;font-size:18px;letter-spacing:-0.01em;color:var(--black);}
+
+  /* Champs */
+  .field{margin-bottom:24px;}
+  .field-label{display:block;font-size:13px;font-weight:600;color:var(--black);margin-bottom:8px;}
+  .field-hint{font-size:12px;color:var(--gray3);margin-top:4px;}
+  .input{width:100%;padding:14px 16px;background:var(--white);border:1px solid var(--gray2);font-family:'DM Mono',monospace;font-weight:500;font-size:15px;color:var(--black);transition:border-color 0.15s ease;}
+  .input:hover{border-color:var(--gray3);}
+  .input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(26,122,60,0.15);}
+  .input-wrap{position:relative;}
+  .input-wrap .suffix{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-family:'DM Mono',monospace;font-size:13px;color:var(--gray3);pointer-events:none;}
+  .input-wrap input{padding-right:60px;}
+
+  /* Radio cards */
+  .radio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  @media (max-width:640px){.radio-grid{grid-template-columns:1fr;}}
+  .radio-card{position:relative;cursor:pointer;}
+  .radio-card input{position:absolute;opacity:0;pointer-events:none;}
+  .radio-card .card-body{padding:14px 16px;background:var(--white);border:1px solid var(--gray2);transition:border-color 0.15s ease;}
+  .radio-card:hover .card-body{border-color:var(--gray3);}
+  .radio-card input:checked + .card-body{border-color:var(--green);background:var(--green-light);}
+  .radio-card input:focus-visible + .card-body{box-shadow:0 0 0 3px rgba(26,122,60,0.15);}
+  .card-label{font-size:14px;font-weight:600;color:var(--black);margin-bottom:2px;}
+  .card-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--gray3);}
+
+  /* Select */
+  .select{width:100%;padding:14px 16px;background:var(--white);border:1px solid var(--gray2);font-family:'Figtree',sans-serif;font-size:14px;color:var(--black);transition:border-color 0.15s ease;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23999990' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:44px;}
+  .select:hover{border-color:var(--gray3);}
+  .select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(26,122,60,0.15);}
+
+  /* Grid 2 colonnes */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  @media (max-width:640px){.grid-2{grid-template-columns:1fr;gap:16px;}}
+
+  /* Chips lots */
+  .lots-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  @media (max-width:768px){.lots-grid{grid-template-columns:repeat(2,1fr);}}
+  .lot-chip{position:relative;cursor:pointer;}
+  .lot-chip input{position:absolute;opacity:0;pointer-events:none;}
+  .lot-chip .chip-body{padding:16px 12px;background:var(--white);border:1px solid var(--gray2);transition:border-color 0.15s ease;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;min-height:110px;justify-content:center;}
+  .lot-chip:hover .chip-body{border-color:var(--gray3);}
+  .lot-chip input:checked + .chip-body{border-color:var(--green);background:var(--green-light);}
+  .lot-chip input:focus-visible + .chip-body{box-shadow:0 0 0 3px rgba(26,122,60,0.15);}
+  .lot-chip:active .chip-body{transform:scale(0.98);}
+  .chip-icon{font-size:24px;color:var(--gray4);}
+  .lot-chip input:checked + .chip-body .chip-icon{color:var(--green);}
+  .chip-name{font-size:13px;font-weight:600;color:var(--black);}
+  .chip-cat{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray3);letter-spacing:0.05em;}
+
+  /* Légende catégories */
+  .legende{margin-top:16px;padding-top:16px;border-top:1px solid var(--gray2);display:flex;flex-wrap:wrap;gap:16px 24px;}
+  .leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray4);}
+  .leg-dot{width:8px;height:8px;border-radius:50%;background:var(--green-b);}
+  .leg-dot.cat2{background:var(--gray3);}
+  .leg-dot.cat3{background:var(--orange);}
+
+  /* Bouton */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:16px 32px;background:var(--black);color:var(--white);font-family:'Figtree',sans-serif;font-weight:600;font-size:15px;border:none;cursor:pointer;transition:background 0.15s ease;width:100%;}
+  .btn:hover{background:var(--green-dark);}
+  .btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(26,122,60,0.15);}
+  .btn:active{transform:scale(0.98);}
+  .btn:disabled{background:var(--gray3);cursor:not-allowed;}
+  .btn:disabled:hover{background:var(--gray3);}
+
+  /* Résultats */
+  .results{display:none;}
+  .results.visible{display:block;}
+
+  .result-card{background:var(--white);border:1px solid var(--gray2);padding:32px 24px;margin-bottom:24px;}
+  .result-card.primary{border-color:var(--green);background:var(--green-light);}
+  .result-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--gray4);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;}
+  .result-main{font-family:'DM Mono',monospace;font-weight:500;font-size:42px;color:var(--black);line-height:1;letter-spacing:-0.02em;margin-bottom:8px;}
+  @media (max-width:480px){.result-main{font-size:34px;}}
+  .result-range{font-family:'DM Mono',monospace;font-size:13px;color:var(--gray4);}
+  .result-meta{display:flex;flex-wrap:wrap;gap:24px 32px;margin-top:24px;padding-top:24px;border-top:1px solid var(--gray2);}
+  .meta-item .meta-label{font-size:12px;color:var(--gray4);margin-bottom:4px;}
+  .meta-item .meta-value{font-family:'DM Mono',monospace;font-weight:500;font-size:18px;color:var(--black);}
+
+  /* Détail par lot */
+  .lots-detail{margin-top:24px;}
+  .lot-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray2);font-size:14px;}
+  .lot-row:last-child{border-bottom:none;}
+  .lot-row .l{display:flex;align-items:center;gap:10px;color:var(--gray4);}
+  .lot-row .l i{font-size:16px;color:var(--gray3);}
+  .lot-row .l.principal{color:var(--black);font-weight:600;}
+  .lot-row .l.principal i{color:var(--green);}
+  .lot-row .r{font-family:'DM Mono',monospace;font-size:13px;color:var(--gray4);}
+  .badge-principal{display:inline-block;padding:2px 6px;background:var(--green);color:var(--white);font-size:9px;font-family:'DM Mono',monospace;letter-spacing:0.05em;text-transform:uppercase;margin-left:6px;}
+
+  /* Comparatif scénarios */
+  .scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media (max-width:768px){.scenarios{grid-template-columns:1fr;}}
+  .scenario{padding:20px 18px;background:var(--white);border:1px solid var(--gray2);}
+  .scenario.current{border-color:var(--green);background:var(--green-light);}
+  .scenario-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--gray4);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+  .scenario-title{font-size:14px;font-weight:600;color:var(--black);margin-bottom:16px;line-height:1.3;}
+  .scenario-amount{font-family:'DM Mono',monospace;font-weight:500;font-size:24px;color:var(--black);line-height:1;margin-bottom:6px;}
+  .scenario-delta{font-family:'DM Mono',monospace;font-size:12px;color:var(--gray4);display:flex;align-items:center;gap:4px;}
+  .scenario-delta.up{color:var(--orange);}
+  .scenario-delta.down{color:var(--green);}
+  .scenario-delta.same{color:var(--gray3);}
+
+  /* Recommandations */
+  .reco-list{display:flex;flex-direction:column;gap:12px;}
+  .reco{display:flex;gap:14px;padding:16px 18px;background:var(--white);border:1px solid var(--gray2);}
+  .reco i{font-size:18px;color:var(--green);flex-shrink:0;margin-top:2px;}
+  .reco-content{flex:1;}
+  .reco-title{font-size:14px;font-weight:600;color:var(--black);margin-bottom:4px;}
+  .reco-text{font-size:13px;color:var(--gray4);line-height:1.5;}
+
+  /* Méthode (collapsible) */
+  details.method{background:var(--white);border:1px solid var(--gray2);padding:0;}
+  details.method summary{padding:18px 20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--gray4);display:flex;justify-content:space-between;align-items:center;list-style:none;}
+  details.method summary::-webkit-details-marker{display:none;}
+  details.method summary::after{content:"+";font-family:'DM Mono',monospace;font-weight:500;font-size:18px;color:var(--gray3);}
+  details.method[open] summary::after{content:"−";}
+  details.method summary:hover{color:var(--black);}
+  details.method .method-body{padding:0 20px 20px;font-size:13px;color:var(--gray4);line-height:1.6;}
+  details.method .method-body p{margin-bottom:10px;}
+  details.method .method-body code{font-family:'DM Mono',monospace;font-size:12px;background:var(--gray-bg);padding:1px 6px;}
+  details.method .method-body ul{margin:8px 0 12px 18px;}
+  details.method .method-body li{margin-bottom:4px;}
+
+  /* Empty state */
+  .empty{padding:48px 24px;text-align:center;color:var(--gray3);font-size:14px;background:var(--white);border:1px solid var(--gray2);}
+  .empty i{font-size:32px;color:var(--gray3);margin-bottom:12px;display:block;}
+
+  /* Footer */
+  .foot{margin-top:64px;padding-top:24px;border-top:1px solid var(--gray2);font-size:12px;color:var(--gray3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="header">
+    <div class="logo">SOCLE</div>
+    <div class="breadcrumb">
+      <span>Lancement</span>
+      <i class="ti ti-chevron-right"></i>
+      <span>Décennale</span>
+    </div>
+  </header>
+
+  <div class="title-block">
+    <h1>Simulateur de prime décennale</h1>
+    <p>Estime ton coût annuel d'assurance décennale selon ton CA prévisionnel, tes activités et ton profil. Tarifs calés sur les barèmes marché 2025-2026 des assureurs spécialisés BTP.</p>
+  </div>
+
+  <!-- SECTION 1 : Profil entreprise -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2>Profil entreprise</h2>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Statut juridique</label>
+      <div class="radio-grid">
+        <label class="radio-card">
+          <input type="radio" name="statut" value="micro" checked>
+          <div class="card-body">
+            <div class="card-label">Micro-entreprise</div>
+            <div class="card-sub">AUTO-ENTREPRENEUR</div>
+          </div>
+        </label>
+        <label class="radio-card">
+          <input type="radio" name="statut" value="ei">
+          <div class="card-body">
+            <div class="card-label">EI / EURL</div>
+            <div class="card-sub">INDIVIDUEL / IS</div>
+          </div>
+        </label>
+        <label class="radio-card">
+          <input type="radio" name="statut" value="societe">
+          <div class="card-body">
+            <div class="card-label">SASU / SARL / SAS</div>
+            <div class="card-sub">SOCIETE COMMERCIALE</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label" for="anciennete">Ancienneté de l'entreprise</label>
+        <select id="anciennete" class="select">
+          <option value="creation">En création (0-1 an)</option>
+          <option value="jeune">Jeune (1-3 ans)</option>
+          <option value="etablie" selected>Établie (3-5 ans)</option>
+          <option value="confirmee">Confirmée (5-10 ans)</option>
+          <option value="experte">Experte (10+ ans)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="experience">Expérience du dirigeant</label>
+        <select id="experience" class="select">
+          <option value="debutant">Débutant (0-2 ans)</option>
+          <option value="intermediaire">Intermédiaire (3-5 ans)</option>
+          <option value="confirme" selected>Confirmé (5-10 ans)</option>
+          <option value="expert">Expert (10+ ans)</option>
+        </select>
+        <div class="field-hint">Années d'exercice du métier (salarié ou indépendant)</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="ca">Chiffre d'affaires prévisionnel HT</label>
+      <div class="input-wrap">
+        <input type="number" id="ca" class="input" placeholder="60000" min="0" step="1000" value="60000">
+        <span class="suffix">€ / AN</span>
+      </div>
+      <div class="field-hint">Pour une première année, base-toi sur ton prévisionnel SOCLE</div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 : Lots à assurer -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2>Lots à assurer</h2>
+    </div>
+
+    <div class="lots-grid" id="lotsGrid">
+      <label class="lot-chip">
+        <input type="checkbox" name="lot" value="maconnerie">
+        <div class="chip-body">
+          <i class="ti ti-wall chip-icon"></i>
+          <div class="chip-name">Maçonnerie</div>
+          <div class="chip-cat">CAT. 3</div>
+        </div>
+      </label>
+      <label class="lot-chip">
+        <input type="checkbox" name="lot" value="platrerie">
+        <div class="chip-body">
+          <i class="ti ti-layout-grid chip-icon"></i>
+          <div class="chip-name">Plâtrerie</div>
+          <div class="chip-cat">CAT. 1</div>
+        </div>
+      </label>
+      <label class="lot-chip">
+        <input type="checkbox" name="lot" value="electricite" checked>
+        <div class="chip-body">
+          <i class="ti ti-bolt chip-icon"></i>
+          <div class="chip-name">Électricité</div>
+          <div class="chip-cat">CAT. 1</div>
+        </div>
+      </label>
+      <label class="lot-chip">
+        <input type="checkbox" name="lot" value="plomberie">
+        <div class="chip-body">
+          <i class="ti ti-droplet chip-icon"></i>
+          <div class="chip-name">Plomberie</div>
+          <div class="chip-cat">CAT. 2</div>
+        </div>
+      </label>
+      <label class="lot-chip">
+        <input type="checkbox" name="lot" value="menuiserie">
+        <div class="chip-body">
+          <i class="ti ti-tool chip-icon"></i>
+          <div class="chip-name">Menuiserie</div>
+          <div class="chip-cat">CAT. 2</div>
+        </div>
+      </label>
+      <label class="lot-chip">
+        <input type="checkbox" name="lot" value="carrelage">
+        <div class="chip-body">
+          <i class="ti ti-grid-dots chip-icon"></i>
+          <div class="chip-name">Carrelage</div>
+          <div class="chip-cat">CAT. 2</div>
+        </div>
+      </label>
+      <label class="lot-chip">
+        <input type="checkbox" name="lot" value="peinture">
+        <div class="chip-body">
+          <i class="ti ti-brush chip-icon"></i>
+          <div class="chip-name">Peinture</div>
+          <div class="chip-cat">CAT. 1</div>
+        </div>
+      </label>
+      <label class="lot-chip">
+        <input type="checkbox" name="lot" value="isolation">
+        <div class="chip-body">
+          <i class="ti ti-temperature chip-icon"></i>
+          <div class="chip-name">Isolation</div>
+          <div class="chip-cat">CAT. 3</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="legende">
+      <div class="leg-item"><span class="leg-dot"></span>Cat. 1 — Second œuvre (1.5% du CA)</div>
+      <div class="leg-item"><span class="leg-dot cat2"></span>Cat. 2 — Risque moyen (2.0-2.4%)</div>
+      <div class="leg-item"><span class="leg-dot cat3"></span>Cat. 3 — Gros œuvre (2.8-3.0%)</div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 : Calculer -->
+  <section>
+    <button class="btn" id="btnCalc">
+      <i class="ti ti-calculator"></i>
+      Calculer ma prime décennale
+    </button>
+  </section>
+
+  <!-- RÉSULTATS -->
+  <div class="results" id="results">
+
+    <!-- Résultat principal -->
+    <section>
+      <div class="section-head">
+        <span class="section-num">03</span>
+        <h2>Estimation annuelle</h2>
+      </div>
+
+      <div class="result-card primary">
+        <div class="result-label">Prime décennale estimée</div>
+        <div class="result-main" id="primeMoyenne">— €</div>
+        <div class="result-range" id="primeRange">Fourchette marché : — € à — €</div>
+
+        <div class="result-meta">
+          <div class="meta-item">
+            <div class="meta-label">Équivalent mensuel</div>
+            <div class="meta-value" id="primeMensuel">— €</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">% du CA prévisionnel</div>
+            <div class="meta-value" id="primePctCa">— %</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Lots couverts</div>
+            <div class="meta-value" id="nbLots">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lots-detail" id="lotsDetail"></div>
+    </section>
+
+    <!-- Comparatif scénarios -->
+    <section>
+      <div class="section-head">
+        <span class="section-num">04</span>
+        <h2>Comparatif scénarios</h2>
+      </div>
+      <div class="scenarios" id="scenarios"></div>
+    </section>
+
+    <!-- Recommandations -->
+    <section>
+      <div class="section-head">
+        <span class="section-num">05</span>
+        <h2>Recommandations</h2>
+      </div>
+      <div class="reco-list" id="recommandations"></div>
+    </section>
+
+  </div>
+
+  <!-- Méthode -->
+  <details class="method">
+    <summary>Méthode de calcul et sources</summary>
+    <div class="method-body">
+      <p><strong>Formule générale :</strong></p>
+      <p><code>Prime = max(taux × CA, base) × C_lots × C_statut × C_ancienneté × C_expérience</code></p>
+
+      <p><strong>Taux de base (catégories de risque marché 2025-2026) :</strong></p>
+      <ul>
+        <li>Cat. 1 (second œuvre simple) — 1.5% du CA, base 700-750€</li>
+        <li>Cat. 2 (risque moyen) — 2.0-2.4% du CA, base 950-1 200€</li>
+        <li>Cat. 3 (gros œuvre / isolation) — 2.8-3.0% du CA, base 1 500-1 800€</li>
+      </ul>
+
+      <p><strong>Coefficients statut juridique :</strong> Micro 1.0 / EI-EURL 1.5 / Société 1.9</p>
+      <p><strong>Coefficients ancienneté :</strong> Création +30% / Jeune +15% / Établie 1.0 / Confirmée −8% / Experte −15%</p>
+      <p><strong>Coefficients expérience :</strong> Débutant +30% / Intermédiaire +10% / Confirmé 1.0 / Expert −12%</p>
+      <p><strong>Règle multi-lots :</strong> la prime se base sur l'activité la plus risquée, puis uplift progressif (jusqu'à +32% pour 6-8 lots).</p>
+      <p><strong>Fourchette marché :</strong> ±20% bas / +30% haut pour refléter les écarts entre assureurs (April BTP, MAAF, SMABTP, Hiscox, PRO BTP, Allianz, courtiers).</p>
+
+      <p><strong>Sources :</strong> grilles tarifaires 2025-2026 publiées par decennale.com, prossur.fr, april.fr, pro-btp.com, France Épargne, Companeo, Legalstart. Indice FFB T4 2025 : 1 187,80 pts. Hausse moyenne 2026 : +5 à 15%.</p>
+
+      <p><em>⚠️ Estimation indicative. Le tarif réel dépend de l'assureur, des qualifications (Qualibat, RGE), des sinistres antérieurs, de la zone géographique et de la franchise choisie. Comparer minimum 3 devis avant souscription.</em></p>
+    </div>
+  </details>
+
+  <div class="foot">
+    <div class="mono">SOCLE · DECENNALE v1</div>
+    <div class="mono">Maj 2026.05</div>
+  </div>
+
+</div>
+
+<script>
+// ============ DONNÉES MÉTIER ============
+const LOTS = {
+  maconnerie: { nom: 'Maçonnerie',  icone: 'ti-wall',         cat: 3, taux: 3.0, base: 1800 },
+  platrerie:  { nom: 'Plâtrerie',   icone: 'ti-layout-grid',  cat: 1, taux: 1.5, base: 700  },
+  electricite:{ nom: 'Électricité', icone: 'ti-bolt',         cat: 1, taux: 1.5, base: 750  },
+  plomberie:  { nom: 'Plomberie',   icone: 'ti-droplet',      cat: 2, taux: 2.2, base: 1100 },
+  menuiserie: { nom: 'Menuiserie',  icone: 'ti-tool',         cat: 2, taux: 2.0, base: 950  },
+  carrelage:  { nom: 'Carrelage',   icone: 'ti-grid-dots',    cat: 2, taux: 2.4, base: 1200 },
+  peinture:   { nom: 'Peinture',    icone: 'ti-brush',        cat: 1, taux: 1.5, base: 700  },
+  isolation:  { nom: 'Isolation',   icone: 'ti-temperature',  cat: 3, taux: 2.8, base: 1500 }
+};
+
+const COEF_STATUT = {
+  micro:   { v: 1.00, label: 'Micro-entreprise' },
+  ei:      { v: 1.50, label: 'EI / EURL' },
+  societe: { v: 1.90, label: 'SASU / SARL / SAS' }
+};
+
+const COEF_ANCIENNETE = {
+  creation:  { v: 1.30, label: 'En création' },
+  jeune:     { v: 1.15, label: '1-3 ans' },
+  etablie:   { v: 1.00, label: '3-5 ans' },
+  confirmee: { v: 0.92, label: '5-10 ans' },
+  experte:   { v: 0.85, label: '10+ ans' }
+};
+
+const COEF_EXPERIENCE = {
+  debutant:      { v: 1.30, label: 'Débutant' },
+  intermediaire: { v: 1.10, label: 'Intermédiaire' },
+  confirme:      { v: 1.00, label: 'Confirmé' },
+  expert:        { v: 0.88, label: 'Expert' }
+};
+
+function coefMultiLots(n) {
+  if (n <= 1) return 1.00;
+  if (n <= 3) return 1.12;
+  if (n <= 5) return 1.22;
+  return 1.32;
+}
+
+// ============ CALCUL ============
+function calculerPrime(lotsKeys, ca, statut, anciennete, experience) {
+  if (!lotsKeys.length) return null;
+
+  const lotsObjs = lotsKeys.map(k => ({ key: k, ...LOTS[k] }));
+  const lotPrincipal = lotsObjs.reduce((max, l) => l.taux > max.taux ? l : max);
+
+  const primeBase = Math.max((lotPrincipal.taux / 100) * ca, lotPrincipal.base);
+  const cLots = coefMultiLots(lotsKeys.length);
+  const cStat = COEF_STATUT[statut].v;
+  const cAnc  = COEF_ANCIENNETE[anciennete].v;
+  const cExp  = COEF_EXPERIENCE[experience].v;
+
+  const prime = primeBase * cLots * cStat * cAnc * cExp;
+
+  return {
+    min: prime * 0.80,
+    moyen: prime,
+    max: prime * 1.30,
+    base: primeBase,
+    cLots, cStat, cAnc, cExp,
+    lotPrincipal,
+    lots: lotsObjs
+  };
+}
+
+// ============ FORMATAGE ============
+const fmtEur = n => Math.round(n / 10) * 10 + ' €';
+const fmtPct = n => (Math.round(n * 10) / 10).toFixed(1) + ' %';
+
+// ============ RENDU ============
+function renderResultats(r, inputs) {
+  document.getElementById('primeMoyenne').textContent = fmtEur(r.moyen);
+  document.getElementById('primeRange').textContent =
+    'Fourchette marché : ' + fmtEur(r.min) + ' à ' + fmtEur(r.max);
+  document.getElementById('primeMensuel').textContent = fmtEur(r.moyen / 12);
+  document.getElementById('primePctCa').textContent =
+    inputs.ca > 0 ? fmtPct((r.moyen / inputs.ca) * 100) : '—';
+  document.getElementById('nbLots').textContent = r.lots.length;
+
+  // Détail par lot
+  const detail = document.getElementById('lotsDetail');
+  detail.innerHTML = r.lots.map(l => {
+    const isPrincipal = l.key === r.lotPrincipal.key;
+    const tauxLot = ((l.taux / 100) * inputs.ca);
+    const indication = Math.max(tauxLot, l.base);
+    return `
+      <div class="lot-row">
+        <div class="l ${isPrincipal ? 'principal' : ''}">
+          <i class="ti ${l.icone}"></i>
+          ${l.nom}
+          ${isPrincipal ? '<span class="badge-principal">Principal</span>' : ''}
+        </div>
+        <div class="r">${l.taux.toFixed(1)}% · ~${fmtEur(indication)} solo</div>
+      </div>`;
+  }).join('');
+
+  // Scénarios comparatifs
+  renderScenarios(r, inputs);
+
+  // Recommandations
+  renderReco(r, inputs);
+}
+
+function renderScenarios(r, inputs) {
+  const container = document.getElementById('scenarios');
+  const scenarios = [];
+
+  // Scénario 1 : actuel
+  scenarios.push({
+    label: 'PROFIL ACTUEL',
+    title: `${COEF_STATUT[inputs.statut].label}, ${r.lots.length} lot${r.lots.length>1?'s':''}`,
+    amount: r.moyen,
+    delta: 0,
+    isCurrent: true
+  });
+
+  // Scénario 2 : statut différent
+  let altStatut, altLabel;
+  if (inputs.statut === 'micro') {
+    altStatut = 'societe'; altLabel = 'Si tu étais en SASU';
+  } else if (inputs.statut === 'societe') {
+    altStatut = 'micro'; altLabel = 'Si tu étais en micro';
+  } else {
+    altStatut = 'micro'; altLabel = 'Si tu étais en micro';
+  }
+  const rAlt = calculerPrime(r.lots.map(l => l.key), inputs.ca, altStatut, inputs.anciennete, inputs.experience);
+  scenarios.push({
+    label: 'IMPACT STATUT',
+    title: altLabel,
+    amount: rAlt.moyen,
+    delta: rAlt.moyen - r.moyen
+  });
+
+  // Scénario 3 : mono-activité (lot principal seul)
+  if (r.lots.length > 1) {
+    const rMono = calculerPrime([r.lotPrincipal.key], inputs.ca, inputs.statut, inputs.anciennete, inputs.experience);
+    scenarios.push({
+      label: 'IMPACT MULTI-LOTS',
+      title: `Si tu te limitais à ${r.lotPrincipal.nom.toLowerCase()}`,
+      amount: rMono.moyen,
+      delta: rMono.moyen - r.moyen
+    });
+  } else {
+    // Si déjà mono : montrer impact si ajout d'un 2e lot léger
+    const ajout = 'peinture' === r.lotPrincipal.key ? 'electricite' : 'peinture';
+    const rMulti = calculerPrime([r.lotPrincipal.key, ajout], inputs.ca, inputs.statut, inputs.anciennete, inputs.experience);
+    scenarios.push({
+      label: 'IMPACT MULTI-LOTS',
+      title: `Si tu ajoutais ${LOTS[ajout].nom.toLowerCase()}`,
+      amount: rMulti.moyen,
+      delta: rMulti.moyen - r.moyen
+    });
+  }
+
+  container.innerHTML = scenarios.map(s => {
+    const deltaClass = s.isCurrent ? 'same' : (s.delta > 50 ? 'up' : s.delta < -50 ? 'down' : 'same');
+    const deltaIcon = s.isCurrent ? 'ti-point' : (s.delta > 50 ? 'ti-arrow-up-right' : s.delta < -50 ? 'ti-arrow-down-right' : 'ti-equal');
+    const deltaText = s.isCurrent
+      ? 'Référence'
+      : (s.delta > 0 ? '+' : '') + fmtEur(s.delta) + '/an';
+    return `
+      <div class="scenario ${s.isCurrent ? 'current' : ''}">
+        <div class="scenario-label">${s.label}</div>
+        <div class="scenario-title">${s.title}</div>
+        <div class="scenario-amount">${fmtEur(s.amount)}</div>
+        <div class="scenario-delta ${deltaClass}"><i class="ti ${deltaIcon}"></i>${deltaText}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderReco(r, inputs) {
+  const recos = [];
+  const pctCa = inputs.ca > 0 ? (r.moyen / inputs.ca) * 100 : 0;
+
+  // Reco 1 : impact statut juridique
+  if (inputs.statut === 'societe' && inputs.ca < 80000) {
+    recos.push({
+      icon: 'ti-bulb',
+      title: 'Statut juridique : la micro reste pertinente sous 77 700€ de CA',
+      text: `Tu paies ~${fmtEur(r.moyen * (1 - 1/1.9))} de plus par an en société qu'en micro pour le même périmètre. Si ton CA prévisionnel reste sous le plafond micro (77 700€ en prestations BTP), réinterroger ton choix de statut peut libérer 1 000 à 2 000€/an.`
+    });
+  }
+
+  // Reco 2 : impact création/jeune
+  if (inputs.anciennete === 'creation' || inputs.anciennete === 'jeune') {
+    recos.push({
+      icon: 'ti-discount',
+      title: 'Profite des réductions "jeune entreprise"',
+      text: 'PRO BTP propose jusqu\'à 30% de réduction la 1re année, 20% la 2e, 10% la 3e pour les TNS créateurs. La SMABTP et April BTP ont des offres équivalentes. Compare au minimum 3 devis spécialisés BTP avant de signer.'
+    });
+  }
+
+  // Reco 3 : impact débutant
+  if (inputs.experience === 'debutant') {
+    recos.push({
+      icon: 'ti-certificate',
+      title: 'Valorise tes diplômes et formations',
+      text: 'Sans expérience pro, beaucoup d\'assureurs refusent ou surchargent. Fournis tous tes justificatifs : CAP/BEP/BTS, attestations de formation, expériences en tant que salarié BTP, qualifications électriques. Un dossier solide peut faire baisser la surprime débutant de 30% à 10%.'
+    });
+  }
+
+  // Reco 4 : multi-lots élevé
+  if (r.lots.length >= 5) {
+    recos.push({
+      icon: 'ti-alert-triangle',
+      title: 'Multi-lots : justifie chaque activité',
+      text: `Avec ${r.lots.length} activités déclarées, l'assureur va exiger une preuve d'expérience sur chacune. Ne déclare que les lots que tu réalises vraiment : déclarer "au cas où" gonfle la prime de 20-30% sans bénéfice. Au-delà de 8 lots, beaucoup de contrats basculent en tarification illimitée (plus chère).`
+    });
+  }
+
+  // Reco 5 : prime élevée par rapport au CA
+  if (pctCa > 4 && inputs.ca > 0) {
+    recos.push({
+      icon: 'ti-chart-pie',
+      title: 'Prime > 4% du CA : seuil de vigilance',
+      text: `Ta prime représente ${fmtPct(pctCa)} de ton CA, ce qui dépasse le seuil sain de 2-4% pour le BTP. Augmenter le CA prévisionnel (chantiers réels) ou la franchise (de 1 500€ à 3 000€) sont les deux leviers immédiats. Vérifie aussi que tu n'as pas déclaré de lots non exercés.`
+    });
+  }
+
+  // Reco 6 : Qualibat/RGE
+  if (inputs.experience !== 'debutant' && (r.lots.includes && r.lots.includes('isolation'))) {
+    // ne s'applique pas (r.lots est un array d'objets)
+  }
+  if (inputs.experience !== 'debutant' && r.lots.some(l => l.key === 'isolation')) {
+    recos.push({
+      icon: 'ti-award',
+      title: 'Isolation : passe la qualification RGE',
+      text: 'Pour le lot isolation, la qualification RGE (Reconnu Garant de l\'Environnement) ouvre des réductions de 10-15% chez certains assureurs et te donne accès aux chantiers MaPrimeRénov\'. ROI rapide sur la prime + nouveau marché.'
+    });
+  }
+
+  // Reco 7 : si tout va bien, suggestion comparaison
+  if (recos.length === 0) {
+    recos.push({
+      icon: 'ti-check',
+      title: 'Profil équilibré',
+      text: `Ton profil n'a pas de levier d'optimisation évident côté décennale. Concentre-toi sur la comparaison de devis : l'écart entre assureurs atteint 30-40% pour un profil identique. Demande minimum 3 devis (April BTP, SMABTP, PRO BTP, Hiscox, courtiers spécialisés type Decennassur ou Companeo).`
+    });
+  }
+
+  // Toujours ajouter : reco écart devis
+  recos.push({
+    icon: 'ti-arrows-shuffle',
+    title: 'Compare toujours 3 devis minimum',
+    text: 'À profil identique, l\'écart entre assureurs va de 30 à 40%. Les courtiers spécialisés BTP (April, Simplis, Companeo, Prossur) négocient souvent mieux que la souscription directe.'
+  });
+
+  document.getElementById('recommandations').innerHTML = recos.map(r => `
+    <div class="reco">
+      <i class="ti ${r.icon}"></i>
+      <div class="reco-content">
+        <div class="reco-title">${r.title}</div>
+        <div class="reco-text">${r.text}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============ ÉVÉNEMENTS ============
+document.getElementById('btnCalc').addEventListener('click', () => {
+  const lotsKeys = [...document.querySelectorAll('input[name="lot"]:checked')].map(i => i.value);
+  const ca = parseFloat(document.getElementById('ca').value) || 0;
+  const statut = document.querySelector('input[name="statut"]:checked').value;
+  const anciennete = document.getElementById('anciennete').value;
+  const experience = document.getElementById('experience').value;
+
+  if (lotsKeys.length === 0) {
+    alert('Sélectionne au moins un lot à assurer');
+    return;
+  }
+  if (ca <= 0) {
+    alert('Renseigne un chiffre d\'affaires prévisionnel');
+    return;
+  }
+
+  const r = calculerPrime(lotsKeys, ca, statut, anciennete, experience);
+  renderResultats(r, { ca, statut, anciennete, experience });
+
+  document.getElementById('results').classList.add('visible');
+  setTimeout(() => {
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+});
+</script>
+
+</body>
+</html>
