@@ -248,7 +248,139 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
       return items;
     }
 
-    // ── autres cases ajoutés par les paquets 2b → 5 ──
+    case "iti": {
+      const epa = String(o.epa);
+      const isGR = o.iso === "gr32";
+      const isoKey = isGR ? `iti_gr32_${epa}` : `iti_steico_${epa}`;
+      const R_gr: Record<string, string> = { "80": "2,50", "100": "3,15", "120": "3,75", "140": "4,40", "160": "5,00" };
+      const R_st: Record<string, string> = { "60": "1,65", "80": "2,20", "100": "2,80", "120": "3,35", "140": "3,90" };
+      const isoLbl = isGR
+        ? `GR32 Kraft ${epa}mm — R=${R_gr[epa] || "?"} m².K/W`
+        : `Steicoflex 036 ${epa}mm — R=${R_st[epa] || "?"} m².K/W`;
+      const m2 = Number(o.m2) || 0;
+      const items: EngineLigne[] = [
+        _row("iti_oss", m2, "Ossature Optima — lisses Clip'Optima + fourrures 240", "m²"),
+        _row("iti_appuis", m2, "Appuis intermédiaires Optima2", "m²", "1,5 pce/m²"),
+        _row(isoKey, m2, isoLbl, "m²", isGR ? "Isover GR32 Kraft" : "Steicoflex 036 — fibre de bois souple"),
+      ];
+      if (o.membrane) {
+        items.push(_row("iti_vario", m2, "Membrane hygro-régulante Vario Xtra", "m²", "Frein-vapeur intelligent"));
+        const sml = Math.round(m2 * 0.7);
+        items.push(_row("iti_scotch", sml, "Scotch Vario Multitape — jointoiement des lés", "ml", `~${sml} ml (0,7 ml/m²)`));
+        items.push(_row("iti_pastilles", m2, "Pastilles Optima2 — maintien membrane", "m²"));
+      }
+      if (o.parement !== "aucun") {
+        const pk = `iti_${o.parement}`;
+        items.push(_row(pk, m2, o.parement === "ba13_std" ? "Parement BA13 standard" : "Parement BA13 hydrofuge", "m²"));
+      }
+      return items;
+    }
+
+    case "fauxplafond": {
+      const ex = Number(o.entraxe) || 0.6;
+      const four_ratio = Math.round((1 / ex + 0.4) * 10) / 10;
+      const nb_four = Math.round(S * four_ratio);
+      const peaux = Number(o.peaux) || 1;
+      const plq_net = S * peaux;
+      const plq = chuted(plq_net, o.chute as number | undefined);
+      const pqLbls: Record<string, string> = {
+        fp_ba13_std: "BA13 standard",
+        fp_ba13_hydro: "BA13 hydrofuge",
+        fp_ba13_feu: "BA13 coupe-feu",
+        fp_ba13_phon: "BA13 phonique",
+      };
+      const isoLbls: Record<string, string> = {
+        fp_lv_45: "Laine de verre 45mm",
+        fp_lr_45: "Laine de roche 45mm",
+        fp_lv_100: "Laine de verre 100mm",
+        fp_lr_100: "Laine de roche 100mm",
+        fp_ouate: "Ouate de cellulose 100mm",
+      };
+      const items: EngineLigne[] = [];
+      const nb_susp = Math.round(nb_four / 1.4);
+      if (o.suspente === "res")
+        items.push(_row("fp_suspente_res", nb_susp, `Suspentes à ressort — ${nb_susp} pce`, "pce", `~${(nb_susp / S).toFixed(1)}/m²`));
+      else
+        items.push(_row("fp_suspente_cav", nb_susp, `Cavaliers pivot — ${nb_susp} pce`, "pce", `~${(nb_susp / S).toFixed(1)}/m²`));
+      items.push(_row("fp_fourrure", nb_four, `Fourrures 47×17 — ${nb_four} ml`, "ml", `Entraxe ${o.entraxe} m`));
+      const lisse_ml = Math.round(4 * Math.sqrt(S));
+      items.push(_row("fp_lisse_peri", lisse_ml, `Lisses périphériques — ${lisse_ml} ml`, "ml", `4 × √${Math.round(S)} m²`));
+      if (o.avec_isolant) {
+        const isoKey = String(o.isolant);
+        items.push(_row(isoKey, S, isoLbls[isoKey] || isoKey, "m²", "Entre fourrures / plafond"));
+      }
+      const plaqKey = String(o.plaque);
+      items.push(_hrow(plaqKey, plq, `${pqLbls[plaqKey] || plaqKey} — ${peaux} peau${peaux > 1 ? "x" : ""} × ${S} m²`, "m²", `Brut : ${plq} m² (+${o.chute}% chute, net ${plq_net} m²)`));
+      items.push(_row("fp_visserie", S, "Visserie TF plafond", "m²"));
+      if (o.joints) items.push(_row("fp_bande_joint", plq_net, `Bandes + enduit joints — ${plq_net} m²`, "m²", "Faces visibles"));
+      return items;
+    }
+
+    case "cloisons": {
+      const zoneSpecs = [
+        { key: "std", on: o.std_on, m2: o.std_m2, oss: o.std_oss || "m48", peaux: Number(o.std_peaux || 2), acou: o.std_acou || "non", dbl: !!o.std_dbl_mont, lbl: "BA13 standard" },
+        { key: "hydro", on: o.hydro_on, m2: o.hydro_m2, oss: o.hydro_oss || "m48", peaux: Number(o.hydro_peaux || 2), acou: o.hydro_acou || "non", dbl: !!o.hydro_dbl_mont, lbl: "BA13 hydrofuge" },
+        { key: "hd", on: o.hd_on, m2: o.hd_m2, oss: o.hd_oss || "m48", peaux: Number(o.hd_peaux || 2), acou: o.hd_acou || "non", dbl: !!o.hd_dbl_mont, lbl: "BA13 haute dureté" },
+        { key: "feu", on: o.feu_on, m2: o.feu_m2, oss: o.feu_oss || "m48", peaux: Number(o.feu_peaux || 2), acou: o.feu_acou || "non", dbl: !!o.feu_dbl_mont, lbl: "BA13 coupe-feu" },
+      ];
+      const zones = zoneSpecs.filter((z) => z.on && Number(z.m2) > 0);
+      if (zones.length === 0) return [];
+      const chute = Number(o.chute) || 5;
+      const items: EngineLigne[] = [];
+      for (const z of zones) {
+        const m2 = Number(z.m2) || 0;
+        const oss = String(z.oss);
+        const rk = oss === "m90" ? "rail_r70" : "rail_r48";
+        const mk = `mont_${oss}`;
+        const nr = Math.round(m2 * 0.8);
+        const nm = Math.round(m2 * 1.7) * (z.dbl ? 2 : 1);
+        const net = m2 * z.peaux;
+        const brut = chuted(net, chute);
+        items.push(_row(rk, nr, `Rails ${oss === "m90" ? "R70" : "R48"} — ${z.lbl} — ${nr} ml`, "ml"));
+        items.push(_row(mk, nm, `Montants ${oss.toUpperCase()}${z.dbl ? " (doublés)" : ""} — ${z.lbl} — ${nm} ml`, "ml"));
+        items.push(_row("bande_acou", nr, `Bande acoustique sous rails — ${z.lbl} — ${nr} ml`, "ml"));
+        items.push(_hrow(`ba13_${z.key}`, brut, `${z.lbl} — ${z.peaux === 4 ? "double peau (4 faces)" : "simple peau (2 faces)"} × ${m2} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute)`));
+        items.push(_row("visserie_cloison", m2, `Visserie — ${z.lbl}`, "m²"));
+        items.push(_row("bande_joint", net, `Bandes à joint — ${z.lbl}`, "m²"));
+        items.push(_row("enduit_bande", net, `Enduit de bande — ${z.lbl}`, "m²"));
+        if (z.acou !== "non") {
+          const acouKey = String(z.acou);
+          items.push(_row(acouKey, m2, acouKey === "lv45" ? `LV acoustique 45mm — ${z.lbl}` : `LR acoustique 45mm — ${z.lbl}`, "m²"));
+        }
+      }
+      return items;
+    }
+
+    case "peinture": {
+      const finLbl: Record<string, string> = {
+        mat: "Peinture mate — gamme GSB",
+        velours: "Peinture velours Unikalo Aqualine Evo",
+        satin: "Peinture satin premium",
+      };
+      const zones = [1, 2, 3, 4]
+        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
+        .map((n) => ({
+          n,
+          m2: Number(o[`z${n}_m2`]) || 0,
+          passes: parseInt(String(o[`z${n}_passes`])) || 0,
+          fin: String(o[`z${n}_fin`] || "mat"),
+          imp: !!o[`z${n}_imp`],
+          treillis: !!o[`z${n}_treillis`],
+        }));
+      if (zones.length === 0) return [];
+      const items: EngineLigne[] = [];
+      for (const z of zones) {
+        const zlbl = `Zone ${z.n} — ${z.m2} m²`;
+        if (z.passes > 0) items.push(_row("enduit_pate", z.m2 * z.passes, `${zlbl} · Enduit pâte ${z.passes} passe${z.passes > 1 ? "s" : ""}`, "m²", `${z.m2 * z.passes} m²`));
+        if (z.passes === 3 && z.treillis) items.push(_row("toile_treillis", z.m2, `${zlbl} · Toile treillis de verre`, "m²"));
+        if (z.imp) items.push(_row("impression", z.m2, `${zlbl} · Impression fixante`, "m²", "Unikalo Aqualine Impress Evo"));
+        const fk = `peinture_${z.fin}`;
+        items.push(_hrow(fk, z.m2 * 2, `${zlbl} · ${finLbl[z.fin] || z.fin} — 2 couches`, "m²", `${z.m2 * 2} m²`));
+      }
+      return items;
+    }
+
+    // ── autres cases ajoutés par les paquets 3 → 5 ──
     default:
       return [];
   }
