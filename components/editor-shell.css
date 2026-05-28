@@ -1,0 +1,89 @@
+/* ============================================================
+   SOCLE — EditorShell (route group `(editor)`)
+   Layout 2 zones : rail SOCLE (Sidebar variant="editor") + zone main
+   décalée de la largeur du rail. Le rail est position:fixed (cf.
+   .sidebar dans app/globals.css) ; ici on réserve la largeur côté main.
+   ============================================================ */
+
+.editor-shell {
+  /* Variable consommée par le bouton circulaire centré sur le bord rail.
+     Switch via .editor-shell.is-collapsed. */
+  --rail-w: 220px;
+  display: flex;
+  min-height: 100vh;
+  background: var(--gray-bg);
+}
+.editor-shell.is-collapsed {
+  --rail-w: 64px;
+}
+
+.editor-shell-main {
+  flex: 1;
+  margin-left: var(--rail-w);
+  min-height: 100vh;
+  background: var(--gray-bg);
+  /* Important : pas de padding-top — la topbar fine de l'éditeur enfant
+     est sticky top:0 dans cette zone et gère son propre espacement. */
+}
+
+/* Le rail variant="editor" doit démarrer en haut de page (pas de
+   topbar globale au-dessus). On override la règle globale .sidebar.is-editor
+   { top: 56px } qui s'appliquait dans le C1 ancien. */
+.editor-shell .sidebar.is-editor { top: 0; }
+
+/* En editor variant le toggle dans la sidebar est remplacé par le
+   bouton circulaire ci-dessous → on cache l'ancien hamburger. */
+.editor-shell .sidebar.is-editor .sidebar-toggle { display: none; }
+
+/* ─── Bouton circulaire de rétractation ──────────────────────────
+   Position : centré verticalement, à cheval sur le bord droit du rail
+   (moitié sur rail, moitié sur zone main). z-index supérieur au rail
+   pour rester cliquable.
+   Identité : LE SEUL endroit où un cercle plein vert SOCLE est autorisé
+   comme élément d'interface (cf. règle utilisateur — marqueur d'identité
+   assumé, comme le point du logo). Sobre : pas d'ombre, pas de halo. */
+.editor-rail-toggle {
+  position: fixed;
+  top: 50vh;
+  left: calc(var(--rail-w) - 14px);
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green);
+  border: none;
+  border-radius: 50%;
+  color: var(--white);
+  cursor: pointer;
+  z-index: 100;
+  transition: background .12s, transform .12s;
+  /* Pas d'outline, pas de focus glow — on garde un focus accessible
+     via un cerclage discret au keyboard */
+}
+.editor-rail-toggle i {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--white);
+}
+.editor-rail-toggle:hover {
+  background: var(--green-dark);
+  transform: translateY(-50%) scale(1.08);
+}
+.editor-rail-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* Mobile : le rail passe sous 64px sur tout petit écran ; le bouton
+   reste accessible mais ne sert plus à grand-chose (le rail mobile a
+   son propre toggle). On le cache sous 860px. */
+@media (max-width: 860px) {
+  .editor-shell-main { margin-left: 64px; }
+  .editor-shell { --rail-w: 64px; }
+}
+@media (max-width: 720px) {
+  .editor-rail-toggle { display: none; }
+}
