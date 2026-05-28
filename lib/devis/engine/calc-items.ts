@@ -532,7 +532,142 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
       return items;
     }
 
-    // ── autres cases ajoutés par les paquets 4 → 5 ──
+    case "menus": {
+      const np = Number(o.nb_portes) || 0;
+      const mpl = Number(o.m_plinthes) || 0;
+      const ns = Number(o.nb_seuils) || 0;
+      const type_porte = String(o.type_porte || "porte_mid");
+      const type_plinthe = String(o.type_plinthe || "plinthe_mdf");
+      const plbl: Record<string, string> = {
+        porte_std: "Bloc-porte prépeint standard + huisserie",
+        porte_mid: "Bloc-porte intermédiaire + huisserie",
+        porte_prm: "Bloc-porte premium + huisserie chêne",
+      };
+      const tllbl: Record<string, string> = {
+        plinthe_mdf: "Plinthe MDF prépeinte 70mm",
+        plinthe_bois: "Plinthe bois massif 80mm",
+      };
+      return [
+        _hrow(type_porte, np, `${plbl[type_porte] || type_porte} — ${np} unité${np > 1 ? "s" : ""}`, "pce", "Ouvrant + dormant"),
+        _row(type_plinthe, mpl, `${tllbl[type_plinthe] || type_plinthe} — ${mpl} ml`, "ml"),
+        _row("barre_seuil", ns, `Barre de seuil — ${ns} pce`, "pce", "Jonction sol"),
+      ];
+    }
+
+    case "menuext": {
+      const nf = Number(o.nb_fen) || 0;
+      const npf = Number(o.nb_pf) || 0;
+      const nv = Number(o.nb_vol) || 0;
+      const nse = Number(o.nb_seuils_ext) || 0;
+      const nbpe = Number(o.nb_porte_entree) || 0;
+      const type_fen = String(o.type_fen || "fenetre_pvc");
+      const type_pf = String(o.type_pf || "pf_pvc");
+      const type_vol = String(o.type_vol || "volet_bat_pvc");
+      const porte_entree = String(o.porte_entree || "porte_entree_std");
+      const flbl: Record<string, string> = {
+        fenetre_pvc: "Fenêtre PVC double vitrage Ug≤1,1",
+        fenetre_alu: "Fenêtre alu thermolaqué triple vitrage",
+        fenetre_bois: "Fenêtre bois double vitrage certifié",
+      };
+      const pflbl: Record<string, string> = {
+        pf_pvc: "Porte-fenêtre PVC 2 vantaux",
+        pf_alu: "Porte-fenêtre alu 2 vantaux",
+        pf_bois: "Porte-fenêtre bois 2 vantaux",
+      };
+      const vlbl: Record<string, string> = {
+        volet_bat_pvc: "Volet battant PVC",
+        volet_bat_alu: "Volet battant alu thermolaqué",
+        volet_roul: "Volet roulant électrique + caisson",
+      };
+      const pelbl: Record<string, string> = {
+        porte_entree_std: "Porte d'entrée standard isolée",
+        porte_entree_prm: "Porte d'entrée premium acier/alu",
+      };
+      const items: EngineLigne[] = [];
+      if (nf > 0) items.push(_hrow(type_fen, nf, `${flbl[type_fen] || type_fen} — ${nf} unité${nf > 1 ? "s" : ""}`, "pce", "Pose en feuillure"));
+      if (npf > 0) items.push(_hrow(type_pf, npf, `${pflbl[type_pf] || type_pf} — ${npf} unité${npf > 1 ? "s" : ""}`, "pce"));
+      if (nv > 0) items.push(_hrow(type_vol, nv, `${vlbl[type_vol] || type_vol} — ${nv} unité${nv > 1 ? "s" : ""}`, "pce"));
+      if (nbpe > 0) items.push(_hrow(porte_entree, nbpe, `${pelbl[porte_entree] || porte_entree}${nbpe > 1 ? " × " + nbpe : ""}`, "pce"));
+      if (nse > 0) items.push(_row("seuil_ext", nse, `Seuil pierre / granit — ${nse} pce`, "pce"));
+      return items;
+    }
+
+    case "cuisine": {
+      const ml_b = Number(o.ml_bas) || 0;
+      const ml_h = Number(o.ml_haut) || 0;
+      const ml_pt = Number(o.ml_pt) || 0;
+      const m2_cr = Number(o.m2_cred) || 0;
+      const type_pt = String(o.type_pt || "plan_travail");
+      const ptlbl: Record<string, string> = {
+        plan_travail: "Plan de travail stratifié",
+        plan_travail_qtz: "Plan de travail quartz",
+      };
+      const items: EngineLigne[] = [];
+      if (ml_b > 0) items.push(_hrow("meuble_bas", ml_b, `Meubles bas — ${ml_b} ml`, "ml"));
+      if (ml_h > 0) items.push(_hrow("meuble_haut", ml_h, `Meubles hauts — ${ml_h} ml`, "ml"));
+      if (ml_pt > 0) items.push(_hrow(type_pt, ml_pt, `${ptlbl[type_pt] || type_pt} — ${ml_pt} ml`, "ml"));
+      if (m2_cr > 0) items.push(_row("credence", m2_cr, `Crédence carrelage — ${m2_cr} m²`, "m²"));
+      if (o.evier) items.push(_hrow("evier_cuisine", 1, "Évier inox simple bac + bonde", "pce"));
+      if (o.four) items.push(_hrow("four", 1, "Four encastrable", "pce"));
+      if (o.plaques) items.push(_hrow("plaques", 1, "Plaques de cuisson 4 feux", "pce"));
+      if (o.hotte) items.push(_hrow("hotte", 1, "Hotte aspirante", "pce"));
+      if (o.lave_vaisselle) items.push(_hrow("lave_vaisselle", 1, "Lave-vaisselle", "pce"));
+      return items;
+    }
+
+    case "plombs": {
+      const pts = (o.pts as { douche?: number; cuisine?: number; lavabo?: number; bain?: number }) || {};
+      const reseau_type = String(o.reseau_type || "mc");
+      const rk = reseau_type === "cu" ? "reseau_cu" : "reseau_mc";
+      const rLbl = reseau_type === "cu"
+        ? "Réseau distribution cuivre — tubes + raccords à sertir"
+        : "Réseau distribution multicouche — tubes gainés + raccords + nourrices";
+      const rNote = reseau_type === "cu" ? "EF + EC tube cuivre Ø12/14/16" : "EF + EC Ø16/20/25";
+      const items: EngineLigne[] = [
+        _row(rk, S, rLbl, "m²", rNote),
+        _row("evac_pvc", S, "Réseau évacuation PVC — eaux usées Ø40 + eaux vannes Ø100", "m²", "Siphons + raccords"),
+      ];
+      const wc_sol = Number(o.wc_sol) || 0;
+      const wc_susp = Number(o.wc_susp) || 0;
+      const q = (lot.q || "mid") as string;
+      if (wc_sol > 0) items.push(_hrow(`wc_complet_${q}`, wc_sol, `WC au sol — cuvette + réservoir + abattant${wc_sol > 1 ? " × " + wc_sol : ""}`, "pce"));
+      if (wc_susp > 0) {
+        items.push(_hrow("bati_support", wc_susp, `Bâti-support WC suspendu${wc_susp > 1 ? " × " + wc_susp : ""}`, "pce", "Geberit / Grohe / Viega"));
+        items.push(_hrow(`wc_suspendu_cuvette_${q}`, wc_susp, `Cuvette WC suspendue${wc_susp > 1 ? " × " + wc_susp : ""}`, "pce", "Rimless"));
+        items.push(_hrow(`plaque_declenchement_${q}`, wc_susp, `Plaque de déclenchement${wc_susp > 1 ? " × " + wc_susp : ""}`, "pce"));
+      }
+      const nbDouche = Number(pts.douche) || 0;
+      const nbCuisine = Number(pts.cuisine) || 0;
+      const nbLavabo = Number(pts.lavabo) || 0;
+      const nbBain = Number(pts.bain) || 0;
+      if (nbDouche > 0) {
+        const carr = (o.douche_type || "receveur") === "carreler";
+        if (carr) {
+          items.push(_hrow("receveur_carreler", nbDouche, `Receveur à carreler${nbDouche > 1 ? " × " + nbDouche : ""}`, "pce", "Wedi / Schlüter Kerdi-Shower"));
+          items.push(_hrow("bonde_design", nbDouche, `Bonde design / linéaire${nbDouche > 1 ? " × " + nbDouche : ""}`, "pce"));
+          items.push(_row("kit_etanche_douche", nbDouche * 3.5, `Kit étanchéité douche${nbDouche > 1 ? " × " + nbDouche : ""}`, "m²", "Membrane liquide + bandes"));
+        } else {
+          items.push(_hrow(`receveur_90_${q}`, nbDouche, `Receveur douche 90×90 + bonde${nbDouche > 1 ? " × " + nbDouche : ""}`, "pce"));
+        }
+        items.push(_hrow(`mitigeur_douche_${q}`, nbDouche, `Mitigeur douche + flexible + douchette${nbDouche > 1 ? " × " + nbDouche : ""}`, "pce"));
+      }
+      if (nbCuisine > 0) items.push(_hrow(`mitigeur_cuisine_${q}`, nbCuisine, `Mitigeur évier cuisine${nbCuisine > 1 ? " × " + nbCuisine : ""}`, "pce"));
+      if (nbLavabo > 0) items.push(_hrow(`mitigeur_lavabo_${q}`, nbLavabo, `Mitigeur lavabo + siphon${nbLavabo > 1 ? " × " + nbLavabo : ""}`, "pce"));
+      if (nbBain > 0) {
+        items.push(_hrow(`baignoire_${q}`, nbBain, `Baignoire standard 170×75${nbBain > 1 ? " × " + nbBain : ""}`, "pce"));
+        items.push(_hrow(`mitigeur_bain_${q}`, nbBain, `Mitigeur bain/douche${nbBain > 1 ? " × " + nbBain : ""}`, "pce"));
+      }
+      const ceKey = String(o.ce || "ce_elec_150");
+      const ceLbl: Record<string, string> = {
+        ce_elec_100: "Chauffe-eau électrique 100L",
+        ce_elec_150: "Chauffe-eau électrique 150L",
+        ce_thermo: "Chauffe-eau thermodynamique — COP ≥ 3",
+      };
+      items.push(_hrow(ceKey, 1, ceLbl[ceKey] || ceKey, "pce"));
+      return items;
+    }
+
+    // ── case 'elec' ajouté au paquet 5 ──
     default:
       return [];
   }
