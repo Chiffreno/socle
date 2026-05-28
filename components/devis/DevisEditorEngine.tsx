@@ -297,14 +297,11 @@ export default function DevisEditorEngine({ devisId }: Props) {
     scheduleSave();
   }
 
-  function toggleLot(lid: LotId) {
-    const cur = draft.engine?.lots?.[lid];
-    if (cur && !cur.on) patchLot(lid, { on: true });
-    setCur(lid);
-  }
-
-  function removeLot(lid: LotId) {
-    patchLot(lid, { on: false });
+  // Option B : 2 zones de clic distinctes sur chaque lot.
+  function onLotCheck(lid: LotId, checked: boolean) {
+    patchLot(lid, { on: checked });
+    // Cocher → sélectionne aussi. Décocher → reste sur le lot (vide).
+    if (checked) setCur(lid);
   }
 
   // ── Totaux temps réel (engine + tauxHoraire) ────────────────────
@@ -642,7 +639,7 @@ export default function DevisEditorEngine({ devisId }: Props) {
       </details>
 
       <main className="dee-cols">
-        {/* ── COLONNE GAUCHE : 15 lots ───────────────────────── */}
+        {/* ── COLONNE GAUCHE : 15 lots (Option B : check + nom) ──── */}
         <aside className="dee-cols-left">
           <div className="dee-cols-left-title">Lots du devis</div>
           <ul className="dee-lot-list">
@@ -650,23 +647,43 @@ export default function DevisEditorEngine({ devisId }: Props) {
               const lt = totaux?.parLot.find((l) => l.lotId === meta.id);
               const isOn = lt?.active ?? false;
               const isCurrent = cur === meta.id;
+              // Vert "récompense" : sous-total affiché UNIQUEMENT quand
+              // caLot > 0. Un lot coché mais vide reste neutre.
+              const hasMontant = isOn && !!lt && lt.caLot > 0;
               return (
                 <li key={meta.id}>
-                  <button
-                    type="button"
-                    className={`dee-lot-item${isOn ? " is-on" : ""}${
+                  <div
+                    className={`dee-lot-row${isOn ? " is-on" : ""}${
                       isCurrent ? " is-current" : ""
                     }`}
-                    onClick={() => toggleLot(meta.id)}
                   >
-                    <span className="dee-lot-dot" />
-                    <span className="dee-lot-label">{meta.label}</span>
-                    {isOn && lt && (
+                    <label
+                      className="dee-lot-check"
+                      aria-label={`Inclure ${meta.label} dans le devis`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isOn}
+                        onChange={(e) => onLotCheck(meta.id, e.target.checked)}
+                      />
+                      <span className="dee-lot-check-box" aria-hidden="true" />
+                    </label>
+                    <button
+                      type="button"
+                      className="dee-lot-name"
+                      onClick={() => setCur(meta.id)}
+                    >
+                      <span className="dee-lot-label">{meta.label}</span>
+                      {meta.sub && (
+                        <span className="dee-lot-sub">{meta.sub}</span>
+                      )}
+                    </button>
+                    {hasMontant && lt && (
                       <span className="dee-lot-total">
                         {formatEuro(lt.caLot)}
                       </span>
                     )}
-                  </button>
+                  </div>
                 </li>
               );
             })}
@@ -679,40 +696,23 @@ export default function DevisEditorEngine({ devisId }: Props) {
           </div>
         </aside>
 
-        {/* ── COLONNE CENTRE : config du lot courant ─────────── */}
+        {/* ── COLONNE CENTRE : header inline compact + lignes du devis ── */}
         <section className="dee-cols-center">
-          <div className="dee-config-head">
-            <div className="dee-config-eyebrow">{lotMeta.sub || "Lot"}</div>
-            <h2 className="dee-config-title">{lotMeta.label}</h2>
-            <button
-              type="button"
-              className={`dee-config-toggle${curLot?.on ? " is-on" : ""}`}
-              onClick={() => patchLot(cur, { on: !curLot?.on })}
-            >
-              <span className="dee-lot-dot" />
-              {curLot?.on
-                ? "Lot inclus dans le devis"
-                : "Inclure ce lot dans le devis"}
-            </button>
-          </div>
+          <div className="dee-config-head-inline">
+            <h2 className="dee-config-name">{lotMeta.label}</h2>
 
-          {curLot?.on && (
-            <>
-              <div className="dee-config-block">
-                <h4 className="dee-config-block-title">Réglages du lot</h4>
-                <div className="dee-config-grid">
+            {curLot?.on && (
+              <>
+                <div className="dee-config-controls">
                   {!LOTS_NO_SURF.has(cur) && (
-                    <div className="dee-field">
-                      <label className="dee-field-label">
-                        Surface lot (m²)
-                      </label>
+                    <span className="dee-inline-field">
+                      surface
                       <input
-                        className="dee-input"
                         type="number"
                         min={0}
                         step={0.5}
                         value={curLot.surf ?? ""}
-                        placeholder={`Global : ${draft.globalSurf || 0}`}
+                        placeholder={String(draft.globalSurf || 0)}
                         onChange={(e) =>
                           patchLot(cur, {
                             surf:
@@ -722,12 +722,12 @@ export default function DevisEditorEngine({ devisId }: Props) {
                           })
                         }
                       />
-                    </div>
+                      <span className="dee-inline-unit">m²</span>
+                    </span>
                   )}
-                  <div className="dee-field">
-                    <label className="dee-field-label">Marge (%)</label>
+                  <span className="dee-inline-field">
+                    marge
                     <input
-                      className="dee-input"
                       type="number"
                       min={0}
                       step={1}
@@ -736,13 +736,11 @@ export default function DevisEditorEngine({ devisId }: Props) {
                         patchLot(cur, { m: Number(e.target.value) || 0 })
                       }
                     />
-                  </div>
-                  <div className="dee-field">
-                    <label className="dee-field-label">
-                      Temps MO (heures)
-                    </label>
+                    <span className="dee-inline-unit">%</span>
+                  </span>
+                  <span className="dee-inline-field">
+                    MO
                     <input
-                      className="dee-input"
                       type="number"
                       min={0}
                       step={0.5}
@@ -753,19 +751,17 @@ export default function DevisEditorEngine({ devisId }: Props) {
                         })
                       }
                     />
-                  </div>
+                    <span className="dee-inline-unit">h</span>
+                  </span>
                   {LOTS_AVEC_POINTS.has(cur) && (
-                    <div className="dee-field">
-                      <label className="dee-field-label">
-                        Coût revient points (€)
-                      </label>
+                    <span className="dee-inline-field">
+                      revient pts
                       <input
-                        className="dee-input"
                         type="number"
                         min={0}
                         step={1}
                         value={curLot.coutRevientPoints ?? ""}
-                        placeholder="Non saisi"
+                        placeholder="—"
                         onChange={(e) =>
                           patchLot(cur, {
                             coutRevientPoints:
@@ -775,71 +771,49 @@ export default function DevisEditorEngine({ devisId }: Props) {
                           })
                         }
                       />
-                    </div>
+                      <span className="dee-inline-unit">€</span>
+                    </span>
                   )}
-                  <div className="dee-field">
-                    <label className="dee-field-label">TVA du lot</label>
-                    <select
-                      className="dee-select"
-                      value={curLot.tva ?? ""}
-                      onChange={(e) =>
-                        patchLot(cur, {
-                          tva:
-                            e.target.value === ""
-                              ? undefined
-                              : (Number(e.target.value) as TauxTVA),
-                        })
-                      }
-                    >
-                      <option value="">
-                        Hérité ({draft.tvaParDefaut} %)
-                      </option>
-                      {TAUX_TVA.map((t) => (
-                        <option key={t} value={t}>
-                          {t} %
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
-
                 {LOTS_AVEC_GAMME.has(cur) && (
-                  <div style={{ marginTop: 18 }}>
-                    <h4 className="dee-config-block-title">Gamme</h4>
-                    <div className="dee-quality">
-                      {(["std", "mid", "prm"] as Qualite[]).map((q) => (
-                        <button
-                          key={q}
-                          type="button"
-                          className={`dee-quality-card${
-                            curLot.q === q ? " is-active" : ""
-                          }`}
-                          onClick={() => patchLot(cur, { q })}
-                        >
-                          {q === "std"
-                            ? "Éco"
-                            : q === "mid"
-                              ? "Standard"
-                              : "Premium"}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="dee-quality-inline">
+                    <span className="dee-quality-inline-label">Gamme</span>
+                    {(["std", "mid", "prm"] as Qualite[]).map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        className={`dee-quality-pill${
+                          curLot.q === q ? " is-active" : ""
+                        }`}
+                        onClick={() => patchLot(cur, { q })}
+                      >
+                        {q === "std"
+                          ? "Éco"
+                          : q === "mid"
+                            ? "Standard"
+                            : "Premium"}
+                      </button>
+                    ))}
                   </div>
                 )}
-              </div>
+              </>
+            )}
+          </div>
 
-              <div className="dee-config-placeholder">
-                <strong>P4</strong> — Configurateur détaillé du lot «&nbsp;
-                {lotMeta.label}&nbsp;» à venir.
-                <br />
-                En attendant, le moteur utilise les valeurs par défaut du
-                lot.
+          {curLot?.on ? (
+            <section className="dee-engine-items">
+              <div className="dee-engine-items-head">
+                <span>Lignes du devis pour ce lot</span>
+                <span className="dee-engine-items-head-count">
+                  {curItems.length} ligne{curItems.length > 1 ? "s" : ""}
+                </span>
               </div>
-
-              <details className="dee-engine-items">
-                <summary>
-                  Lignes auto-générées par le moteur ({curItems.length})
-                </summary>
+              {curItems.length === 0 ? (
+                <div className="dee-engine-items-empty">
+                  Aucune ligne pour l&apos;instant — le configurateur détaillé
+                  du lot arrive en P4.
+                </div>
+              ) : (
                 <table>
                   <thead>
                     <tr>
@@ -850,50 +824,29 @@ export default function DevisEditorEngine({ devisId }: Props) {
                     </tr>
                   </thead>
                   <tbody>
-                    {curItems.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          style={{
-                            textAlign: "center",
-                            color: "var(--gray3)",
-                            padding: 16,
-                          }}
-                        >
-                          Aucune ligne — configurez le lot pour voir les
-                          calculs.
+                    {curItems.map((it, i) => (
+                      <tr key={i}>
+                        <td className="lbl">
+                          {it.lbl}
+                          {it.note && <small>{it.note}</small>}
                         </td>
+                        <td className="num">
+                          {it.qty} {it.unit}
+                        </td>
+                        <td className="num">{formatEuro(it.p)}</td>
+                        <td className="num">{formatEuro(it.total)}</td>
                       </tr>
-                    ) : (
-                      curItems.map((it, i) => (
-                        <tr key={i}>
-                          <td className="lbl">
-                            {it.lbl}
-                            {it.note && <small>{it.note}</small>}
-                          </td>
-                          <td className="num">
-                            {it.qty} {it.unit}
-                          </td>
-                          <td className="num">{formatEuro(it.p)}</td>
-                          <td className="num">{formatEuro(it.total)}</td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
-              </details>
-
-              <button
-                type="button"
-                className="dee-config-remove"
-                onClick={() => {
-                  removeLot(cur);
-                  setNotice(`Lot « ${lotMeta.label} » retiré`);
-                }}
-              >
-                Retirer ce lot du devis
-              </button>
-            </>
+              )}
+            </section>
+          ) : (
+            <div className="dee-empty">
+              <strong>Lot non inclus dans le devis.</strong>
+              <br />
+              Cochez la case dans la colonne gauche pour l&apos;inclure.
+            </div>
           )}
         </section>
 

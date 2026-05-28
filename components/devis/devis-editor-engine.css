@@ -199,46 +199,134 @@
   letter-spacing: .12em;
 }
 .dee-lot-list { list-style: none; margin: 0; padding: 0; }
-.dee-lot-item {
+
+/* Une ligne lot = 2 zones de clic distinctes (Option B) :
+   - .dee-lot-check : case à cocher (active/désactive le lot)
+   - .dee-lot-name  : nom + sous-titre (navigation seule, n'active pas) */
+.dee-lot-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 9px 18px;
-  background: transparent;
-  border: none;
+  align-items: stretch;
   border-left: 3px solid transparent;
-  border-radius: 0;
-  font-family: var(--ff);
-  font-size: 13px;
-  color: var(--gray4);
-  text-align: left;
-  cursor: pointer;
-  transition: background .12s, color .12s;
+  /* Transition douce sur l'activation (fond qui glisse vers le vert clair). */
+  transition: background .15s ease, border-left-color .15s ease;
+  position: relative;
 }
-.dee-lot-item:hover { background: var(--gray-bg); color: var(--black); }
-.dee-lot-item.is-on { color: var(--black); }
-.dee-lot-item.is-current {
+.dee-lot-row:hover { background: var(--gray-bg); }
+.dee-lot-row.is-current {
   background: var(--green-light);
   border-left-color: var(--green);
-  color: var(--black);
-  font-weight: 500;
 }
-.dee-lot-item .dee-lot-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--gray2);
+.dee-lot-row.is-current:hover { background: var(--green-light); }
+
+/* Case à cocher custom (zéro radius, vert quand cochée) */
+.dee-lot-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  padding: 0;
+  cursor: pointer;
   flex-shrink: 0;
+  position: relative;
 }
-.dee-lot-item.is-on .dee-lot-dot { background: var(--green); }
-.dee-lot-item .dee-lot-label { flex: 1; }
-.dee-lot-item .dee-lot-total {
+.dee-lot-check input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.dee-lot-check-box {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--gray3);
+  background: var(--white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s ease, background .15s ease;
+}
+.dee-lot-check:hover .dee-lot-check-box { border-color: var(--black); }
+.dee-lot-check input:checked + .dee-lot-check-box {
+  background: var(--green);
+  border-color: var(--green);
+}
+.dee-lot-check input:checked:hover + .dee-lot-check-box {
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+}
+.dee-lot-check-box::after {
+  content: "";
+  width: 7px;
+  height: 3.5px;
+  border-left: 1.5px solid var(--white);
+  border-bottom: 1.5px solid var(--white);
+  transform: rotate(-45deg) translate(1px, -1px);
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.dee-lot-check input:checked + .dee-lot-check-box::after { opacity: 1; }
+
+/* Zone "nom + sous-titre" : bouton, navigation seule */
+.dee-lot-name {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 10px 8px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  font-family: var(--ff);
+  color: var(--gray4);
+}
+.dee-lot-row.is-on .dee-lot-name { color: var(--black); }
+.dee-lot-row.is-current .dee-lot-name { color: var(--black); }
+.dee-lot-label {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  display: block;
+  /* gère les labels longs */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+.dee-lot-row.is-current .dee-lot-label { font-weight: 600; }
+.dee-lot-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--gray3);
+  line-height: 1.25;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* Sous-total à droite : vert + fondu à l'apparition. Affiché UNIQUEMENT
+   quand caLot > 0 (un lot coché vide reste neutre — le vert récompense
+   le remplissage). */
+.dee-lot-total {
+  align-self: center;
+  padding-right: 14px;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--green);
+  white-space: nowrap;
+  animation: dee-fade-in .25s ease;
 }
-.dee-lot-item:not(.is-on) .dee-lot-total { display: none; }
+@keyframes dee-fade-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .dee-lot-foot {
   margin-top: 18px;
@@ -263,103 +351,139 @@
 
 /* ── Colonne centrale : config du lot courant ───────────────────── */
 .dee-cols-center {
-  padding: 24px 28px 80px;
+  padding: 18px 28px 80px;
   background: var(--gray-bg);
   overflow-x: hidden;
 }
-.dee-config-head { margin-bottom: 20px; }
-.dee-config-eyebrow {
-  font-family: var(--ff);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--gray4);
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  margin-bottom: 4px;
+
+/* En-tête compact : nom du lot + réglages inline sur la même ligne. */
+.dee-config-head-inline {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  padding: 8px 0 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--gray2);
 }
-.dee-config-title {
+.dee-config-name {
+  margin: 0;
   font-family: var(--ff);
-  font-size: 22px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--black);
-  margin: 0 0 10px;
+  letter-spacing: -0.005em;
+  flex-shrink: 0;
 }
-.dee-config-toggle {
+.dee-config-controls {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+/* Champ inline : label gris à gauche, input compact, suffixe gris. */
+.dee-inline-field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-family: var(--ff);
+  font-size: 12px;
+  color: var(--gray4);
+}
+.dee-inline-field > input {
+  width: 54px;
+  padding: 3px 6px;
   background: var(--white);
   border: 1px solid var(--gray2);
   border-radius: 0;
-  font-family: var(--ff);
-  font-size: 13px;
+  font-family: var(--mono);
+  font-size: 12px;
   color: var(--black);
-  cursor: pointer;
+  text-align: right;
 }
-.dee-config-toggle.is-on { border-color: var(--green); background: var(--green-light); }
+.dee-inline-field > input:focus {
+  outline: none;
+  border-color: var(--black);
+}
+.dee-inline-unit {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gray3);
+}
+/* Séparateurs entre champs inline (point médian discret). */
+.dee-config-controls > .dee-inline-field + .dee-inline-field::before {
+  content: "·";
+  margin-right: 10px;
+  color: var(--gray2);
+}
 
-.dee-config-block {
+/* Gamme inline (pills compactes) — affichée à droite si applicable. */
+.dee-quality-inline {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-left: auto;
+  font-family: var(--ff);
+  font-size: 11px;
+  color: var(--gray4);
+}
+.dee-quality-inline-label {
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-right: 4px;
+}
+.dee-quality-pill {
+  padding: 3px 9px;
+  background: transparent;
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 11px;
+  color: var(--gray4);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+.dee-quality-pill:hover { border-color: var(--gray4); color: var(--black); }
+.dee-quality-pill.is-active {
+  border-color: var(--green);
+  background: var(--green-light);
+  color: var(--black);
+  font-weight: 500;
+}
+
+/* Bloc principal : lignes du devis pour le lot courant.
+   PRIORITÉ d'espace au devis (toute la hauteur sous le header compact). */
+.dee-engine-items {
   background: var(--white);
   border: 1px solid var(--gray2);
-  padding: 18px 20px;
-  margin-bottom: 16px;
 }
-.dee-config-block-title {
+.dee-engine-items-head {
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--gray2);
   font-family: var(--ff);
   font-size: 11px;
   font-weight: 600;
   color: var(--gray4);
   text-transform: uppercase;
   letter-spacing: .12em;
-  margin: 0 0 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
 }
-.dee-config-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 14px;
-}
-
-.dee-config-placeholder {
-  padding: 28px 24px;
-  background: var(--white);
-  border: 1px dashed var(--gray3);
-  text-align: center;
-  font-family: var(--ff);
-  font-size: 13px;
-  color: var(--gray4);
-}
-.dee-config-placeholder strong { color: var(--black); font-weight: 600; }
-
-/* Lignes auto-générées par le moteur (debug visuel P3) */
-.dee-engine-items {
-  margin-top: 14px;
-  background: var(--white);
-  border: 1px solid var(--gray2);
-}
-.dee-engine-items > summary {
-  padding: 10px 16px;
-  cursor: pointer;
-  list-style: none;
-  font-family: var(--ff);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--gray4);
-  text-transform: uppercase;
-  letter-spacing: .12em;
-}
-.dee-engine-items > summary::-webkit-details-marker { display: none; }
-.dee-engine-items > summary::before {
-  content: "▸ ";
+.dee-engine-items-head-count {
+  font-family: var(--mono);
+  font-size: 11px;
   color: var(--gray3);
+  text-transform: none;
+  letter-spacing: 0;
 }
-.dee-engine-items[open] > summary::before { content: "▾ "; }
 .dee-engine-items table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .dee-engine-items th, .dee-engine-items td {
-  padding: 6px 10px;
+  padding: 7px 12px;
   border-top: 1px solid var(--gray2);
   text-align: left;
 }
+.dee-engine-items thead th { border-top: none; }
 .dee-engine-items th {
   font-family: var(--ff);
   font-weight: 500;
@@ -369,37 +493,44 @@
   letter-spacing: .08em;
   background: var(--gray-bg);
 }
-.dee-engine-items td.num { font-family: var(--mono); text-align: right; }
+.dee-engine-items td.num { font-family: var(--mono); text-align: right; white-space: nowrap; }
 .dee-engine-items td.lbl { color: var(--black); }
-.dee-engine-items td.lbl small { display: block; color: var(--gray3); font-family: var(--mono); font-size: 10px; }
-
-.dee-config-remove {
-  margin-top: 24px;
-  padding: 9px 16px;
-  background: transparent;
-  border: 1px solid var(--gray2);
-  border-radius: 0;
+.dee-engine-items td.lbl small {
+  display: block;
+  margin-top: 2px;
+  color: var(--gray3);
+  font-family: var(--ff);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.dee-engine-items-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--gray3);
   font-family: var(--ff);
   font-size: 12px;
-  color: var(--gray4);
-  cursor: pointer;
 }
-.dee-config-remove:hover { border-color: var(--red); color: var(--red); }
 
-/* Quality cards std/mid/prm */
-.dee-quality { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.dee-quality-card {
-  padding: 10px 12px;
+/* Grille de champs utilisée par la modale "Nouveau client" et toute
+   future modale d'édition de fiche. Pas utilisée dans le header inline
+   du lot (celui-ci a son propre layout flex). */
+.dee-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+/* État : lot non inclus (case décochée mais sélectionné). */
+.dee-empty {
+  padding: 32px 24px;
   background: var(--white);
-  border: 1px solid var(--gray2);
-  border-radius: 0;
+  border: 1px dashed var(--gray2);
+  text-align: center;
   font-family: var(--ff);
   font-size: 13px;
-  color: var(--black);
-  cursor: pointer;
-  text-align: center;
+  color: var(--gray4);
 }
-.dee-quality-card.is-active { border-color: var(--green); background: var(--green-light); font-weight: 500; }
+.dee-empty strong { color: var(--black); font-weight: 600; }
 
 /* ── Colonne droite : récap temps réel ──────────────────────────── */
 .dee-cols-right {
