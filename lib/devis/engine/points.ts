@@ -12,21 +12,27 @@
 
 import type { TauxTVA, Unite } from "../types";
 
-/** Une prestation "par point" — fourniture+pose à prix unitaire fixe. */
+/**
+ * Une prestation à prix unitaire ferme — fourniture+pose (élec), pose seule
+ * (démolition), forfait, etc. Le prix est monolithique : prixEstFinal=true
+ * sur la ligne générée, aucune marge ni MO ajoutée par le moteur.
+ */
 export interface PointPrestation {
   id: string;
   /** Référence à une PointCategorie du même catalogue (pour le regroupement UI). */
   categorieId: string;
   libelle: string;
   description: string;
+  /** Unité de la prestation : "u" (point), "m2", "ml", "forfait", etc. */
   unite: Unite;
-  /** Prix de vente FINAL au client, tout compris (fourniture + pose + câblage). */
+  /** Prix de vente FINAL au client, tout compris pour la prestation. */
   prixVente: number;
   tva: TauxTVA;
   /**
-   * Sémantiquement true pour un produit fini reconnaissable par le client.
-   * À l'affichage : ignoré si la ligne générée a prixEstFinal=true (pas de
-   * split fourniture/pose disponible sur un tarif monolithique).
+   * Sémantiquement true pour un produit fini reconnaissable par le client
+   * (élec). À l'affichage : ignoré si la ligne générée a prixEstFinal=true
+   * (prix monolithique, pas de split fourniture/pose disponible).
+   * Pour la démolition (100% pose) : false partout.
    */
   afficheFourniture: boolean;
 }

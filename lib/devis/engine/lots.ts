@@ -169,7 +169,9 @@ function lotEmpty(o: Record<string, unknown>): LotState {
 /** Construit l'état initial des 15 lots. */
 export function createInitialLotStates(): Record<LotId, LotState> {
   return {
-    demolition: lotEmpty({ nb_bennes: 0, poly_on: false, poly_m2: 0, adh_on: false, adh_m2: 0, kraft_on: false, kraft_m2: 0 }),
+    // DÉMOLITION — nouvelle forme SOCLE : 100% postes à prix ferme (catalogue-demolition.ts).
+    // Pas d'infrastructure à déboursé (contrairement à élec). Marge interne via coutRevientPoints.
+    demolition: lotEmpty({ points: {} as Record<string, number> }),
     iti: lotEmpty({ m2: 0, epa: "120", iso: "gr32", membrane: false, parement: "ba13_std" }),
     cloisons: lotEmpty({ std_on: false, std_m2: 0, std_oss: "m48", std_peaux: "2", std_acou: "non", std_dbl_mont: false, hydro_on: false, hydro_m2: 0, hydro_oss: "m48", hydro_peaux: "2", hydro_acou: "non", hydro_dbl_mont: false, hd_on: false, hd_m2: 0, hd_oss: "m48", hd_peaux: "2", hd_acou: "non", hd_dbl_mont: false, feu_on: false, feu_m2: 0, feu_oss: "m48", feu_peaux: "2", feu_acou: "non", feu_dbl_mont: false, chute: 0 }),
     // ÉLECTRICITÉ — nouvelle forme SOCLE : infrastructure + points
