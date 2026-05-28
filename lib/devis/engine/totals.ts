@@ -83,6 +83,10 @@ export interface DevisTotaux {
   totalMargePointsTracked: number; // somme des margePoints connus
   pointsLotsNonRenseignes: LotId[]; // lots avec points mais sans coutRevientPoints
   margeGlobaleTracked: number; // margeDeboursé + margePointsTracked (parts connues)
+  /** true ssi tauxHoraire ≤ 0 ET au moins un lot actif a tempsMoHeures > 0.
+   *  Signale à l'UI que la MO n'est pas valorisée dans la marge (cf. P3/P4
+   *  affichage des bandeaux d'alerte). */
+  tauxHoraireManquant: boolean;
 }
 
 // ─── Helpers internes ────────────────────────────────────────────────
@@ -228,6 +232,16 @@ export function calcEngineTotaux(
     totalMargeDeboursé + totalMargePointsTracked
   );
 
+  // Détection : entreprise.tauxHoraire à 0 alors qu'au moins un lot actif a
+  // saisi du temps MO → la marge sur déboursé est sous-évaluée silencieusement.
+  // À l'UI (P3/P4) de signaler via un bandeau et de proposer Paramètres.
+  const tauxHoraireManquant =
+    (tauxHoraire || 0) <= 0 &&
+    activeLots.some((l) => {
+      const lotState = state.lots[l.lotId];
+      return (lotState.tempsMoHeures || 0) > 0;
+    });
+
   return {
     parLot,
     subTotalHT,
@@ -244,5 +258,6 @@ export function calcEngineTotaux(
     totalMargePointsTracked,
     pointsLotsNonRenseignes,
     margeGlobaleTracked,
+    tauxHoraireManquant,
   };
 }

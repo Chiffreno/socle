@@ -1,7 +1,14 @@
 // ============================================================
 // SOCLE — Module Devis — Types
 // Calqués sur lib/devis/schema.sql (camelCase côté TS).
+//
+// P2 — Le contenu chiffrage est porté par `Devis.engine: EngineState`
+// (moteur "15 lots ChiffReno"). Les anciens `Lot`/`Ligne` (modèle C1
+// ligne-par-ligne) sont @deprecated et seront retirés en P3 quand
+// DevisEditor sera réécrit autour du configurateur de lots.
 // ============================================================
+
+import type { EngineState } from "./engine/types";
 
 export type ClientType = "particulier" | "professionnel";
 
@@ -121,29 +128,30 @@ export interface ClientSnapshot {
   siren: string;
 }
 
-// ─── Contenu du devis (jsonb) ───
+// ─── @deprecated — modèle C1 ligne-par-ligne ───
+// Conservé en P2 pour ne pas casser DevisEditor/ApercuDevis. Sera supprimé
+// en P3 quand l'UI bascule sur le configurateur de lots ChiffReno. Les
+// devis migrés ont `Devis.lots = []` (vide), tout le chiffrage est dans
+// `Devis.engine`.
+
+/** @deprecated P2 — modèle C1, remplacé par EngineLigne dans le moteur. */
 export interface Ligne {
   id: string;
-  /** Nature : "normal" (compté) | "option" (présenté hors total). */
   nature: LigneNature;
-  /** Référence catalogue si la ligne a été ajoutée depuis la bibliothèque. */
   prestationId?: string;
   libelle: string;
   description: string;
   quantite: number;
   unite: Unite;
-  /** €/unité — fournitures (ce qui est facturé au client pour les matériaux). */
   prixMateriauxUnitaire: number;
-  /** €/unité — main d'œuvre (pose). */
   prixPoseUnitaire: number;
   tva: TauxTVA;
-  // Coûts internes PAR UNITÉ (jamais affichés au client) — base de la marge.
-  /** Ce que l'artisan paye fournisseur (€/unité). */
   coutMateriauxAchat?: number;
-  /** Taux horaire interne × heures réelles, rapporté à l'unité (€/unité). */
   coutMoInterne?: number;
 }
 
+/** @deprecated P2 — modèle C1, remplacé par les 15 lots ChiffReno
+ *  (cf. `lib/devis/engine/lots.ts`). */
 export interface Lot {
   id: string;
   titre: string;
@@ -163,16 +171,29 @@ export interface Devis {
   chantierAdresse: string;
   chantierCodePostal: string;
   chantierVille: string;
+  /** Surface chantier (m²). Sync'd vers `engine.globalSurf` à chaque
+   *  écriture par le repository. */
+  globalSurf: number;
+  /** TVA appliquée par défaut aux lignes du moteur. Sync'd vers
+   *  `engine.tvaParDefaut`. */
+  tvaParDefaut: TauxTVA;
+  /** P2 — Source de vérité du chiffrage : lots ChiffReno, leur config,
+   *  custom, MO, marge, coutRevientPoints, override TVA par lot. */
+  engine: EngineState;
+  /** @deprecated P2 — modèle C1, vidé à [] par la migration. Sera retiré
+   *  en P3 quand DevisEditor sera réécrit autour de `engine`. */
   lots: Lot[];
   acomptePct: number;
   lettreIntro: string;
   notesInternes: string;
   /** Affiche le détail Matériaux/Pose dans l'aperçu/PDF client. */
   detailMatPose: boolean;
-  /** Remise commerciale appliquée au sous-total HT (avant TVA). */
+  /** Remise commerciale appliquée au sous-total HT (avant TVA). Sync'd
+   *  vers `engine.remiseMode` / `engine.remiseValeur`. */
   remiseMode: RemiseMode;
   remiseValeur: number;
-  // Totaux dénormalisés, recalculés à chaque écriture (cf. calc.ts).
+  // Totaux dénormalisés, recalculés à chaque écriture depuis `engine`
+  // (cf. repository.withTotaux → calcEngineTotaux).
   totalHT: number;
   totalTVA: number;
   totalTTC: number;
@@ -184,6 +205,12 @@ export interface Devis {
 /**
  * Données fournies pour créer/modifier un devis. Le `numero` et les totaux
  * sont attribués/calculés par le repository ; ils ne sont pas fournis ici.
+ *
+ * P2 — `globalSurf`, `tvaParDefaut`, `engine` sont optionnels à l'entrée :
+ * le repository les remplit avec des défauts neutres (0 / 10 /
+ * `createInitialEngineState`) si absents. Permet à l'ancien DevisEditor
+ * (C1) de continuer à créer des devis sans connaître l'engine. P3 les
+ * rendra obligatoires une fois l'UI réécrite.
  */
 export type DevisInput = Omit<
   Devis,
@@ -195,4 +222,8 @@ export type DevisInput = Omit<
   | "margeHT"
   | "createdAt"
   | "updatedAt"
->;
+  | "globalSurf"
+  | "tvaParDefaut"
+  | "engine"
+> &
+  Partial<Pick<Devis, "globalSurf" | "tvaParDefaut" | "engine">>;

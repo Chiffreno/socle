@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estimateur BTP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=ranade@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ede9e2;--bg2:#faf9f7;--bg3:#f2efe9;--bg4:#e4e0d8;
+  --border:#d8d4cc;--border2:#c4c0b8;
+  --text:#0f0f0d;--text2:#58554f;--text3:#9a9690;
+  --accent:#4d7a60;--accent2:#3a6149;
+  --green:#4a8c5c;--red:#b05050;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13px;height:100vh;overflow:hidden}
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:212px;min-width:212px;background:var(--bg2);border-right:1px solid var(--border);box-shadow:2px 0 12px rgba(0,0,0,.07);display:flex;flex-direction:column;overflow:hidden;z-index:1}
+.brand{padding:14px 14px 13px;border-bottom:1px solid var(--border);display:flex;justify-content:center;align-items:center}
+.brand-logo{font-family:'Ranade',var(--sans);font-size:26px;font-weight:700;line-height:1;letter-spacing:-.01em}
+.brand-logo .chiff{color:var(--text)}
+.brand-logo .reno{color:#C8A96E}
+.brand-sub{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.proj-row{padding:7px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.proj-row label{font-size:9px;color:var(--text3);font-family:var(--mono);flex-shrink:0}
+.proj-row input[type=text]{flex:1;min-width:0;font-family:var(--sans);font-size:11px;background:transparent;border:none;border-bottom:1px solid var(--border2);border-radius:0;padding:1px 0;color:var(--text)}
+.proj-row input[type=text]:focus{outline:none;border-bottom-color:var(--accent)}
+.params-row{padding:7px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:6px}
+.surf-part{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.surf-part label{font-size:9px;color:var(--text2);font-family:var(--mono);white-space:nowrap;flex-shrink:0}
+.surf-part span{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.tva-part{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.tva-seg{display:flex;border:1px solid var(--border2);border-radius:4px;overflow:hidden}
+.tva-seg button{padding:2px 7px;font-size:9px;font-family:var(--mono);background:transparent;border:none;color:var(--text2);cursor:pointer;border-right:1px solid var(--border2);transition:all .1s}
+.tva-seg button:last-child{border-right:none}
+.tva-seg button.on{background:var(--bg4);color:var(--text);font-weight:500}
+.nav-scroll{flex:1;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;position:relative}
+.nav-item:hover{background:var(--bg3)}
+.nav-item.active{background:var(--bg3)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent)}
+.nav-item.disabled{opacity:.32}
+.nav-num{font-family:var(--mono);font-size:9px;color:var(--text3);min-width:15px;flex-shrink:0}
+.nav-info{flex:1;min-width:0}
+.nav-label{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-sub{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.nav-amount{font-family:var(--mono);font-size:10px;color:var(--text2);text-align:right;min-width:46px;flex-shrink:0}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.lot-header{padding:10px 16px 9px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;row-gap:5px}
+.lot-sw-wrap{display:flex;align-items:center;gap:10px;flex:1;min-width:140px;cursor:pointer;user-select:none}
+.lot-sw-wrap:hover .lot-sw{border-color:var(--accent)}
+.lot-sw{width:32px;height:18px;border-radius:9px;background:var(--bg4);border:1px solid var(--border2);position:relative;flex-shrink:0;transition:all .18s}
+.lot-sw.on{background:var(--accent);border-color:var(--accent2)}
+.lot-sw::after{content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:var(--text3);top:2px;left:2px;transition:transform .18s}
+.lot-sw.on::after{transform:translateX(14px);background:var(--bg2)}
+.lot-title{min-width:0;transition:opacity .15s}
+.lot-sw-wrap.off .lot-title{opacity:.38}
+.lot-title h2{font-size:14px;font-weight:400;letter-spacing:-.01em}
+.lot-title p{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.surf-group{display:flex;align-items:center;gap:5px}
+.surf-group label{font-size:9px;color:var(--text2);font-family:var(--mono);white-space:nowrap}
+.surf-group span{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.quality-seg{display:flex;border:1px solid var(--border2);border-radius:5px;overflow:hidden;flex-shrink:0}
+.quality-seg button{padding:3px 9px;font-size:10px;font-family:var(--mono);background:transparent;border:none;color:var(--text2);cursor:pointer;border-right:1px solid var(--border2);transition:all .12s;white-space:nowrap}
+.quality-seg button:last-child{border-right:none}
+.quality-seg button.active{background:var(--accent);color:#fff;font-weight:500}
+.quality-seg button:not(.active):hover{background:var(--bg4);color:var(--text)}
+.hdr-btn{padding:3px 8px;font-size:10px;font-family:var(--mono);background:transparent;border:1px solid var(--border2);border-radius:5px;color:var(--text3);cursor:pointer;transition:all .12s;white-space:nowrap;flex-shrink:0}
+.hdr-btn:hover{color:var(--text2)}
+.hdr-btn.active-lot{border-color:var(--green);color:var(--green)}
+.lot-options{padding:7px 16px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;flex-wrap:wrap;gap:6px 12px;flex-shrink:0;min-height:32px}
+.opt-group{display:flex;align-items:center;gap:5px}
+.opt-group>label{font-size:9px;color:var(--text2);font-family:var(--mono);white-space:nowrap}
+.mini-seg{display:flex;border:1px solid var(--border2);border-radius:4px;overflow:hidden}
+.mini-seg button{padding:2px 6px;font-size:9px;font-family:var(--mono);background:transparent;border:none;color:var(--text2);cursor:pointer;border-right:1px solid var(--border2);transition:all .1s;white-space:nowrap}
+.mini-seg button:last-child{border-right:none}
+.mini-seg button.on{background:var(--bg4);color:var(--text);font-weight:500}
+.opt-chk{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text2);cursor:pointer;padding:2px 0}
+.opt-chk input{accent-color:var(--accent)}
+.opt-pts{display:flex;gap:6px;flex-wrap:wrap}
+.pt-chk{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--text2);cursor:pointer}
+.pt-chk input{accent-color:var(--accent)}
+.table-wrap{flex:1;overflow-y:auto}
+table.ptable{width:100%;border-collapse:collapse}
+table.ptable thead th{padding:5px 10px;text-align:left;font-size:9px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);background:var(--bg2);font-family:var(--mono);white-space:nowrap;position:sticky;top:0;z-index:1}
+table.ptable thead th.r{text-align:right}
+table.ptable tbody tr{border-bottom:1px solid var(--border);transition:background .08s}
+table.ptable tbody tr:hover{background:var(--bg2)}
+table.ptable td{padding:6px 10px;vertical-align:middle}
+table.ptable td.desc{font-size:11px;max-width:280px;line-height:1.4}
+table.ptable td.desc small{display:block;font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+table.ptable td.qty{font-family:var(--mono);font-size:11px;text-align:right;color:var(--text2);white-space:nowrap}
+table.ptable td.unit{font-family:var(--mono);font-size:10px;color:var(--text3);padding-left:3px;white-space:nowrap}
+table.ptable td.price-cell{text-align:right;white-space:nowrap}
+table.ptable td.total{font-family:var(--mono);font-size:11px;font-weight:500;text-align:right;white-space:nowrap}
+table.ptable td.total.hl{color:var(--accent)}
+.opt-badge{display:inline-block;padding:0 4px;border-radius:2px;font-size:8px;font-family:var(--mono);background:#e6f0ea;color:var(--accent2);border:1px solid #b8d4c4;vertical-align:middle;margin-left:4px}
+.price-display{display:inline-flex;align-items:center;gap:3px;cursor:pointer;padding:2px 5px;border-radius:4px;border:1px solid transparent;transition:all .1s;font-family:var(--mono);font-size:11px;color:var(--text2)}
+.price-display:hover{border-color:var(--border2);background:var(--bg4)}
+.price-display.modified{color:var(--accent)}
+.edit-icon{font-size:9px;color:var(--text3);opacity:0;transition:opacity .1s}
+.price-display:hover .edit-icon{opacity:1}
+.reset-btn{font-size:9px;color:var(--text3);cursor:pointer;padding:1px 2px;background:none;border:none;font-family:var(--mono);transition:color .1s}
+.reset-btn:hover{color:var(--accent)}
+.price-edit{display:inline-flex;align-items:center;gap:3px}
+.price-edit input{width:66px;text-align:right;font-family:var(--mono);font-size:11px;padding:2px 4px;background:var(--bg4);border:1px solid var(--accent);border-radius:4px;color:var(--text);outline:none}
+.price-edit button.ok{padding:2px 6px;font-size:9px;font-family:var(--mono);background:var(--accent);border:none;border-radius:4px;color:var(--bg);cursor:pointer;font-weight:500}
+.price-edit button.cancel{padding:2px 6px;font-size:9px;font-family:var(--mono);background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text2);cursor:pointer}
+.lot-footer{padding:8px 16px;border-top:1px solid var(--border);background:var(--bg2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:10px}
+.footer-meta{font-family:var(--mono);font-size:9px;color:var(--text3);line-height:1.7;flex:1}
+.footer-marge{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.footer-marge label{font-size:9px;color:var(--text3);font-family:var(--mono);white-space:nowrap}
+.footer-marge span{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.footer-total{text-align:right;flex-shrink:0}
+.ft-label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.ft-amount{font-family:var(--mono);font-size:16px;font-weight:500;letter-spacing:-.02em}
+.ft-marged{font-family:var(--mono);font-size:10px;color:var(--accent);margin-top:1px}
+.ft-m2{font-family:var(--mono);font-size:9px;color:var(--text2);margin-top:1px}
+.inactive-msg{display:flex;align-items:center;justify-content:center;flex:1;color:var(--text3);font-family:var(--mono);font-size:11px}
+#summary{width:220px;min-width:220px;background:var(--bg2);border-left:1px solid var(--border);box-shadow:-2px 0 12px rgba(0,0,0,.07);display:flex;flex-direction:column;overflow:hidden;z-index:1}
+/* ── Header ── */
+.sum-header{padding:10px 13px 8px;border-bottom:1px solid var(--border)}
+.sum-header h3{font-family:var(--mono);font-size:8px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px}
+.sum-actions{display:flex;flex-direction:column;gap:5px}
+.sum-action{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:5px;font-size:10px;font-family:var(--mono);background:transparent;border:1px solid var(--border2);color:var(--text2);cursor:pointer;width:100%;text-align:left;transition:all .12s}
+.sum-action:hover{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.sum-action.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+.sum-action.accent:hover{background:var(--accent2);border-color:var(--accent2)}
+.sa-icon{font-size:11px;flex-shrink:0}
+/* ── Grand total ── */
+.sum-grand{padding:14px 13px 20px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0}
+.sg-block{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.sg-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.sg-label{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.sg-amount{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--accent);letter-spacing:-.01em;line-height:1}
+.sg-ht-sub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px}
+.sg-ttc-amount{font-family:var(--mono);font-size:28px;font-weight:500;color:var(--text);letter-spacing:-.02em;line-height:1;margin-top:3px}
+.sg-tva-note{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:6px}
+.sg-m2-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px}
+.sg-m2-cell{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px}
+.sg-m2-val{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);line-height:1}
+.sg-m2-tag{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+/* ── Répartition ── */
+.bars-lbl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.bar-row{display:grid;grid-template-columns:1fr auto;gap:2px 6px;margin-bottom:8px;align-items:center}
+.bar-name{font-size:9px;color:var(--text2);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-pct{font-family:var(--mono);font-size:9px;color:var(--accent);text-align:right;font-weight:500}
+.bar-bg{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;grid-column:1}
+.bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .35s ease}
+.bar-amt{font-family:var(--mono);font-size:8px;color:var(--text3);text-align:right}
+input[type=number],select{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:11px;padding:3px 6px;outline:none;transition:border-color .1s}
+input[type=number]:focus,select:focus{border-color:var(--accent)}
+select option{background:var(--bg3)}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-family:var(--mono);font-size:10px;padding:6px 14px;border-radius:5px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
+#toast.show{opacity:1}
+@media print{
+  body{background:#fff;color:#000;overflow:visible;height:auto}
+  #app{height:auto;flex-direction:column}
+  #sidebar,#summary,.qual-cards,.hdr-btn,.lot-options,.footer-marge,.footer-meta{display:none}
+  #main{overflow:visible}.table-wrap{overflow:visible}
+  .lot-footer{background:#fff;border-top:1px solid #ccc;padding:6px 0}
+  .ft-label,.ft-amount,.ft-m2,.ft-marged{color:#000}
+  table.ptable thead th{background:#f4f4f4;color:#555}
+  .price-display{color:#444;border:none;padding:0}.edit-icon,.reset-btn{display:none}
+  td.total.hl{color:#3a6149}.opt-badge{border:1px solid #b8d4c4;background:#e6f0ea;color:#3a6149}
+}
+/* Quality cards */
+.qual-cards{display:flex;gap:5px;flex-shrink:0}
+.qcard{padding:4px 10px;border-radius:5px;border:1px solid var(--border);cursor:pointer;background:transparent;font-size:10px;color:var(--text2);text-align:center;transition:all .12s;line-height:1.35;font-family:var(--sans)}
+.qcard:hover{border-color:var(--border2);color:var(--text)}
+.qcard.active{border-color:var(--accent);background:rgba(77,122,96,.10);color:var(--accent)}
+.qcard .qc-lbl{display:block;font-family:var(--mono);font-weight:500;font-size:10px}
+.qcard .qc-sub{display:block;font-size:8px;color:inherit;opacity:.7;margin-top:1px;white-space:nowrap}
+/* Material cards */
+.matc-wrap{display:flex;flex-direction:column;gap:3px}
+.matc-lbl{font-size:9px;color:var(--text2);font-family:var(--mono)}
+.matc-row{display:flex;gap:4px;flex-wrap:wrap}
+.matc{padding:3px 9px;border-radius:4px;border:1px solid var(--border);cursor:pointer;font-size:10px;color:var(--text2);white-space:nowrap;transition:all .1s;background:transparent;font-family:var(--sans);line-height:1.4}
+.matc:hover{border-color:var(--border2);color:var(--text)}
+.matc.on{border-color:var(--accent);color:var(--accent);background:rgba(77,122,96,.09)}
+.matc .ms{display:block;font-size:8px;opacity:.65;margin-top:1px}
+/* Zone cards */
+.zones-wrap{display:flex;flex-direction:column;gap:5px;width:100%}
+.zone-card-n{border:1px solid var(--border);border-radius:6px;overflow:hidden;transition:border-color .12s;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.zone-card-n.zon{border-color:var(--border2)}
+.zhead{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;user-select:none}
+.zhead:hover{background:var(--bg3)}
+.zsw{width:28px;height:16px;border-radius:8px;background:var(--bg4);border:1px solid var(--border2);position:relative;flex-shrink:0;transition:all .15s;pointer-events:none}
+.zon .zsw{background:var(--accent);border-color:var(--accent)}
+.zsw::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;background:var(--text3);top:2px;left:2px;transition:transform .15s}
+.zon .zsw::after{transform:translateX(12px);background:var(--bg)}
+.zname{font-size:11px;color:var(--text2);flex:1;transition:color .12s}
+.zon .zname{color:var(--text);font-weight:500}
+.ztype{font-size:9px;color:var(--text3);font-family:var(--mono);margin-right:4px}
+.zbody{display:none;padding:8px 10px 10px;border-top:1px solid var(--border);background:var(--bg2);flex-wrap:wrap;gap:8px 14px}
+.zon .zbody{display:flex}
+/* Equip rows — compteur + variantes inline */
+.eq-rows{display:flex;flex-direction:column;gap:6px;width:100%}
+.eq-row{border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--bg2);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.eq-head{display:flex;align-items:center;gap:8px;padding:7px 10px}
+.eq-name{font-size:11px;color:var(--text);flex:1;font-weight:500}
+.eq-qty{display:flex;align-items:center;gap:0;border:1px solid var(--border2);border-radius:4px;overflow:hidden;flex-shrink:0}
+.eq-qty button{width:22px;height:22px;background:transparent;border:none;cursor:pointer;color:var(--text2);font-size:14px;line-height:1;transition:background .1s}
+.eq-qty button:hover{background:var(--bg4);color:var(--text)}
+.eq-qty span{font-family:var(--mono);font-size:11px;min-width:22px;text-align:center;color:var(--text);line-height:22px}
+.eq-variants{display:none;padding:6px 10px 8px;border-top:1px solid var(--border);background:var(--bg3);gap:4px;flex-wrap:wrap}
+.eq-row.eq-on .eq-variants{display:flex}
+.eq-var{padding:3px 9px;border-radius:4px;border:1px solid var(--border);cursor:pointer;font-size:10px;color:var(--text2);white-space:nowrap;transition:all .1s;background:transparent;font-family:var(--sans)}
+.eq-var:hover{border-color:var(--border2);color:var(--text)}
+.eq-var.on{border-color:var(--accent);color:var(--accent);background:rgba(77,122,96,.09)}
+/* Protection rows */
+.prot-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.prot-row .pr-name{font-size:11px;color:var(--text);flex:1}
+.prot-row .pr-qty{display:flex;align-items:center;gap:5px}
+.prot-row .pr-qty label{font-size:9px;color:var(--text3);font-family:var(--mono)}
+/* Équipement cuisine grid */
+.appgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:5px;width:100%}
+.appcard{border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;transition:all .12s;background:var(--bg2);text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.appcard:hover{border-color:var(--border2)}
+.appcard.on{border-color:var(--accent);background:rgba(77,122,96,.08)}
+.appcard .ac-icon{font-size:16px;margin-bottom:3px}
+.appcard .ac-name{font-size:10px;color:var(--text2)}
+.appcard.on .ac-name{color:var(--accent)}
+/* Tooltip */
+.tip-wrap{display:inline-block;position:relative;margin-left:5px;vertical-align:middle}
+.tip-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);color:var(--text3);font-size:8px;font-family:var(--mono);cursor:help;line-height:1;user-select:none;transition:border-color .1s}
+.tip-icon:hover,.tip-icon:focus{border-color:var(--accent);color:var(--accent);outline:none}
+.tip-bubble{display:none;position:absolute;left:0;bottom:calc(100% + 6px);background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:11px;font-family:var(--sans);line-height:1.5;padding:7px 10px;border-radius:5px;width:240px;z-index:200;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.tip-bubble::after{content:'';position:absolute;top:100%;left:8px;border:5px solid transparent;border-top-color:var(--border2)}
+.tip-wrap:hover .tip-bubble,.tip-wrap:focus-within .tip-bubble{display:block}
+@media(max-width:600px){.tip-bubble{left:auto;right:0}}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div id="app">
+  <nav id="sidebar">
+    <div class="brand"><div class="brand-logo"><span class="chiff">Chiff</span><span class="reno">Reno</span></div></div>
+    <div class="proj-row"><label>Projet</label><input type="text" id="proj-input" value="Nouveau projet" maxlength="40"></div>
+    <div class="params-row"><div class="surf-part"><label>Surf. hab.</label><input type="number" id="gs-input" value="43" min="1" max="9999" style="width:44px;text-align:right"><span>m²</span></div></div>
+    <div class="params-row"><div class="tva-part"><label style="font-size:9px;color:var(--text2);font-family:var(--mono);flex-shrink:0;margin-right:2px">TVA</label><div class="tva-seg"><button id="tva0" onclick="setTVA(0)">0 %</button><button id="tva10" onclick="setTVA(10)">10 %</button><button id="tva20" onclick="setTVA(20)">20 %</button></div></div></div>
+    <div id="nav-lots" class="nav-scroll"></div>
+    <div style="padding:8px 14px;border-top:1px solid var(--border);flex-shrink:0">
+      <button id="reset-btn" onclick="resetProject()" style="width:100%;padding:4px 0;font-size:9px;font-family:var(--mono);color:var(--text3);background:transparent;border:1px solid var(--border2);border-radius:4px;cursor:pointer;transition:all .15s">↺ Réinitialiser le projet</button>
+    </div>
+  </nav>
+  <main id="main"><div id="lot-view" style="display:flex;flex-direction:column;height:100%"></div></main>
+  <aside id="summary">
+    <div class="sum-header">
+      <h3>Récapitulatif</h3>
+      <div class="sum-actions">
+        <button class="sum-action" onclick="exportPDF()"><span class="sa-icon">↓</span>Exporter PDF</button>
+        <button class="sum-action" onclick="exportShoppingList()"><span class="sa-icon">🛒</span>Liste d'achat</button>
+        <button class="sum-action" onclick="exportCSV()"><span class="sa-icon">↓</span>Export CSV</button>
+      </div>
+    </div>
+    <div id="sum-grand" class="sum-grand"></div>
+  </aside>
+</div>
+<script>
+if(location.href.indexOf('?_r=')>=0)localStorage.removeItem('btp_v9');
+const fmt=(n,d=0)=>new Intl.NumberFormat('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}).format(+n.toFixed(d));
+const $=id=>document.getElementById(id);
+let _toast; function toast(m){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(_toast);_toast=setTimeout(()=>e.classList.remove('show'),2200);}
+
+const BP={
+  iti_oss:8.5,iti_appuis:1.8,
+  iti_gr32_80:5.5,iti_gr32_100:7.0,iti_gr32_120:10.0,iti_gr32_140:12.5,iti_gr32_160:15.0,
+  iti_steico_60:12.0,iti_steico_80:15.0,iti_steico_100:18.0,iti_steico_120:22.0,iti_steico_140:26.0,
+  iti_vario:5.0,iti_scotch:0.55,iti_pastilles:0.5,iti_ba13_std:4.5,iti_ba13_hydro:7.0,
+  rail_r48:1.2,rail_r70:1.5,mont_m48:1.5,mont_m70:1.9,mont_m90:2.5,
+  bande_acou:0.50,ba13_std:4.5,ba13_hydro:7.0,ba13_hd:9.5,ba13_feu:9.5,
+  lv45:3.5,lr45:5.0,visserie_cloison:0.4,bande_joint:0.35,enduit_bande:1.20,
+  tableau_elec:500,gaines_cables:11,appareillage_std:7,appareillage_mid:12,appareillage_prm:20,vmc_sf:250,vmc_df:600,
+  app_prise_std:6,app_prise_mid:14,app_prise_prm:32,
+  app_inter_std:5,app_inter_mid:12,app_inter_prm:35,
+  app_vav_std:6,app_vav_mid:13,app_vav_prm:35,
+  app_dcl_std:3.5,app_dcl_mid:5,app_dcl_prm:8,
+  app_rj45_std:9,app_rj45_mid:18,app_rj45_prm:45,
+  app_usb_mid:20,app_usb_prm:55,
+  app_variateur_std:12,app_variateur_mid:22,app_variateur_prm:65,
+  enduit_pate:1.2,impression:0.8,peinture_mat:0.9,peinture_velours:1.4,peinture_satin:2.0,toile_treillis:2.80,
+  reseau_mc:12,reseau_cu:24,evac_pvc:6,wc_complet:130,bati_support:185,wc_suspendu_cuvette:145,plaque_declenchement:48,
+  receveur_90:110,receveur_carreler:95,bonde_design:58,kit_etanche_douche:8.5,
+  mitigeur_douche:55,mitigeur_cuisine:42,
+  mitigeur_lavabo:38,baignoire_std:180,mitigeur_bain:62,ce_elec_100:220,ce_elec_150:295,ce_thermo:1100,
+  wc_complet_std:130,wc_complet_mid:200,wc_complet_prm:380,
+  wc_suspendu_cuvette_std:145,wc_suspendu_cuvette_mid:250,wc_suspendu_cuvette_prm:450,
+  plaque_declenchement_std:48,plaque_declenchement_mid:85,plaque_declenchement_prm:160,
+  receveur_90_std:110,receveur_90_mid:180,receveur_90_prm:320,
+  mitigeur_douche_std:55,mitigeur_douche_mid:100,mitigeur_douche_prm:200,
+  mitigeur_cuisine_std:42,mitigeur_cuisine_mid:75,mitigeur_cuisine_prm:150,
+  mitigeur_lavabo_std:38,mitigeur_lavabo_mid:65,mitigeur_lavabo_prm:130,
+  baignoire_mid:320,baignoire_prm:600,
+  mitigeur_bain_std:62,mitigeur_bain_mid:110,mitigeur_bain_prm:220,
+  parquet_strat:15,parquet_contre:48,parquet_massif:70,sous_couche:2.5,sous_couche_liege:4.90,colle_parquet:9.60,
+  primaire_ragreage:0.8,bande_resiliente:1.2,ragreage_simple:4.5,ragreage_fibre:9.6,
+  primaire_etanche:1.5,etanche_liquide:8.0,bande_etanche:2.5,natte_ditra:5.5,natte_etanche:9.50,natte_desoli:14.50,bande_natte:3.0,colle_c2s:1.20,
+  carrelage_std:18,gres_cerame:28,grand_format:52,colle_carrelage:1.20,
+  faience_std:18,gres_mural:30,gf_mural:55,colle_faience:1.00,profiles_alu:4,
+  porte_std:200,porte_mid:320,porte_prm:550,plinthe_mdf:3,plinthe_bois:7,barre_seuil:8,
+  fenetre_pvc:280,fenetre_alu:450,fenetre_bois:650,pf_pvc:600,pf_alu:950,pf_bois:1350,
+  volet_bat_pvc:120,volet_bat_alu:210,volet_roul:380,porte_entree_std:800,porte_entree_prm:1600,seuil_ext:30,
+  meuble_bas:420,meuble_haut:260,plan_travail:85,plan_travail_qtz:220,credence:25,
+  evier_cuisine:160,four:350,plaques:300,hotte:260,lave_vaisselle:420,
+  fp_fourrure:1.5,fp_suspente_res:1.8,fp_nonius_haut:2.8,fp_nonius_bas:2.2,fp_rail_avib:8.5,
+  fp_ba13_std:4.5,fp_ba13_hydro:7.0,fp_ba13_feu:9.5,fp_ba13_phon:11.0,
+  fp_lv_45:3.5,fp_lr_45:5.0,fp_lv_100:7.5,fp_lr_100:9.5,fp_ouate:12.0,
+  fp_visserie:0.4,fp_bande_joint:1.8,fp_suspente_cav:0.90,fp_lisse_peri:3.20,
+  benne_10m3:350,
+  polyane_200:0.25,film_adh:1.0,papier_kraft:0.40,
+};
+
+const TIPS={
+  ba13_std:"Plaque de plâtre standard. S'utilise dans les pièces sèches (salon, chambre, couloir) pour monter des cloisons.",
+  ba13_hydro:"Plaque résistante à l'humidité (couleur verte). Obligatoire dans les zones humides : salle de bain, cuisine.",
+  ba13_hd:"Plaque haute dureté. Résiste mieux aux chocs. Recommandée dans les couloirs, garages et pièces très sollicitées.",
+  ba13_feu:"Plaque coupe-feu. Obligatoire dans certains cas réglementaires (local technique, gaine de ventilation).",
+  rail_r48:"Rail horizontal en acier galvanisé. Se fixe au sol et au plafond pour constituer l'ossature des cloisons.",
+  rail_r70:"Rail 70 mm. Permet d'intégrer plus d'isolant acoustique entre les montants.",
+  mont_m48:"Montant vertical en acier galvanisé M48. S'insère dans les rails tous les 60 cm pour soutenir les plaques.",
+  mont_m70:"Montant 70 mm. Associé au rail R70 pour une cloison plus épaisse avec meilleure isolation phonique.",
+  mont_m90:"Montant 90 mm. Pour des cloisons séparatives haute performance acoustique.",
+  bande_acou:"Bande résiliente sous les rails. Réduit la transmission des bruits de pas et de choc d'un niveau à l'autre.",
+  lv45:"Laine de verre 45 mm à glisser entre les montants de la cloison pour améliorer l'isolation phonique.",
+  lr45:"Laine de roche 45 mm. Meilleures performances acoustiques et résistance au feu que la laine de verre.",
+  bande_joint:"Bande à joint (rouleau 150 m). Se pose sur les jonctions entre plaques BA13 pour armer et consolider les joints avant enduisage.",
+  enduit_bande:"Enduit de bande (seau 25 kg). S'applique sur les bandes à joint pour couvrir les jonctions et obtenir une surface lisse, prête à peindre.",
+  iti_oss:"Ossature Optima Isover. Système de rails et fourrures spécifique au doublage isolant des murs par l'intérieur.",
+  iti_vario:"Membrane frein-vapeur Vario Xtra (Isover). Film qui empêche la condensation de détériorer l'isolant et les murs.",
+  fp_fourrure:"Fourrure métallique (45×17 mm). Profilé horizontal sur lequel on visse les plaques de faux plafond.",
+  fp_suspente_res:"Suspente à ressort. Fixée au plafond porteur, elle absorbe les vibrations et suspend la fourrure. Recommandée quand le plafond porteur transmet des bruits d'impact.",
+  fp_suspente_cav:"Cavalier pivot. Fixation directe et rigide au plafond porteur par vis. Solution simple et économique pour les locaux sans contrainte phonique particulière.",
+  fp_lisse_peri:"Lisse périphérique (cornière ou profilé U). Fixée sur les murs en pourtour de pièce, elle encadre le faux plafond et sert d'appui aux extrémités des fourrures.",
+  ragreage_simple:"Ragréage autonivelant classique. Mortier liquide qui s'étale seul pour obtenir un sol parfaitement plat avant pose du revêtement.",
+  ragreage_fibre:"Ragréage fibré. Version renforcée avec fibres synthétiques, résiste aux fissures. Recommandé sur planchers chauffants.",
+  primaire_ragreage:"Primaire d'accrochage. S'applique avant le ragréage pour qu'il colle bien au support et ne se décolle pas.",
+  bande_resiliente:"Bande résiliente périphérique. Se colle en pied de mur pour désolidariser le ragréage des cloisons et éviter les fissures.",
+  etanche_liquide:"Membrane d'étanchéité liquide. Produit à badigeonner sous le carrelage des douches/SdB pour éviter les infiltrations d'eau.",
+  natte_ditra:"Natte de découplage DITRA (Schlüter). S'intercale entre le sol et le carrelage pour protéger ce dernier des mouvements du support.",
+  natte_etanche:"Natte d'étanchéité (type Schlüter KERDI, Wedi). Membrane souple imperméable fixée au support avant carrelage. Assure l'étanchéité complète des surfaces en contact avec l'eau.",
+  natte_desoli:"Natte de désolidarisation (type Schlüter DITRA). Membrane alvéolée qui découple le carrelage du support, absorbe les mouvements différentiels et évite les fissurations. Compatible plancher chauffant.",
+  colle_c2s:"Colle carrelage C2S (ciment-colle amélioré déformable, EN 12004). Spatule 3×3 mm pour nattes étanchéité (~3 kg/m²), 10×10 mm pour nattes de désolidarisation (~5 kg/m²).",
+  bande_etanche:"Bandes armées. S'appliquent sur les angles et le périmètre de la douche pour renforcer l'étanchéité aux points fragiles.",
+  tableau_elec:"Tableau électrique complet (GTL + interrupteurs différentiels + disjoncteurs + parafoudre). Cœur de votre installation électrique.",
+  gaines_cables:"Gaines ICTA + câbles 1,5 à 6 mm². Fourreaux plastique et fils électriques qui alimentent chaque prise, interrupteur et luminaire.",
+  appareillage_std:"Prises, interrupteurs et points lumineux. Prix estimé par m² de surface habitable selon la densité de points réglementaire.",
+  appareillage_mid:"Appareillage intermédiaire (Legrand Céliane / Schneider Unica). Meilleure finition et robustesse que la gamme standard.",
+  appareillage_prm:"Appareillage premium (connecté, USB intégré). Design soigné et fonctions domotiques intégrées.",
+  vmc_sf:"VMC simple flux hygro-réglable. Obligatoire dans les logements : aspire l'air vicié dans les pièces humides (SdB, WC, cuisine).",
+  vmc_df:"VMC double flux à échangeur. Récupère la chaleur de l'air extrait pour préchauffer l'air entrant. Réduit les pertes thermiques.",
+  reseau_mc:"Réseau de distribution multicouche. Tubes gainés et raccords qui amènent l'eau froide et chaude à chaque point d'usage.",
+  reseau_cu:"Réseau cuivre. Tube recuit + raccords à sertir. Plus noble et durable que le multicouche, résistant aux bactéries — pose plus exigeante et coût matière plus élevé.",
+  evac_pvc:"Réseau d'évacuation PVC. Canalisations qui évacuent les eaux usées des lavabos (Ø40) et les eaux vannes des WC (Ø100).",
+  bati_support:"Bâti-support pour WC suspendu (Geberit Duofix). Cadre encastré dans la cloison qui supporte le WC et contient la chasse d'eau.",
+  wc_suspendu_cuvette:"Cuvette WC suspendue sans bride (Rimless). S'accroche sur le bâti-support. Plus facile à nettoyer qu'un WC au sol.",
+  receveur_carreler:"Receveur à carreler en mousse hydrofuge (Wedi / Schlüter). Permet de créer une douche à l'italienne carrelée.",
+  kit_etanche_douche:"Kit d'étanchéité pour douche à carreler. Membrane liquide + bandes d'angle à appliquer avant le carrelage.",
+  ce_thermo:"Chauffe-eau thermodynamique. Fonctionne comme un climatiseur inversé : pompe la chaleur ambiante. Consomme 3× moins qu'un électrique classique.",
+  parquet_strat:"Parquet stratifié. Décor bois imprimé sur support HDF. Économique, facile à poser, mais ne peut pas être rénové (non poncable).",
+  parquet_contre:"Parquet contrecollé. Vraie couche de bois noble (2–4 mm) sur support multiplis. Poncable 1 à 2 fois. Excellent rapport qualité/prix.",
+  parquet_massif:"Parquet massif 100% bois (20 mm). Le plus noble et le plus durable. Poncable plusieurs fois. Se pose collé ou cloué.",
+  sous_couche:"Sous-couche mousse parquet. Posée sous le flottant pour amortir les bruits de pas et corriger les légères irrégularités du support.",
+  sous_couche_liege:"Sous-couche liège 2 mm. Matériau naturel offrant de meilleures performances acoustiques (bruits de pas) que la mousse. Respirant et stable en température.",
+  colle_parquet:"Colle MS polymère. Colle élastique qui lie définitivement le parquet au sol. Indispensable sur plancher chauffant. Consommation : 1,2 kg/m² — 8 €/kg.",
+  carrelage_std:"Carrelage céramique standard (grès émaillé). Entrée de gamme. Bien pour les murs, moins résistant que le grès cérame en sol.",
+  gres_cerame:"Grès cérame rectifié. Bords précis, très résistant à l'usure et à l'eau. Standard actuel pour les sols de cuisine et SdB.",
+  grand_format:"Grand format 60×120 cm. Dalle XXL pour un rendu moderne et peu de joints. Nécessite un sol parfaitement plan.",
+  colle_carrelage:"Colle C2 déformable pour carrelage sol. Consommation selon peigne : V3 3mm ≈ 2 kg/m², V4 4mm ≈ 3 kg/m², B10 10mm ≈ 5 kg/m², B12 12mm ≈ 7 kg/m².",
+  faience_std:"Faïence standard 20×30 cm. Carreau mural céramique émaillé. Classique et économique pour salle de bain et cuisine.",
+  gres_mural:"Grès cérame mural rectifié. Plus résistant et plus esthétique que la faïence classique. Rendu contemporain.",
+  gf_mural:"Grand format mural 60×120 cm. Plaque XXL pour un rendu épuré et moderne. Nécessite un mur parfaitement plan.",
+  profiles_alu:"Profilés de finition aluminium. Protègent les bords du carrelage aux angles, transitions et nez de marche.",
+  enduit_pate:"Enduit en pâte. S'applique sur les murs avant peinture pour combler les imperfections et obtenir une surface bien lisse.",
+  impression:"Impression fixante. Couche d'accrochage sur supports neufs ou très absorbants, pour que la peinture de finition tienne mieux.",
+  peinture_mat:"Peinture mate. Pas de brillance, masque les irrégularités. Idéale pour plafonds et murs peu sollicités.",
+  peinture_velours:"Peinture velours. Légère brillance douce, facile à nettoyer. Bon compromis pour les pièces de vie (salon, chambre).",
+  peinture_satin:"Peinture satinée. Brillance marquée, très résistante et lessivable. Idéale pour les pièces humides et les couloirs.",
+  toile_treillis:"Toile treillis de verre (armature). Filet en fibre de verre marouflé entre deux passes d'enduit. Renforce le support, prévient les microfissures sur les supports fragiles ou les joints de murs.",
+  porte_std:"Bloc-porte standard prêt à poser (huisserie + porte prépeinte). Gamme entrée de gamme disponible en grandes surfaces.",
+  porte_mid:"Bloc-porte intermédiaire. Meilleure finition et charnières plus solides. Gamme Lapeyre / Point P.",
+  porte_prm:"Bloc-porte premium (chêne ou laqué haut de gamme). Plus noble, plus lourd, plus durable.",
+  plinthe_mdf:"Plinthe MDF prépeinte 70 mm. Cache le joint entre le sol et la cloison en bas de mur.",
+  fenetre_pvc:"Fenêtre PVC double vitrage (Ug ≤ 1,1). Standard de la rénovation : bonne isolation, faible entretien, prix accessible.",
+  fenetre_alu:"Fenêtre aluminium triple vitrage. Profilés fins, très isolante thermiquement, aspect plus élégant que le PVC.",
+  volet_roul:"Volet roulant électrique avec caisson. Confort maximal, peut être couplé à une domotique ou une télécommande.",
+  meuble_bas:"Meubles de cuisine bas (60 cm de profondeur). Prix au mètre linéaire, gamme milieu de gamme assemblée.",
+  plan_travail:"Plan de travail stratifié. Panneau HPL (plastique haute pression). Économique, disponible en nombreux décors bois ou béton.",
+  plan_travail_qtz:"Plan de travail en quartz reconstitué. Très résistant aux chocs et rayures. Rendu haut de gamme, facile d'entretien.",
+  app_vav:"Va-et-vient : 2 interrupteurs pour commander le même point lumineux depuis 2 endroits distincts (entrée, couloir, pied de lit).",
+  app_dcl:"DCL (Dispositif de Connexion pour Luminaire) : embout plafond normalisé NF C 61-030 pour suspendre et raccorder un luminaire.",
+  app_rj45:"Prise RJ45 réseau : connexion filaire pour TV, PC ou NAS. Plus stable et rapide que le Wi-Fi pour les usages intensifs.",
+  app_usb:"Prise avec chargeur USB intégré (Type A + C) : recharge smartphones et tablettes sans bloc adaptateur.",
+  app_variateur:"Variateur d'intensité (dimmer) : règle la luminosité — nécessite des ampoules LED dimmables.",
+};
+
+// Conditionnements : { factor: consommation par unité de qty, packQty: quantité par colis, packLabel: description colis }
+const PACK={
+  // Démolition
+  benne_10m3:    {factor:1,   packQty:1,    packLabel:'benne 10 m³'},
+  polyane_200:   {factor:1,   packQty:200,  packLabel:'rouleau 4×50 m (200 m²)'},
+  film_adh:      {factor:1,   packQty:25,   packLabel:'rouleau 25 m²'},
+  papier_kraft:  {factor:1,   packQty:60,   packLabel:'rouleau 60 m²'},
+  // ITI
+  iti_oss:       {factor:1,   packQty:1,    packLabel:'m² (kit ossature)'},
+  iti_appuis:    {factor:1,   packQty:1,    packLabel:'m²'},
+  iti_gr32_80:   {factor:1,   packQty:6,    packLabel:'paquet 6 m²'},
+  iti_gr32_100:  {factor:1,   packQty:6,    packLabel:'paquet 6 m²'},
+  iti_gr32_120:  {factor:1,   packQty:6,    packLabel:'paquet 6 m²'},
+  iti_gr32_140:  {factor:1,   packQty:4,    packLabel:'paquet 4 m²'},
+  iti_gr32_160:  {factor:1,   packQty:4,    packLabel:'paquet 4 m²'},
+  iti_steico_60: {factor:1,   packQty:3.6,  packLabel:'paquet 3,6 m²'},
+  iti_steico_80: {factor:1,   packQty:3.6,  packLabel:'paquet 3,6 m²'},
+  iti_steico_100:{factor:1,   packQty:2.4,  packLabel:'paquet 2,4 m²'},
+  iti_steico_120:{factor:1,   packQty:2.4,  packLabel:'paquet 2,4 m²'},
+  iti_steico_140:{factor:1,   packQty:2.4,  packLabel:'paquet 2,4 m²'},
+  iti_vario:     {factor:1,   packQty:40,   packLabel:'rouleau 40 m²'},
+  iti_scotch:    {factor:1,   packQty:25,   packLabel:'rouleau 25 m'},
+  iti_pastilles: {factor:1,   packQty:1,    packLabel:'m²'},
+  iti_ba13_std:  {factor:1,   packQty:3,    packLabel:'plaque 120×250 cm (3 m²)'},
+  iti_ba13_hydro:{factor:1,   packQty:3,    packLabel:'plaque 120×250 cm (3 m²)'},
+  // Cloisons
+  rail_r48:      {factor:1,   packQty:3,    packLabel:'tige 3 m'},
+  rail_r70:      {factor:1,   packQty:3,    packLabel:'tige 3 m'},
+  mont_m48:      {factor:1,   packQty:2.6,  packLabel:'tige 2,6 m'},
+  mont_m70:      {factor:1,   packQty:2.6,  packLabel:'tige 2,6 m'},
+  mont_m90:      {factor:1,   packQty:2.6,  packLabel:'tige 2,6 m'},
+  bande_acou:    {factor:1,   packQty:25,   packLabel:'rouleau 25 m'},
+  ba13_std:      {factor:1,   packQty:3,    packLabel:'plaque 120×250 cm (3 m²)'},
+  ba13_hydro:    {factor:1,   packQty:3,    packLabel:'plaque 120×250 cm (3 m²)'},
+  ba13_hd:       {factor:1,   packQty:3,    packLabel:'plaque 120×250 cm (3 m²)'},
+  ba13_feu:      {factor:1,   packQty:3,    packLabel:'plaque 120×250 cm (3 m²)'},
+  visserie_cloison:{factor:15, packQty:1000, packLabel:'boîte 1 000 vis'},
+  bande_joint:   {factor:1.5, packQty:150,  packLabel:'rouleau 150 m'},
+  enduit_bande:  {factor:1,   packQty:20,   packLabel:'seau 25 kg (~20 m²)'},
+  lv45:          {factor:1,   packQty:4.5,  packLabel:'rouleau 4,5 m²'},
+  lr45:          {factor:1,   packQty:4.5,  packLabel:'rouleau 4,5 m²'},
+  // Électricité
+  tableau_elec:      {factor:1, packQty:1, packLabel:'forfait'},
+  gaines_cables:     {shopItems:[
+    {label:'Conduit ICTA 20/25 mm',   factor:7, packQty:100, packLabel:'couronne 100 m'},
+    {label:'Câbles 1,5/2,5/4/6 mm²',  factor:6, packQty:100, packLabel:'couronne 100 m'},
+  ]},
+  appareillage_std:  {hideInShop:true},
+  appareillage_mid:  {hideInShop:true},
+  appareillage_prm:  {hideInShop:true},
+  vmc_sf:            {factor:1, packQty:1, packLabel:'unité'},
+  vmc_df:            {factor:1, packQty:1, packLabel:'unité'},
+  app_prise_std:     {factor:1, packQty:1, packLabel:'pce'},
+  app_prise_mid:     {factor:1, packQty:1, packLabel:'pce'},
+  app_prise_prm:     {factor:1, packQty:1, packLabel:'pce'},
+  app_inter_std:     {factor:1, packQty:1, packLabel:'pce'},
+  app_inter_mid:     {factor:1, packQty:1, packLabel:'pce'},
+  app_inter_prm:     {factor:1, packQty:1, packLabel:'pce'},
+  app_vav_std:       {factor:1, packQty:1, packLabel:'pce'},
+  app_vav_mid:       {factor:1, packQty:1, packLabel:'pce'},
+  app_vav_prm:       {factor:1, packQty:1, packLabel:'pce'},
+  app_dcl_std:       {factor:1, packQty:1, packLabel:'pce'},
+  app_dcl_mid:       {factor:1, packQty:1, packLabel:'pce'},
+  app_dcl_prm:       {factor:1, packQty:1, packLabel:'pce'},
+  app_rj45_std:      {factor:1, packQty:1, packLabel:'pce'},
+  app_rj45_mid:      {factor:1, packQty:1, packLabel:'pce'},
+  app_rj45_prm:      {factor:1, packQty:1, packLabel:'pce'},
+  app_usb_mid:       {factor:1, packQty:1, packLabel:'pce'},
+  app_usb_prm:       {factor:1, packQty:1, packLabel:'pce'},
+  app_variateur_std: {factor:1, packQty:1, packLabel:'pce'},
+  app_variateur_mid: {factor:1, packQty:1, packLabel:'pce'},
+  app_variateur_prm: {factor:1, packQty:1, packLabel:'pce'},
+  // Peinture — qty = m²×passes (enduit) ou m²×2couches (peinture) — affiché en litres
+  enduit_pate:      {showL:true, lPerQty:1/15, packLabel:'L (enduit pâte ~15 m²/L/couche)'},
+  impression:       {showL:true, lPerQty:1/10, packLabel:'L (impression ~10 m²/L)'},
+  peinture_mat:     {showL:true, lPerQty:1/8,  packLabel:'L (peinture ~8 m²/L/couche)'},
+  peinture_velours: {showL:true, lPerQty:1/8,  packLabel:'L (peinture ~8 m²/L/couche)'},
+  peinture_satin:   {showL:true, lPerQty:1/8,  packLabel:'L (peinture ~8 m²/L/couche)'},
+  toile_treillis:   {factor:1,   packQty:25,   packLabel:'rouleau 25 m²'},
+  // Plomberie
+  reseau_mc:               {shopItems:[{label:'Tube multicouche Ø16–25 mm (EF+EC)',   factor:1.3, packQty:50, packLabel:'couronne 50 m'}]},
+  reseau_cu:               {shopItems:[{label:'Tube cuivre recuit Ø12–22 mm (EF+EC)',  factor:1.3, packQty:25, packLabel:'couronne 25 m'}]},
+  evac_pvc:                {shopItems:[
+    {label:'Tube PVC Ø40 mm — eaux usées',   factor:0.15, packQty:2, packLabel:'barre 2 m'},
+    {label:'Tube PVC Ø100 mm — eaux vannes', factor:0.07, packQty:2, packLabel:'barre 2 m'},
+  ]},
+  wc_complet_std:          {factor:1, packQty:1, packLabel:'unité'},
+  wc_complet_mid:          {factor:1, packQty:1, packLabel:'unité'},
+  wc_complet_prm:          {factor:1, packQty:1, packLabel:'unité'},
+  bati_support:            {factor:1, packQty:1, packLabel:'unité'},
+  wc_suspendu_cuvette_std: {factor:1, packQty:1, packLabel:'unité'},
+  wc_suspendu_cuvette_mid: {factor:1, packQty:1, packLabel:'unité'},
+  wc_suspendu_cuvette_prm: {factor:1, packQty:1, packLabel:'unité'},
+  plaque_declenchement_std:{factor:1, packQty:1, packLabel:'unité'},
+  plaque_declenchement_mid:{factor:1, packQty:1, packLabel:'unité'},
+  plaque_declenchement_prm:{factor:1, packQty:1, packLabel:'unité'},
+  receveur_90_std:         {factor:1, packQty:1, packLabel:'unité'},
+  receveur_90_mid:         {factor:1, packQty:1, packLabel:'unité'},
+  receveur_90_prm:         {factor:1, packQty:1, packLabel:'unité'},
+  receveur_carreler:       {factor:1, packQty:1, packLabel:'unité'},
+  bonde_design:            {factor:1, packQty:1, packLabel:'unité'},
+  kit_etanche_douche:      {factor:1, packQty:1, packLabel:'kit (membrane + bandes)'},
+  mitigeur_douche_std:     {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_douche_mid:     {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_douche_prm:     {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_cuisine_std:    {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_cuisine_mid:    {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_cuisine_prm:    {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_lavabo_std:     {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_lavabo_mid:     {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_lavabo_prm:     {factor:1, packQty:1, packLabel:'unité'},
+  baignoire_std:           {factor:1, packQty:1, packLabel:'unité'},
+  baignoire_mid:           {factor:1, packQty:1, packLabel:'unité'},
+  baignoire_prm:           {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_bain_std:       {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_bain_mid:       {factor:1, packQty:1, packLabel:'unité'},
+  mitigeur_bain_prm:       {factor:1, packQty:1, packLabel:'unité'},
+  ce_elec_100:             {factor:1, packQty:1, packLabel:'unité'},
+  ce_elec_150:             {factor:1, packQty:1, packLabel:'unité'},
+  ce_thermo:               {factor:1, packQty:1, packLabel:'unité'},
+  // Ragréage — qty en m², le nb de sacs dépend de l'épaisseur (calculé séparément via item.epa)
+  ragreage_simple: {factor:1.8, packQty:25, packLabel:'sac 25 kg (~2,8 m² à 5 mm)'},
+  ragreage_fibre:  {factor:1.75,packQty:25, packLabel:'sac 25 kg (~1,8 m² à 8 mm)'},
+  primaire_ragreage:{factor:1,  packQty:100,packLabel:'bidon 5 L (~100 m²)'},
+  bande_resiliente: {factor:1,  packQty:25, packLabel:'rouleau 25 m'},
+  // Étanchéité
+  primaire_etanche:{factor:1,  packQty:25,  packLabel:'bidon 5 L (~25 m²)'},
+  etanche_liquide: {factor:2,  packQty:5,   packLabel:'seau 5 kg (~2,5 m²)'},
+  bande_etanche:   {factor:1,  packQty:10,  packLabel:'rouleau 10 m'},
+  natte_ditra:     {factor:1,  packQty:6,   packLabel:'rouleau 6 m²'},
+  natte_etanche:   {factor:1,  packQty:5,   packLabel:'rouleau 5 m²'},
+  natte_desoli:    {factor:1,  packQty:6,   packLabel:'rouleau 6 m²'},
+  colle_c2s:       {factor:1,  packQty:25,  packLabel:'sac 25 kg'},
+  bande_natte:     {factor:1,  packQty:5,   packLabel:'rouleau 5 m'},
+  // Parquet
+  parquet_strat:   {factor:1, packQty:2.5, packLabel:'paquet 2,5 m²'},
+  parquet_contre:  {factor:1, packQty:2.5, packLabel:'paquet 2,5 m²'},
+  parquet_massif:  {factor:1, packQty:2.0, packLabel:'paquet 2,0 m²'},
+  sous_couche:          {factor:1, packQty:15, packLabel:'rouleau 15 m²'},
+  sous_couche_liege:    {factor:1, packQty:10, packLabel:'rouleau 10 m²'},
+  colle_parquet:   {factor:1.2, packQty:15, packLabel:'seau 15 kg (~12,5 m²)'},
+  // Carrelage
+  carrelage_std:   {factor:1, packQty:1.44, packLabel:'boîte 1,44 m²', packNote:true},
+  gres_cerame:     {factor:1, packQty:1.44, packLabel:'boîte 1,44 m²', packNote:true},
+  grand_format:    {factor:1, packQty:1.44, packLabel:'paquet 1,44 m²', packNote:true},
+  colle_carrelage: {factor:1, packQty:25,   packLabel:'sac 25 kg'},
+  // Faïence
+  faience_std:     {factor:1, packQty:1.5,  packLabel:'boîte 1,5 m²', packNote:true},
+  gres_mural:      {factor:1, packQty:1.44, packLabel:'boîte 1,44 m²', packNote:true},
+  gf_mural:        {factor:1, packQty:1.44, packLabel:'paquet 1,44 m²', packNote:true},
+  colle_faience:   {factor:1, packQty:25,   packLabel:'sac 25 kg'},
+  profiles_alu:    {factor:1, packQty:2.5,  packLabel:'barre 2,5 m'},
+  // Menuiseries int.
+  porte_std:       {factor:1, packQty:1,   packLabel:'unité (bloc-porte)'},
+  porte_mid:       {factor:1, packQty:1,   packLabel:'unité (bloc-porte)'},
+  porte_prm:       {factor:1, packQty:1,   packLabel:'unité (bloc-porte)'},
+  plinthe_mdf:     {factor:1, packQty:2.4, packLabel:'barre 2,4 m'},
+  plinthe_bois:    {factor:1, packQty:2.4, packLabel:'barre 2,4 m'},
+  barre_seuil:     {factor:1, packQty:1,   packLabel:'pce'},
+  // Menuiseries ext.
+  fenetre_pvc:      {factor:1, packQty:1, packLabel:'unité'},
+  fenetre_alu:      {factor:1, packQty:1, packLabel:'unité'},
+  fenetre_bois:     {factor:1, packQty:1, packLabel:'unité'},
+  pf_pvc:           {factor:1, packQty:1, packLabel:'unité'},
+  pf_alu:           {factor:1, packQty:1, packLabel:'unité'},
+  pf_bois:          {factor:1, packQty:1, packLabel:'unité'},
+  volet_bat_pvc:    {factor:1, packQty:1, packLabel:'paire'},
+  volet_bat_alu:    {factor:1, packQty:1, packLabel:'paire'},
+  volet_roul:       {factor:1, packQty:1, packLabel:'unité'},
+  porte_entree_std: {factor:1, packQty:1, packLabel:'bloc'},
+  porte_entree_prm: {factor:1, packQty:1, packLabel:'bloc'},
+  seuil_ext:        {factor:1, packQty:1, packLabel:'pce'},
+  // Cuisine
+  meuble_bas:       {factor:1, packQty:1,   packLabel:'ml'},
+  meuble_haut:      {factor:1, packQty:1,   packLabel:'ml'},
+  plan_travail:     {factor:1, packQty:3,   packLabel:'plateau 3 m'},
+  plan_travail_qtz: {factor:1, packQty:1,   packLabel:'ml (sur mesure)'},
+  credence:         {factor:1, packQty:1,   packLabel:'m²'},
+  evier_cuisine:    {factor:1, packQty:1,   packLabel:'unité'},
+  four:             {factor:1, packQty:1,   packLabel:'unité'},
+  plaques:          {factor:1, packQty:1,   packLabel:'unité'},
+  hotte:            {factor:1, packQty:1,   packLabel:'unité'},
+  lave_vaisselle:   {factor:1, packQty:1,   packLabel:'unité'},
+  // Faux plafond
+  fp_fourrure:     {factor:1,   packQty:3,   packLabel:'tige 3 m'},
+  fp_rail_avib:    {factor:1,   packQty:3,   packLabel:'tige 3 m'},
+  fp_suspente_res: {factor:1,   packQty:1,   packLabel:'pce'},
+  fp_nonius_haut:  {factor:1,   packQty:1,   packLabel:'pce'},
+  fp_nonius_bas:   {factor:1,   packQty:1,   packLabel:'pce'},
+  fp_ba13_std:     {factor:1,   packQty:3,   packLabel:'plaque 120×250 cm (3 m²)'},
+  fp_ba13_hydro:   {factor:1,   packQty:3,   packLabel:'plaque 120×250 cm (3 m²)'},
+  fp_ba13_feu:     {factor:1,   packQty:3,   packLabel:'plaque 120×250 cm (3 m²)'},
+  fp_ba13_phon:    {factor:1,   packQty:3,   packLabel:'plaque 120×250 cm (3 m²)'},
+  fp_lv_45:        {factor:1,   packQty:8.4, packLabel:'rouleau 8,4 m²'},
+  fp_lr_45:        {factor:1,   packQty:4.5, packLabel:'rouleau 4,5 m²'},
+  fp_lv_100:       {factor:1,   packQty:5.6, packLabel:'rouleau 5,6 m²'},
+  fp_lr_100:       {factor:1,   packQty:4.5, packLabel:'rouleau 4,5 m²'},
+  fp_ouate:        {factor:1,   packQty:1,   packLabel:'m² (vrac)'},
+  fp_visserie:     {factor:8,   packQty:500, packLabel:'boîte 500 vis (~62 m²)'},
+  fp_bande_joint:  {factor:1.5, packQty:150, packLabel:'rouleau 150 m'},
+  fp_suspente_cav: {factor:1,   packQty:1,   packLabel:'pce'},
+  fp_lisse_peri:   {factor:1,   packQty:3,   packLabel:'barre 3 m'},
+};
+
+function tipHtml(key){
+  const tip=TIPS[key]||TIPS[key.replace(/_(?:std|mid|prm)$/,'')];
+  if(!tip) return '';
+  return`<span class="tip-wrap"><button class="tip-icon" tabindex="0" aria-label="Aide">?</button><span class="tip-bubble">${tip}</span></span>`;
+}
+
+function exportPDF(){
+  const d=new Date().toLocaleDateString('fr-FR');
+  const gt=gtot(),tva=gt*state.tva/100;
+  const activeLots=LM.filter(m=>state.lots[m.id].on);
+  let rows='';
+  activeLots.forEach(m=>{
+    const items=calcItems(m.id);
+    if(!items.length) return;
+    const lot=state.lots[m.id];
+    const matHT=items.reduce((a,i)=>a+i.total,0);
+    const avecM=matHT*(1+(lot.m||0)/100);
+    rows+=`<div class="lot-block">
+      <div class="lot-title">${m.label}<span class="lot-sub"> — ${m.sub}</span></div>
+      <table><thead><tr><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody>`;
+    items.forEach(i=>{
+      const qty=(i.qty||0)%1!==0?fmt(i.qty,1):fmt(i.qty,0);
+      rows+=`<tr class="${i.hl?'hl':''}"><td>${i.lbl||''}${i.note?`<br><small>${i.note}</small>`:''}</td><td>${qty}</td><td>${i.unit||''}</td><td>${fmt(i.p,2)} €</td><td>${fmt(i.total,0)} €</td></tr>`;
+    });
+    rows+=`</tbody></table>
+      <div class="lot-total">Total fournitures HT : <strong>${fmt(matHT,0)} €</strong>${lot.m>0?` · Avec marge ${lot.m}% : <strong>${fmt(avecM,0)} €</strong>`:''}</div>
+    </div>`;
+  });
+  const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>${state.projectName} — Estimateur BTP</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#fff;padding:20px 24px}
+    .doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2px solid #1a1a1a;margin-bottom:20px}
+    .doc-title{font-size:20px;font-weight:700;letter-spacing:-.02em}
+    .doc-meta{font-size:11px;color:#555;margin-top:4px}
+    .doc-totals{text-align:right}
+    .doc-totals .gt{font-size:18px;font-weight:700}
+    .doc-totals .tva{font-size:11px;color:#555;margin-top:3px}
+    .lot-block{margin-bottom:22px;page-break-inside:avoid}
+    .lot-title{font-size:13px;font-weight:700;background:#f4f4f4;padding:6px 10px;border-left:3px solid #c8a96e;margin-bottom:0}
+    .lot-sub{font-weight:400;color:#666;font-size:11px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    thead tr{background:#f9f9f9}
+    th{padding:5px 8px;text-align:left;border-bottom:1px solid #ddd;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#555}
+    td{padding:4px 8px;border-bottom:1px solid #eee;vertical-align:top}
+    td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5){text-align:right;white-space:nowrap}
+    th:nth-child(2),th:nth-child(3),th:nth-child(4),th:nth-child(5){text-align:right}
+    tr.hl td:last-child{font-weight:600;color:#3a6149}
+    small{display:block;color:#888;font-size:10px;margin-top:1px}
+    .lot-total{text-align:right;padding:5px 8px;font-size:11px;background:#fafafa;border-top:1px solid #ddd}
+    .doc-footer{margin-top:24px;padding-top:12px;border-top:2px solid #1a1a1a;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .footer-item{background:#f9f9f9;padding:10px 12px;border-radius:4px}
+    .footer-item label{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:4px}
+    .footer-item .val{font-size:15px;font-weight:700}
+    .footer-item .sub{font-size:10px;color:#666;margin-top:2px}
+    @media print{body{padding:10px 14px}.lot-block{page-break-inside:avoid}}
+  </style></head><body>
+  <div class="doc-header">
+    <div>
+      <div class="doc-title">${state.projectName}</div>
+      <div class="doc-meta">Estimateur BTP · Fournitures HT · Édité le ${d}</div>
+      <div class="doc-meta" style="margin-top:2px">Surface habitable : ${fmt(state.globalSurf,0)} m² · TVA : ${state.tva}%</div>
+    </div>
+    <div class="doc-totals">
+      <div class="gt">${fmt(gt,0)} € HT</div>
+      ${state.tva>0?`<div class="tva">TVA ${state.tva}% : ${fmt(tva,0)} €<br><strong>${fmt(gt+tva,0)} € TTC</strong></div>`:''}
+    </div>
+  </div>
+  ${rows}
+  <div class="doc-footer">
+    <div class="footer-item"><label>Total fournitures HT</label><div class="val">${fmt(gt,0)} €</div><div class="sub">${fmt(gt/state.globalSurf,0)} €/m²</div></div>
+    ${state.tva>0?`<div class="footer-item"><label>TVA ${state.tva}%</label><div class="val">${fmt(tva,0)} €</div></div><div class="footer-item"><label>Total TTC</label><div class="val">${fmt(gt+tva,0)} €</div><div class="sub">${fmt((gt+tva)/state.globalSurf,0)} €/m²</div></div>`:''}
+  </div>
+  </body></html>`;
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
+}
+const CORPS=[
+  {label:'Isolation & Structure',ids:['iti','fauxplafond','cloisons']},
+  {label:'Second œuvre',ids:['elec','plombs']},
+  {label:'Revêtements',ids:['ragreage','etancheite','parquet','carrelage','faience','peinture']},
+  {label:'Menuiseries',ids:['menus','menuext']},
+  {label:'Équipements',ids:['cuisine']},
+];
+
+const state={
+  cur:'demolition',globalSurf:0,tva:0,corpView:false,projectName:'',editCell:null,editVal:'',globalCoeff:0,
+  lots:{
+    demolition:  {on:false,surf:null,q:'std',m:0,o:{nb_bennes:0,poly_on:false,poly_m2:0,adh_on:false,adh_m2:0,kraft_on:false,kraft_m2:0},cp:{},custom:[]},
+    iti:        {on:false,surf:null,q:'std',m:0,o:{m2:0,epa:'120',iso:'gr32',membrane:false,parement:'ba13_std'},cp:{},custom:[]},
+    cloisons:   {on:false,surf:null,q:'std',m:0,o:{std_on:false,std_m2:0,std_oss:'m48',std_peaux:'2',std_acou:'non',std_dbl_mont:false,hydro_on:false,hydro_m2:0,hydro_oss:'m48',hydro_peaux:'2',hydro_acou:'non',hydro_dbl_mont:false,hd_on:false,hd_m2:0,hd_oss:'m48',hd_peaux:'2',hd_acou:'non',hd_dbl_mont:false,feu_on:false,feu_m2:0,feu_oss:'m48',feu_peaux:'2',feu_acou:'non',feu_dbl_mont:false,chute:0},cp:{},custom:[]},
+    elec:       {on:false,surf:null,q:'std',m:0,o:{appareillage:'std',vmc:'sf',detail_app:false,app_prises:0,app_inter:0,app_vav:0,app_dcl:0,app_rj45:0,app_usb:0,app_variateur:0},cp:{},custom:[]},
+    peinture:   {on:false,surf:null,q:'std',m:0,o:{z1_on:false,z1_m2:0,z1_passes:'2',z1_fin:'velours',z1_imp:false,z1_treillis:false,z2_on:false,z2_m2:0,z2_passes:'1',z2_fin:'mat',z2_imp:false,z2_treillis:false,z3_on:false,z3_m2:0,z3_passes:'2',z3_fin:'satin',z3_imp:false,z3_treillis:false,z4_on:false,z4_m2:0,z4_passes:'3',z4_fin:'satin',z4_imp:false,z4_treillis:false},cp:{},custom:[]},
+    plombs:     {on:false,surf:null,q:'std',m:0,o:{pts:{douche:0,cuisine:0,lavabo:0,bain:0},wc_sol:0,wc_susp:0,reseau_type:'mc',douche_type:'receveur',douche_carreler:false,ce:'ce_elec_150'},cp:{},custom:[]},
+    parquet:    {on:false,surf:null,q:'std',m:0,o:{z1_on:false,z1_m2:0,z1_type:'parquet_contre',z1_pose:'colle',z1_sc:'std',z1_chute:0,z2_on:false,z2_m2:0,z2_type:'parquet_massif',z2_pose:'colle',z2_sc:'std',z2_chute:0,z3_on:false,z3_m2:0,z3_type:'parquet_strat',z3_pose:'flottant',z3_sc:'std',z3_chute:0},cp:{},custom:[]},
+    carrelage:  {on:false,surf:null,q:'std',m:0,o:{z1_on:false,z1_m2:0,z1_type:'gres_cerame',z1_peigne:'b10',z1_chute:0,z2_on:false,z2_m2:0,z2_type:'grand_format',z2_peigne:'b10',z2_chute:0,z3_on:false,z3_m2:0,z3_type:'carrelage_std',z3_peigne:'b10',z3_chute:0},cp:{},custom:[]},
+    faience:    {on:false,surf:null,q:'std',m:0,o:{z1_on:false,z1_m2:0,z1_type:'gres_mural',z1_peigne:'v4',z1_profiles_ml:0,z1_chute:0,z2_on:false,z2_m2:0,z2_type:'faience_std',z2_peigne:'v4',z2_profiles_ml:0,z2_chute:0,z3_on:false,z3_m2:0,z3_type:'gf_mural',z3_peigne:'v4',z3_profiles_ml:0,z3_chute:0},cp:{},custom:[]},
+    ragreage:   {on:false,surf:null,q:'std',m:0,o:{z1_on:false,z1_m2:0,z1_type:'ragreage_simple',z1_epa_mm:0,z2_on:false,z2_m2:0,z2_type:'ragreage_fibre',z2_epa_mm:0,z3_on:false,z3_m2:0,z3_type:'ragreage_simple',z3_epa_mm:0,primaire:false,bandes:false,ml_bandes:0},cp:{},custom:[]},
+    etancheite: {on:false,surf:null,q:'std',m:0,o:{m2:0,mode:'liquide',primaire:false,ml_bandes:0},cp:{},custom:[]},
+    menus:      {on:false,surf:null,q:'std',m:0,o:{nb_portes:0,type_porte:'porte_mid',m_plinthes:0,type_plinthe:'plinthe_mdf',nb_seuils:0},cp:{},custom:[]},
+    menuext:    {on:false,surf:null,q:'std',m:0,o:{type_fen:'fenetre_pvc',nb_fen:0,type_pf:'pf_pvc',nb_pf:0,type_vol:'volet_bat_pvc',nb_vol:0,porte_entree:'porte_entree_std',nb_porte_entree:0,nb_seuils_ext:0},cp:{},custom:[]},
+    cuisine:    {on:false,surf:null,q:'std',m:0,o:{ml_bas:0,ml_haut:0,type_pt:'plan_travail',ml_pt:0,m2_cred:0,four:false,plaques:false,hotte:false,lave_vaisselle:false,evier:false},cp:{},custom:[]},
+    fauxplafond:{on:false,surf:null,q:'std',m:0,o:{suspente:'res',plaque:'fp_ba13_std',peaux:'1',isolant:'fp_lv_45',avec_isolant:false,joints:false,chute:0,entraxe:'0.60'},cp:{},custom:[]},
+  }
+};
+const INITIAL_STATE=JSON.parse(JSON.stringify(state));
+
+const LM=[
+  {id:'demolition',  label:'Démolition & Protection', sub:'Bennes + protections chantier'},
+  {id:'iti',       label:'Isolation ITI',    sub:'Système Optima Isover'},
+  {id:'fauxplafond',label:'Faux plafond',     sub:'Suspentes + Isolant'},
+  {id:'cloisons',  label:'Cloisons BA13',     sub:'Ossature métallique'},
+  {id:'elec',      label:'Électricité',       sub:'NF C 15-100'},
+  {id:'plombs',    label:'Plomberie',         sub:'Réseau multicouche'},
+  {id:'peinture',  label:'Enduit & Peinture', sub:'Finition murs / plafonds'},
+  {id:'ragreage',  label:'Ragréage',          sub:'Préparation support sol'},
+  {id:'etancheite',label:'Étanchéité',        sub:'Sol & mur — liquide / natte'},
+  {id:'parquet',   label:'Parquet',           sub:'Pose flottante / collée'},
+  {id:'carrelage', label:'Carrelage',         sub:'Sol grès / céramique'},
+  {id:'faience',   label:'Faïence',           sub:'Revêtement mural'},
+  {id:'menus',     label:'Menuiseries int.',  sub:'Portes + Plinthes'},
+  {id:'menuext',   label:'Menuiseries ext.',  sub:'Fenêtres + Volets'},
+  {id:'cuisine',   label:'Cuisine',           sub:'Meubles + Électroménager'},
+];
+
+const QP={
+  demolition:{
+    std:{nb_bennes:1},
+    mid:{nb_bennes:3},
+    prm:{nb_bennes:6},
+  },
+  iti:{
+    std:{epa:'100',iso:'gr32',membrane:false,parement:'ba13_std'},
+    mid:{epa:'120',iso:'gr32',membrane:true, parement:'ba13_std'},
+    prm:{epa:'120',iso:'steico',membrane:true,parement:'ba13_hydro'},
+  },
+  cloisons:{
+    std:{std_on:true,std_m2:30,std_oss:'m48',std_peaux:'2',std_acou:'non',hydro_on:false,hydro_m2:0,hydro_oss:'m48',hydro_peaux:'2',hydro_acou:'non',hd_on:false,hd_m2:0,hd_oss:'m48',hd_peaux:'2',hd_acou:'non',feu_on:false,feu_m2:0,feu_oss:'m48',feu_peaux:'2',feu_acou:'non',chute:5},
+    mid:{std_on:true,std_m2:40,std_oss:'m48',std_peaux:'2',std_acou:'non',hydro_on:true,hydro_m2:15,hydro_oss:'m48',hydro_peaux:'2',hydro_acou:'lv45',hd_on:false,hd_m2:0,hd_oss:'m48',hd_peaux:'2',hd_acou:'non',feu_on:false,feu_m2:0,feu_oss:'m48',feu_peaux:'2',feu_acou:'non',chute:7},
+    prm:{std_on:false,std_m2:0,std_oss:'m70',std_peaux:'2',std_acou:'lr45',hydro_on:true,hydro_m2:20,hydro_oss:'m70',hydro_peaux:'2',hydro_acou:'lr45',hd_on:true,hd_m2:20,hd_oss:'m70',hd_peaux:'2',hd_acou:'lr45',feu_on:false,feu_m2:0,feu_oss:'m48',feu_peaux:'2',feu_acou:'non',chute:10},
+  },
+  elec:{std:{appareillage:'std',vmc:'sf'},mid:{appareillage:'mid',vmc:'sf'},prm:{appareillage:'prm',vmc:'df'}},
+  peinture:{
+    std:{z1_on:true,z1_m2:80,z1_passes:'1',z1_fin:'mat',    z1_imp:false,z2_on:false,z2_m2:20,z2_passes:'1',z2_fin:'mat',   z2_imp:false,z3_on:false,z3_m2:0,z3_passes:'1',z3_fin:'mat',z3_imp:false,z4_on:false,z4_m2:0,z4_passes:'1',z4_fin:'mat',z4_imp:false},
+    mid:{z1_on:true,z1_m2:100,z1_passes:'2',z1_fin:'velours',z1_imp:true, z2_on:false,z2_m2:30,z2_passes:'1',z2_fin:'mat',   z2_imp:false,z3_on:false,z3_m2:0,z3_passes:'1',z3_fin:'mat',z3_imp:false,z4_on:false,z4_m2:0,z4_passes:'1',z4_fin:'mat',z4_imp:false},
+    prm:{z1_on:true,z1_m2:100,z1_passes:'3',z1_fin:'satin',  z1_imp:true, z2_on:true, z2_m2:30,z2_passes:'2',z2_fin:'velours',z2_imp:true,z3_on:false,z3_m2:0,z3_passes:'1',z3_fin:'mat',z3_imp:false,z4_on:false,z4_m2:0,z4_passes:'1',z4_fin:'mat',z4_imp:false},
+  },
+  plombs:{
+    std:{ce:'ce_elec_100'},
+    mid:{ce:'ce_elec_150'},
+    prm:{ce:'ce_thermo'},
+  },
+  parquet:{
+    std:{z1_on:true,z1_m2:30,z1_type:'parquet_strat', z1_pose:'flottant',z1_chute:5, z2_on:false,z2_m2:0,z2_type:'parquet_strat', z2_pose:'flottant',z2_chute:5, z3_on:false,z3_m2:0,z3_type:'parquet_strat', z3_pose:'flottant',z3_chute:5},
+    mid:{z1_on:true,z1_m2:30,z1_type:'parquet_contre',z1_pose:'colle',  z1_chute:7, z2_on:false,z2_m2:0,z2_type:'parquet_contre',z2_pose:'colle',  z2_chute:7, z3_on:false,z3_m2:0,z3_type:'parquet_contre',z3_pose:'colle',  z3_chute:7},
+    prm:{z1_on:true,z1_m2:30,z1_type:'parquet_massif',z1_pose:'colle',  z1_chute:10,z2_on:false,z2_m2:0,z2_type:'parquet_massif',z2_pose:'colle',  z2_chute:10,z3_on:false,z3_m2:0,z3_type:'parquet_massif',z3_pose:'colle',  z3_chute:10},
+  },
+  carrelage:{
+    std:{z1_on:true,z1_m2:15,z1_type:'carrelage_std',z1_chute:10,z2_on:false,z2_m2:0,z2_type:'carrelage_std',z2_chute:10,z3_on:false,z3_m2:0,z3_type:'carrelage_std',z3_chute:10},
+    mid:{z1_on:true,z1_m2:15,z1_type:'gres_cerame',   z1_chute:12,z2_on:false,z2_m2:0,z2_type:'gres_cerame',   z2_chute:12,z3_on:false,z3_m2:0,z3_type:'gres_cerame',   z3_chute:12},
+    prm:{z1_on:true,z1_m2:15,z1_type:'grand_format',  z1_chute:18,z2_on:false,z2_m2:0,z2_type:'grand_format',  z2_chute:18,z3_on:false,z3_m2:0,z3_type:'grand_format',  z3_chute:18},
+  },
+  faience:{
+    std:{z1_on:true,z1_m2:15,z1_type:'faience_std',z1_profiles_ml:15,z1_chute:10,z2_on:false,z2_m2:0,z2_type:'faience_std',z2_profiles_ml:0,z2_chute:10,z3_on:false,z3_m2:0,z3_type:'faience_std',z3_profiles_ml:0,z3_chute:10},
+    mid:{z1_on:true,z1_m2:15,z1_type:'gres_mural',   z1_profiles_ml:20,z1_chute:10,z2_on:false,z2_m2:0,z2_type:'gres_mural',   z2_profiles_ml:0,z2_chute:10,z3_on:false,z3_m2:0,z3_type:'gres_mural',   z3_profiles_ml:0,z3_chute:10},
+    prm:{z1_on:true,z1_m2:15,z1_type:'gf_mural',     z1_profiles_ml:20,z1_chute:15,z2_on:false,z2_m2:0,z2_type:'gf_mural',     z2_profiles_ml:0,z2_chute:15,z3_on:false,z3_m2:0,z3_type:'gf_mural',     z3_profiles_ml:0,z3_chute:15},
+  },
+  ragreage:{
+    std:{z1_on:true,z1_m2:40,z1_type:'ragreage_simple',z1_epa_mm:4, z2_on:false,z2_m2:0,z2_type:'ragreage_simple',z2_epa_mm:4, z3_on:false,z3_m2:0,z3_type:'ragreage_simple',z3_epa_mm:4, primaire:false,bandes:true,ml_bandes:25},
+    mid:{z1_on:true,z1_m2:40,z1_type:'ragreage_simple',z1_epa_mm:5, z2_on:false,z2_m2:0,z2_type:'ragreage_simple',z2_epa_mm:5, z3_on:false,z3_m2:0,z3_type:'ragreage_simple',z3_epa_mm:5, primaire:true, bandes:true,ml_bandes:28},
+    prm:{z1_on:true,z1_m2:40,z1_type:'ragreage_fibre', z1_epa_mm:10,z2_on:false,z2_m2:0,z2_type:'ragreage_fibre', z2_epa_mm:10,z3_on:false,z3_m2:0,z3_type:'ragreage_fibre', z3_epa_mm:10,primaire:true, bandes:true,ml_bandes:28},
+  },
+  etancheite:{
+    std:{mode:'liquide',primaire:false,ml_bandes:20},
+    mid:{mode:'liquide',primaire:true, ml_bandes:20},
+    prm:{mode:'natte_d',primaire:true, ml_bandes:20},
+  },
+  menus:{std:{type_porte:'porte_std',type_plinthe:'plinthe_mdf'},mid:{type_porte:'porte_mid',type_plinthe:'plinthe_mdf'},prm:{type_porte:'porte_prm',type_plinthe:'plinthe_bois'}},
+  menuext:{
+    std:{type_fen:'fenetre_pvc',type_pf:'pf_pvc',type_vol:'volet_bat_pvc',porte_entree:'porte_entree_std'},
+    mid:{type_fen:'fenetre_alu',type_pf:'pf_alu',type_vol:'volet_bat_alu',porte_entree:'porte_entree_std'},
+    prm:{type_fen:'fenetre_bois',type_pf:'pf_bois',type_vol:'volet_roul',porte_entree:'porte_entree_prm'},
+  },
+  cuisine:{std:{type_pt:'plan_travail',lave_vaisselle:false},mid:{type_pt:'plan_travail',lave_vaisselle:true},prm:{type_pt:'plan_travail_qtz',lave_vaisselle:true}},
+  fauxplafond:{
+    std:{suspente:'cav', plaque:'fp_ba13_std', peaux:'1',isolant:'fp_lv_45', avec_isolant:false},
+    mid:{suspente:'res', plaque:'fp_ba13_std', peaux:'1',isolant:'fp_lv_45', avec_isolant:true},
+    prm:{suspente:'res', plaque:'fp_ba13_phon',peaux:'2',isolant:'fp_lr_100',avec_isolant:true},
+  },
+};
+
+function px(lid,key){const c=state.lots[lid].cp[key];return c!==undefined?c:BP[key]*(1+(state.globalCoeff||0)/100);}
+function isMod(lid,key){return state.lots[lid].cp[key]!==undefined;}
+function lsurf(lid){const s=state.lots[lid].surf;return s!==null?s:state.globalSurf;}
+const REF_EPA={ragreage_simple:5,ragreage_fibre:8};
+function pxRag(lid,key,epa){if(state.lots[lid].cp[key]!==undefined)return state.lots[lid].cp[key];return BP[key]*(epa/(REF_EPA[key]||5));}
+
+function chuted(net,pct){return Math.round(net*(1+(parseFloat(pct)||0)/100)*10)/10;}
+
+function calcItems(lid){
+  const items=_calcItemsCore(lid);
+  (state.lots[lid].custom||[]).forEach(c=>{
+    const qty=parseFloat(c.qty)||0,p=parseFloat(c.p)||0;
+    items.push({key:'_c_'+c.id,qty,lbl:c.lbl||'',unit:c.unit||'',note:'',p,total:qty*p,hl:false,custom:true,customId:c.id});
+  });
+  return items;
+}
+function _calcItemsCore(lid){
+  const l=state.lots[lid],o=l.o,S=lsurf(lid);
+  const row=(key,qty,lbl,unit,note)=>{const p=px(lid,key);return{key,qty,lbl,unit,note:note||'',p,total:qty*p,hl:false};};
+  const hrow=(key,qty,lbl,unit,note)=>{const p=px(lid,key);return{key,qty,lbl,unit,note:note||'',p,total:qty*p,hl:true};};
+  switch(lid){
+    case'demolition':{
+      const nb=parseInt(o.nb_bennes)||0;
+      const items=[];
+      if(nb>0) items.push(hrow('benne_10m3',nb,`Benne 10 m³ — ${nb} unité${nb>1?'s':''}`, 'pce','Évacuation gravats / tout-venant'));
+      if(o.poly_on&&(o.poly_m2>0)) items.push(row('polyane_200',o.poly_m2,`Film polyane 200µ — ${o.poly_m2} m²`,'m²','Protection sols et murs — rouleau 4×50 m'));
+      if(o.adh_on&&(o.adh_m2>0))  items.push(row('film_adh',o.adh_m2,`Film auto-adhésif de protection — ${o.adh_m2} m²`,'m²','Parquets / carrelages existants / escaliers'));
+      if(o.kraft_on&&(o.kraft_m2>0)) items.push(row('papier_kraft',o.kraft_m2,`Papier kraft de protection — ${o.kraft_m2} m²`,'m²','Plans de travail / menuiseries / vitres'));
+      return items;
+    }
+    case'iti':{
+      const epa=o.epa,isGR=o.iso==='gr32';
+      const isoKey=isGR?`iti_gr32_${epa}`:`iti_steico_${epa}`;
+      const R_gr={80:'2,50',100:'3,15',120:'3,75',140:'4,40',160:'5,00'};
+      const R_st={60:'1,65',80:'2,20',100:'2,80',120:'3,35',140:'3,90'};
+      const isoLbl=isGR?`GR32 Kraft ${epa}mm — R=${R_gr[epa]||'?'} m².K/W`:`Steicoflex 036 ${epa}mm — R=${R_st[epa]||'?'} m².K/W`;
+      const m2=parseFloat(o.m2)||0;
+      const items=[
+        row('iti_oss',m2,'Ossature Optima — lisses Clip\'Optima + fourrures 240','m²'),
+        row('iti_appuis',m2,'Appuis intermédiaires Optima2','m²','1,5 pce/m²'),
+        row(isoKey,m2,isoLbl,'m²',isGR?'Isover GR32 Kraft':'Steicoflex 036 — fibre de bois souple'),
+      ];
+      if(o.membrane){
+        items.push(row('iti_vario',m2,'Membrane hygro-régulante Vario Xtra','m²','Frein-vapeur intelligent'));
+        const sml=Math.round(m2*0.7);
+        items.push(row('iti_scotch',sml,'Scotch Vario Multitape — jointoiement des lés','ml',`~${sml} ml (0,7 ml/m²)`));
+        items.push(row('iti_pastilles',m2,'Pastilles Optima2 — maintien membrane','m²'));
+      }
+      if(o.parement!=='aucun'){
+        const pk=`iti_${o.parement}`;
+        items.push(row(pk,m2,o.parement==='ba13_std'?'Parement BA13 standard':'Parement BA13 hydrofuge','m²'));
+      }
+      return items;
+    }
+    case'cloisons':{
+      const zones=[
+        {key:'std',  on:o.std_on,   m2:o.std_m2,   oss:o.std_oss||'m48',  peaux:parseInt(o.std_peaux||2),  acou:o.std_acou||'non',  dbl:!!o.std_dbl_mont,  lbl:'BA13 standard'},
+        {key:'hydro',on:o.hydro_on, m2:o.hydro_m2, oss:o.hydro_oss||'m48',peaux:parseInt(o.hydro_peaux||2),acou:o.hydro_acou||'non',dbl:!!o.hydro_dbl_mont,lbl:'BA13 hydrofuge'},
+        {key:'hd',   on:o.hd_on,    m2:o.hd_m2,    oss:o.hd_oss||'m48',   peaux:parseInt(o.hd_peaux||2),   acou:o.hd_acou||'non',   dbl:!!o.hd_dbl_mont,   lbl:'BA13 haute dureté'},
+        {key:'feu',  on:o.feu_on,   m2:o.feu_m2,   oss:o.feu_oss||'m48',  peaux:parseInt(o.feu_peaux||2),  acou:o.feu_acou||'non',  dbl:!!o.feu_dbl_mont,  lbl:'BA13 coupe-feu'},
+      ].filter(z=>z.on&&z.m2>0);
+      if(zones.length===0) return[];
+      const chute=o.chute||5;
+      const items=[];
+      zones.forEach(z=>{
+        const rk=z.oss==='m90'?'rail_r70':'rail_r48';
+        const mk=`mont_${z.oss}`;
+        const nr=Math.round(z.m2*0.8),nm=Math.round(z.m2*1.7)*(z.dbl?2:1);
+        const net=z.m2*z.peaux,brut=chuted(net,chute);
+        items.push(row(rk,nr,`Rails ${z.oss==='m90'?'R70':'R48'} — ${z.lbl} — ${nr} ml`,'ml'));
+        items.push(row(mk,nm,`Montants ${z.oss.toUpperCase()}${z.dbl?' (doublés)':''} — ${z.lbl} — ${nm} ml`,'ml'));
+        items.push(row('bande_acou',nr,`Bande acoustique sous rails — ${z.lbl} — ${nr} ml`,'ml'));
+        items.push(hrow(`ba13_${z.key}`,brut,`${z.lbl} — ${z.peaux===4?'double peau (4 faces)':'simple peau (2 faces)'} × ${z.m2} m²`,'m²',`Brut : ${brut} m² (+${chute}% chute)`));
+        items.push(row('visserie_cloison',z.m2,`Visserie — ${z.lbl}`,'m²'));
+        items.push(row('bande_joint',net,`Bandes à joint — ${z.lbl}`,'m²'));
+        items.push(row('enduit_bande',net,`Enduit de bande — ${z.lbl}`,'m²'));
+        if(z.acou!=='non') items.push(row(z.acou,z.m2,z.acou==='lv45'?`LV acoustique 45mm — ${z.lbl}`:`LR acoustique 45mm — ${z.lbl}`,'m²'));
+      });
+      return items;
+    }
+    case'elec':{
+      const tPrice=S<50?350:S<=80?480:680;
+      const tNote=S<50?'< 50 m² — jusqu\'à 10 circuits':S<=80?'50–80 m² — jusqu\'à 14 circuits':'>80 m² — jusqu\'à 20 circuits';
+      const items=[
+        {key:'tableau_elec',qty:1,lbl:'Tableau — GTL + différentiels + disjoncteurs + parafoudre',unit:'forfait',note:tNote,p:tPrice,total:tPrice,hl:true},
+        row('gaines_cables',S,'Gaines ICTA + câbles 1,5 / 2,5 / 4 / 6 mm²','m²','Surface SHON'),
+      ];
+      const q=o.appareillage;
+      if(o.detail_app){
+        const appTypes=[
+          ['prise','app_prises','Prises de courant 2P+T'],
+          ['inter','app_inter','Interrupteurs simples'],
+          ['vav','app_vav','Va-et-vient'],
+          ['dcl','app_dcl','Points lumineux DCL'],
+          ['rj45','app_rj45','Prises RJ45 réseau'],
+          ['usb','app_usb','Prises chargeur USB'],
+          ['variateur','app_variateur','Variateurs d\'intensité'],
+        ];
+        appTypes.forEach(([type,opt,lbl])=>{
+          const qty=parseInt(o[opt])||0;
+          if(qty<=0) return;
+          const k=`app_${type}_${q}`;
+          if(BP[k]===undefined&&l.cp[k]===undefined) return;
+          items.push(row(k,qty,lbl,'pce'));
+        });
+      } else {
+        const ak=`appareillage_${q}`;
+        const albl={std:'Appareillage standard (prises, inter, DCL)',mid:'Appareillage intermédiaire — Legrand Céliane / Mosaic',prm:'Appareillage premium — Logus / connecté + USB'}[q];
+        items.push(row(ak,S,albl,'m²'));
+      }
+      if(o.vmc==='sf') items.push(row('vmc_sf',1,'VMC simple flux hygro-réglable','forfait','Aldes / Atlantic'));
+      if(o.vmc==='df') items.push(row('vmc_df',1,'VMC double flux à échangeur','forfait','Rendement ≥ 85%'));
+      return items;
+    }
+    case'peinture':{
+      const finLbl={mat:'Peinture mate — gamme GSB',velours:'Peinture velours Unikalo Aqualine Evo',satin:'Peinture satin premium'};
+      const zones=[1,2,3,4].filter(n=>o[`z${n}_on`]&&o[`z${n}_m2`]>0).map(n=>({n,m2:o[`z${n}_m2`],passes:parseInt(o[`z${n}_passes`]),fin:o[`z${n}_fin`],imp:o[`z${n}_imp`],treillis:o[`z${n}_treillis`]}));
+      if(zones.length===0) return[];
+      const items=[];
+      zones.forEach(z=>{
+        const zlbl=`Zone ${z.n} — ${z.m2} m²`;
+        if(z.passes>0) items.push(row('enduit_pate',z.m2*z.passes,`${zlbl} · Enduit pâte ${z.passes} passe${z.passes>1?'s':''}`, 'm²',`${z.m2*z.passes} m²`));
+        if(z.passes===3&&z.treillis) items.push(row('toile_treillis',z.m2,`${zlbl} · Toile treillis de verre`,'m²'));
+        if(z.imp)      items.push(row('impression',z.m2,`${zlbl} · Impression fixante`,'m²','Unikalo Aqualine Impress Evo'));
+        const fk=`peinture_${z.fin}`;
+        items.push(hrow(fk,z.m2*2,`${zlbl} · ${finLbl[z.fin]} — 2 couches`,'m²',`${z.m2*2} m²`));
+      });
+      return items;
+    }
+    case'plombs':{
+      const pts=o.pts;
+      const rk=o.reseau_type==='cu'?'reseau_cu':'reseau_mc';
+      const rLbl=o.reseau_type==='cu'?'Réseau distribution cuivre — tubes + raccords à sertir':'Réseau distribution multicouche — tubes gainés + raccords + nourrices';
+      const rNote=o.reseau_type==='cu'?'EF + EC tube cuivre Ø12/14/16':'EF + EC Ø16/20/25';
+      const items=[
+        row(rk,S,rLbl,'m²',rNote),
+        row('evac_pvc',S,'Réseau évacuation PVC — eaux usées Ø40 + eaux vannes Ø100','m²','Siphons + raccords'),
+      ];
+      const wc_sol=parseInt(o.wc_sol)||0;
+      const wc_susp=parseInt(o.wc_susp)||0;
+      const q=l.q||'mid';
+      if(wc_sol>0) items.push(hrow(`wc_complet_${q}`,wc_sol,`WC au sol — cuvette + réservoir + abattant${wc_sol>1?' × '+wc_sol:''}`, 'pce'));
+      if(wc_susp>0){
+        items.push(hrow('bati_support',wc_susp,`Bâti-support WC suspendu${wc_susp>1?' × '+wc_susp:''}`, 'pce','Geberit / Grohe / Viega'));
+        items.push(hrow(`wc_suspendu_cuvette_${q}`,wc_susp,`Cuvette WC suspendue${wc_susp>1?' × '+wc_susp:''}`, 'pce','Rimless'));
+        items.push(hrow(`plaque_declenchement_${q}`,wc_susp,`Plaque de déclenchement${wc_susp>1?' × '+wc_susp:''}`, 'pce'));
+      }
+      if(pts.douche>0){
+        const carr=(o.douche_type||'receveur')==='carreler';
+        if(carr){
+          items.push(hrow('receveur_carreler',pts.douche,`Receveur à carreler${pts.douche>1?' × '+pts.douche:''}`, 'pce','Wedi / Schlüter Kerdi-Shower'));
+          items.push(hrow('bonde_design',pts.douche,`Bonde design / linéaire${pts.douche>1?' × '+pts.douche:''}`, 'pce'));
+          items.push(row('kit_etanche_douche',pts.douche*3.5,`Kit étanchéité douche${pts.douche>1?' × '+pts.douche:''}`, 'm²','Membrane liquide + bandes'));
+        } else {
+          items.push(hrow(`receveur_90_${q}`,pts.douche,`Receveur douche 90×90 + bonde${pts.douche>1?' × '+pts.douche:''}`, 'pce'));
+        }
+        items.push(hrow(`mitigeur_douche_${q}`,pts.douche,`Mitigeur douche + flexible + douchette${pts.douche>1?' × '+pts.douche:''}`, 'pce'));
+      }
+      if(pts.cuisine>0) items.push(hrow(`mitigeur_cuisine_${q}`,pts.cuisine,`Mitigeur évier cuisine${pts.cuisine>1?' × '+pts.cuisine:''}`, 'pce'));
+      if(pts.lavabo>0)  items.push(hrow(`mitigeur_lavabo_${q}`,pts.lavabo,`Mitigeur lavabo + siphon${pts.lavabo>1?' × '+pts.lavabo:''}`, 'pce'));
+      if(pts.bain>0){   items.push(hrow(`baignoire_${q}`,pts.bain,`Baignoire standard 170×75${pts.bain>1?' × '+pts.bain:''}`, 'pce')); items.push(hrow(`mitigeur_bain_${q}`,pts.bain,`Mitigeur bain/douche${pts.bain>1?' × '+pts.bain:''}`, 'pce'));}
+      const ceLbl={ce_elec_100:'Chauffe-eau électrique 100L',ce_elec_150:'Chauffe-eau électrique 150L',ce_thermo:'Chauffe-eau thermodynamique — COP ≥ 3'}[o.ce];
+      items.push(hrow(o.ce,1,ceLbl,'pce'));
+      return items;
+    }
+    case'parquet':{
+      const typeLbl={parquet_strat:'Parquet stratifié 8mm',parquet_contre:'Parquet contrecollé 14mm',parquet_massif:'Parquet massif 20mm'};
+      const zones=[1,2,3].filter(n=>o[`z${n}_on`]&&o[`z${n}_m2`]>0).map(n=>({n,m2:o[`z${n}_m2`],type:o[`z${n}_type`],pose:o[`z${n}_pose`],sc:o[`z${n}_sc`]||'std',chute:o[`z${n}_chute`]}));
+      if(zones.length===0) return[];
+      const items=[];
+      zones.forEach(z=>{
+        const brut=chuted(z.m2,z.chute);
+        items.push(hrow(z.type,brut,`${typeLbl[z.type]} — Zone ${z.n}`,'m²',`Brut : ${brut} m² (+${z.chute}% chute, net ${z.m2} m²)`));
+        if(z.pose==='flottant'){
+          const scKey=z.sc==='liege'?'sous_couche_liege':'sous_couche';
+          const scLbl=z.sc==='liege'?'Sous-couche liège 2 mm':'Sous-couche mousse';
+          items.push(row(scKey,z.m2,`${scLbl} — Zone ${z.n}`,'m²'));
+        } else {
+          if(z.sc==='liege') items.push(row('sous_couche_liege',z.m2,`Sous-couche liège 2 mm — Zone ${z.n}`,'m²'));
+          items.push(row('colle_parquet',z.m2,`Colle MS polymère — Zone ${z.n}`,'m²','1,2 kg/m² × 8 €/kg'));
+        }
+      });
+      return items;
+    }
+    case'carrelage':{
+      const typeLbl={carrelage_std:'Carrelage céramique standard',gres_cerame:'Grès cérame rectifié',grand_format:'Grand format 60×120'};
+      const PEIGNE_KG={v3:2,v4:3,b10:5,b12:7};
+      const PEIGNE_LBL={v3:'V3 3mm',v4:'V4 4mm',b10:'B10 10mm',b12:'B12 12mm'};
+      const zones=[1,2,3].filter(n=>o[`z${n}_on`]&&o[`z${n}_m2`]>0).map(n=>({n,m2:o[`z${n}_m2`],type:o[`z${n}_type`],peigne:o[`z${n}_peigne`]||'b10',chute:o[`z${n}_chute`]}));
+      if(zones.length===0) return[];
+      const items=[];
+      zones.forEach(z=>{
+        const brut=chuted(z.m2,z.chute);
+        const kg_m2=PEIGNE_KG[z.peigne]||5;
+        const kg=Math.ceil(z.m2*kg_m2);
+        items.push(hrow(z.type,brut,`${typeLbl[z.type]} — Zone ${z.n}`,'m²',`Brut : ${brut} m² (+${z.chute}% chute, net ${z.m2} m²)`));
+        items.push(row('colle_carrelage',kg,`Colle C2 peigne ${PEIGNE_LBL[z.peigne]} (${kg_m2} kg/m²) — Zone ${z.n}`,'kg'));
+      });
+      return items;
+    }
+    case'faience':{
+      const typeLbl={faience_std:'Faïence standard 20×30',gres_mural:'Grès cérame mural rectifié',gf_mural:'Grand format mural 60×120'};
+      const PEIGNE_KG={v3:2,v4:3,b10:5,b12:7};
+      const PEIGNE_LBL={v3:'V3 3mm',v4:'V4 4mm',b10:'B10 10mm',b12:'B12 12mm'};
+      const zones=[1,2,3].filter(n=>o[`z${n}_on`]&&o[`z${n}_m2`]>0).map(n=>({n,m2:o[`z${n}_m2`],type:o[`z${n}_type`],peigne:o[`z${n}_peigne`]||'v4',profiles_ml:o[`z${n}_profiles_ml`]||0,chute:o[`z${n}_chute`]}));
+      if(zones.length===0) return[];
+      const items=[];
+      zones.forEach(z=>{
+        const brut=chuted(z.m2,z.chute);
+        const kg_m2=PEIGNE_KG[z.peigne]||3;
+        const kg=Math.ceil(z.m2*kg_m2);
+        items.push(hrow(z.type,brut,`${typeLbl[z.type]} — Zone ${z.n}`,'m²',`Brut : ${brut} m² (+${z.chute}% chute, net ${z.m2} m²)`));
+        items.push(row('colle_faience',kg,`Colle C2S1 peigne ${PEIGNE_LBL[z.peigne]} (${kg_m2} kg/m²) — Zone ${z.n}`,'kg'));
+        if(z.profiles_ml>0) items.push(row('profiles_alu',z.profiles_ml,`Profilés alu — Zone ${z.n} — ${z.profiles_ml} ml`,'ml','Nez de carreau / jonction'));
+      });
+      return items;
+    }
+    case'ragreage':{
+      const zones=[1,2,3].filter(n=>o[`z${n}_on`]&&o[`z${n}_m2`]>0).map(n=>({n,m2:o[`z${n}_m2`],type:o[`z${n}_type`],epa:parseFloat(o[`z${n}_epa_mm`])||5}));
+      if(zones.length===0) return[];
+      const S_total=zones.reduce((a,z)=>a+z.m2,0);
+      const items=[];
+      if(o.primaire) items.push(row('primaire_ragreage',S_total,'Primaire d\'accrochage','m²','Favorise adhérence ragréage'));
+      const ml_b=parseFloat(o.ml_bandes)||0;
+      if(o.bandes&&ml_b>0) items.push(row('bande_resiliente',ml_b,`Bandes résilientes périphériques — ${ml_b} ml`,'ml','Désolidarisation phonique'));
+      zones.forEach(z=>{
+        const p=pxRag('ragreage',z.type,z.epa);
+        const lbl=z.type==='ragreage_fibre'?'Ragréage fibré autonivelant':'Ragréage autonivelant classique';
+        items.push({key:z.type,qty:z.m2,lbl:`${lbl} — Zone ${z.n}`,unit:'m²',note:`${z.epa} mm — ${z.m2} m²`,p,total:z.m2*p,hl:true,epa:z.epa});
+      });
+      return items;
+    }
+    case'etancheite':{
+      const mode=o.mode,ml_b=parseFloat(o.ml_bandes)||0,m2=parseFloat(o.m2)||0,items=[];
+      if(o.primaire) items.push(row('primaire_etanche',m2,'Primaire d\'accrochage étanchéité','m²','Pénétration / consolidation support'));
+      if(mode==='natte_e'){
+        items.push(hrow('natte_etanche',m2,'Natte d\'étanchéité — KERDI / Wedi','m²','Zones humides'));
+        items.push(row('colle_c2s',Math.round(m2*3),'Colle C2S — spatule 3×3 mm','kg','~3 kg/m²'));
+        if(ml_b>0) items.push(row('bande_natte',ml_b,`Bandes de rives — ${ml_b} ml`,'ml','Raccord natte / mur'));
+      } else if(mode==='natte_d'||mode==='natte'){
+        items.push(hrow('natte_desoli',m2,'Natte de désolidarisation — DITRA','m²','Découplage + drainage'));
+        items.push(row('colle_c2s',Math.round(m2*5),'Colle C2S — spatule 10×10 mm','kg','~5 kg/m²'));
+        if(ml_b>0) items.push(row('bande_natte',ml_b,`Bandes de rives — ${ml_b} ml`,'ml','Raccord natte / mur'));
+      } else {
+        items.push(hrow('etanche_liquide',m2,'Membrane étanchéité liquide — Sika Level-01 / Knauf','m²','2 couches croisées'));
+        if(ml_b>0) items.push(row('bande_etanche',ml_b,`Bandes armature tissu — ${ml_b} ml`,'ml','Angles et périmètre'));
+      }
+      return items;
+    }
+    case'menus':{
+      const np=parseInt(o.nb_portes)||0,mpl=parseFloat(o.m_plinthes)||0,ns=parseInt(o.nb_seuils)||0;
+      const plbl={porte_std:'Bloc-porte prépeint standard + huisserie',porte_mid:'Bloc-porte intermédiaire + huisserie',porte_prm:'Bloc-porte premium + huisserie chêne'}[o.type_porte];
+      const tllbl={plinthe_mdf:'Plinthe MDF prépeinte 70mm',plinthe_bois:'Plinthe bois massif 80mm'}[o.type_plinthe];
+      return[hrow(o.type_porte,np,`${plbl} — ${np} unité${np>1?'s':''}`,'pce','Ouvrant + dormant'),row(o.type_plinthe,mpl,`${tllbl} — ${mpl} ml`,'ml'),row('barre_seuil',ns,`Barre de seuil — ${ns} pce`,'pce','Jonction sol')];
+    }
+    case'menuext':{
+      const nf=parseInt(o.nb_fen)||0,npf=parseInt(o.nb_pf)||0,nv=parseInt(o.nb_vol)||0,nse=parseInt(o.nb_seuils_ext)||0;
+      const flbl={fenetre_pvc:'Fenêtre PVC double vitrage Ug≤1,1',fenetre_alu:'Fenêtre alu thermolaqué triple vitrage',fenetre_bois:'Fenêtre bois double vitrage certifié'}[o.type_fen];
+      const pflbl={pf_pvc:'Porte-fenêtre PVC 2 vantaux',pf_alu:'Porte-fenêtre alu 2 vantaux',pf_bois:'Porte-fenêtre bois 2 vantaux'}[o.type_pf];
+      const vlbl={volet_bat_pvc:'Volet battant PVC',volet_bat_alu:'Volet battant alu thermolaqué',volet_roul:'Volet roulant électrique + caisson'}[o.type_vol];
+      const nbpe=parseInt(o.nb_porte_entree)||1;
+      const pelbl={porte_entree_std:'Porte d\'entrée standard isolée',porte_entree_prm:'Porte d\'entrée premium acier/alu'}[o.porte_entree];
+      const items=[];
+      if(nf>0)   items.push(hrow(o.type_fen,nf, `${flbl} — ${nf} unité${nf>1?'s':''}`,   'pce','Pose en feuillure'));
+      if(npf>0)  items.push(hrow(o.type_pf, npf,`${pflbl} — ${npf} unité${npf>1?'s':''}`, 'pce'));
+      if(nv>0)   items.push(hrow(o.type_vol,nv, `${vlbl} — ${nv} unité${nv>1?'s':''}`,   'pce'));
+      if(nbpe>0) items.push(hrow(o.porte_entree,nbpe,`${pelbl}${nbpe>1?' × '+nbpe:''}`,   'pce'));
+      if(nse>0)  items.push(row('seuil_ext',nse,`Seuil pierre / granit — ${nse} pce`,     'pce'));
+      return items;
+    }
+    case'cuisine':{
+      const ml_b=parseFloat(o.ml_bas)||0,ml_h=parseFloat(o.ml_haut)||0,ml_pt=parseFloat(o.ml_pt)||0,m2_cr=parseFloat(o.m2_cred)||0;
+      const ptlbl={plan_travail:'Plan de travail stratifié',plan_travail_qtz:'Plan de travail quartz'}[o.type_pt];
+      const items=[];
+      if(ml_b>0)  items.push(hrow('meuble_bas', ml_b,`Meubles bas — ${ml_b} ml`,'ml'));
+      if(ml_h>0)  items.push(hrow('meuble_haut',ml_h,`Meubles hauts — ${ml_h} ml`,'ml'));
+      if(ml_pt>0) items.push(hrow(o.type_pt,ml_pt,`${ptlbl} — ${ml_pt} ml`,'ml'));
+      if(m2_cr>0) items.push(row('credence',m2_cr,`Crédence carrelage — ${m2_cr} m²`,'m²'));
+      // BUG FIX: évier en option
+      if(o.evier)         items.push(hrow('evier_cuisine',1,'Évier inox simple bac + bonde','pce'));
+      if(o.four)          items.push(hrow('four',1,'Four encastrable','pce'));
+      if(o.plaques)       items.push(hrow('plaques',1,'Plaques de cuisson 4 feux','pce'));
+      if(o.hotte)         items.push(hrow('hotte',1,'Hotte aspirante','pce'));
+      if(o.lave_vaisselle)items.push(hrow('lave_vaisselle',1,'Lave-vaisselle','pce'));
+      return items;
+    }
+    case'fauxplafond':{
+      const ex=parseFloat(o.entraxe)||0.6;
+      const four_ratio=Math.round((1/ex+0.4)*10)/10;
+      const nb_four=Math.round(S*four_ratio);
+      const peaux=parseInt(o.peaux);
+      const plq_net=S*peaux,plq=chuted(plq_net,o.chute);
+      const pqLbls={fp_ba13_std:'BA13 standard',fp_ba13_hydro:'BA13 hydrofuge',fp_ba13_feu:'BA13 coupe-feu',fp_ba13_phon:'BA13 phonique'};
+      const isoLbls={fp_lv_45:'Laine de verre 45mm',fp_lr_45:'Laine de roche 45mm',fp_lv_100:'Laine de verre 100mm',fp_lr_100:'Laine de roche 100mm',fp_ouate:'Ouate de cellulose 100mm'};
+      const items=[];
+      const nb_susp=Math.round(nb_four/1.4);
+      if(o.suspente==='res')
+        items.push(row('fp_suspente_res',nb_susp,`Suspentes à ressort — ${nb_susp} pce`,'pce',`~${(nb_susp/S).toFixed(1)}/m²`));
+      else
+        items.push(row('fp_suspente_cav',nb_susp,`Cavaliers pivot — ${nb_susp} pce`,'pce',`~${(nb_susp/S).toFixed(1)}/m²`));
+      items.push(row('fp_fourrure',nb_four,`Fourrures 47×17 — ${nb_four} ml`,'ml',`Entraxe ${o.entraxe} m`));
+      const lisse_ml=Math.round(4*Math.sqrt(S));
+      items.push(row('fp_lisse_peri',lisse_ml,`Lisses périphériques — ${lisse_ml} ml`,'ml',`4 × √${Math.round(S)} m²`));
+      if(o.avec_isolant) items.push(row(o.isolant,S,isoLbls[o.isolant]||o.isolant,'m²','Entre fourrures / plafond'));
+      items.push(hrow(o.plaque,plq,`${pqLbls[o.plaque]} — ${peaux} peau${peaux>1?'x':''} × ${S} m²`,'m²',`Brut : ${plq} m² (+${o.chute}% chute, net ${plq_net} m²)`));
+      items.push(row('fp_visserie',S,'Visserie TF plafond','m²'));
+      if(o.joints) items.push(row('fp_bande_joint',plq_net,`Bandes + enduit joints — ${plq_net} m²`,'m²','Faces visibles'));
+      return items;
+    }
+    default:return[];
+  }
+}
+
+function lmatHT(lid){if(!state.lots[lid].on)return 0;return calcItems(lid).reduce((a,i)=>a+i.total,0);}
+function ltot(lid){return lmatHT(lid)*(1+(state.lots[lid].m||0)/100);}
+function gtot(){return LM.reduce((a,m)=>a+ltot(m.id),0);}
+
+function setLot(id){state.cur=id;state.editCell=null;render();}
+function toggleLot(id){state.lots[id].on=!state.lots[id].on;render();}
+function setTVA(v){state.tva=v;render();}
+function toggleCorps(){state.corpView=!state.corpView;render();}
+
+function setQuality(lid,q){
+  state.lots[lid].q=q;
+  const p=QP[lid]?.[q];
+  if(!p) return render();
+  if(lid==='plombs'){if(p.pts)state.lots.plombs.o.pts={...p.pts};['ce','wc_sol','wc_susp'].forEach(k=>{if(p[k]!==undefined)state.lots.plombs.o[k]=p[k];});}
+  else Object.assign(state.lots[lid].o,p);
+  render();
+}
+
+function setOpt(lid,k,v){
+  // BUG FIX 1: Steicoflex max 140mm
+  if(lid==='iti'&&k==='iso'&&v==='steico'&&!['60','80','100','120','140'].includes(state.lots.iti.o.epa)){
+    state.lots.iti.o.epa='140';
+  }
+  // BUG FIX 2: ragréage type change → clear stale custom price lock
+  if(lid==='ragreage'&&k==='type'&&state.lots[lid].o.type!==v){
+    delete state.lots[lid].cp[state.lots[lid].o.type];
+  }
+  state.lots[lid].on=true;
+  state.lots[lid].o[k]=v;
+  render();
+}
+function setOptN(lid,par,k,v){state.lots[lid].on=true;state.lots[lid].o[par][k]=v;render();}
+function setSurf(lid,v){state.lots[lid].on=true;state.lots[lid].surf=parseFloat(v)||1;render();}
+function setGS(v){state.globalSurf=parseFloat(v)||0;render();}
+function setMarge(lid,v){state.lots[lid].m=parseFloat(v)||0;render();}
+function setProj(v){state.projectName=v;save();}
+
+function addCustomLine(lid){
+  if(!state.lots[lid].custom)state.lots[lid].custom=[];
+  state.lots[lid].custom.push({id:'c'+Date.now(),lbl:'',unit:'',qty:0,p:0});
+  state.lots[lid].on=true;
+  render();
+}
+function removeCustomLine(lid,id){
+  state.lots[lid].custom=(state.lots[lid].custom||[]).filter(c=>c.id!==id);
+  render();
+}
+function setCustomLine(lid,id,field,value){
+  const c=(state.lots[lid].custom||[]).find(c=>c.id===id);
+  if(!c)return;
+  if(field==='qty'||field==='p')c[field]=parseFloat(value)||0;
+  else c[field]=value;
+  render();
+}
+function liveCustomTotal(cid){
+  const q=parseFloat(document.getElementById('cqty_'+cid)?.value)||0;
+  const p=parseFloat(document.getElementById('cpri_'+cid)?.value)||0;
+  const el=document.getElementById('ctot_'+cid);
+  if(el)el.textContent=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(Math.round(q*p))+' €';
+}
+
+function startEdit(lid,key){state.editCell={lid,key};state.editVal=String(px(lid,key));render();requestAnimationFrame(()=>{const e=$('pei');if(e){e.focus();e.select();}});}
+function commitEdit(){if(!state.editCell)return;const v=parseFloat(state.editVal.replace(',','.'));if(!isNaN(v)&&v>=0)state.lots[state.editCell.lid].cp[state.editCell.key]=v;state.editCell=null;render();}
+function cancelEdit(){state.editCell=null;render();}
+function rstPrice(lid,key){delete state.lots[lid].cp[key];state.editCell=null;render();}
+function toggleTarifs(lid){state.lots[lid].tarifs_open=!state.lots[lid].tarifs_open;render();}
+function setGlobalCoeff(v){state.globalCoeff=parseFloat(v)||0;var el=$('coeff-input');if(el)el.value=state.globalCoeff;render();}
+function setPx(lid,key,v){const val=parseFloat(String(v).replace(',','.'));if(!isNaN(val)&&val>=0)state.lots[lid].cp[key]=val;render();}
+function rstAllPrices(lid){state.lots[lid].cp={};render();}
+
+function renderTarifs(lid){
+  const items=calcItems(lid);
+  const seen=new Set();
+  const uniq=items.filter(i=>{if(!BP[i.key]||seen.has(i.key))return false;seen.add(i.key);return true;});
+  if(!uniq.length) return'';
+  const coeff=state.globalCoeff||0;
+  const cleanLbl=s=>s.replace(/ — Zone \d+.*/,'').replace(/ — \d+ (unité|ml|m²|pce).*/,'').replace(/ × \d+.*/,'').trim();
+  const anyMod=Object.keys(state.lots[lid].cp).some(k=>BP[k]!==undefined);
+  const rows=uniq.map(i=>{
+    const base=BP[i.key];
+    const mod=isMod(lid,i.key);
+    const effective=mod?state.lots[lid].cp[i.key]:base*(1+coeff/100);
+    const lbl=cleanLbl(i.lbl||i.key);
+    return`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:5px 10px;font-size:10px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lbl}</td>
+      <td style="padding:5px 8px;font-family:var(--mono);font-size:10px;color:var(--text3);text-align:right;white-space:nowrap">${fmt(base,2)} €</td>
+      <td style="padding:5px 8px;text-align:right;white-space:nowrap"><input type="number" value="${+effective.toFixed(2)}" min="0" step="0.01" style="width:64px;text-align:right;font-family:var(--mono);font-size:10px;padding:2px 5px;background:var(--bg);border:1px solid ${mod?'var(--accent)':'var(--border2)'};border-radius:3px;color:var(--text);outline:none" onchange="setPx('${lid}','${i.key}',this.value)" onfocus="this.select()"></td>
+      <td style="padding:5px 6px;text-align:center">${mod?`<button style="font-size:9px;color:var(--text3);cursor:pointer;padding:1px 4px;background:none;border:none;font-family:var(--mono)" onclick="rstPrice('${lid}','${i.key}')">↺</button>`:''}</td>
+    </tr>`;
+  }).join('');
+  return`<div style="flex-shrink:0;border-top:2px solid var(--accent);background:var(--bg2);max-height:220px;overflow-y:auto">
+    <div style="display:flex;align-items:center;padding:5px 10px;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1;gap:8px">
+      <span style="font-family:var(--mono);font-size:9px;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;font-weight:500;flex:1">Tarifs du lot${coeff!==0?` · coeff. ${coeff>0?'+':''}${coeff}%`:''}${anyMod?' · <span style="color:var(--accent2)">prix modifiés</span>':''}</span>
+      ${anyMod?`<button style="font-size:9px;font-family:var(--mono);color:var(--text3);background:transparent;border:1px solid var(--border2);border-radius:3px;padding:2px 7px;cursor:pointer" onclick="rstAllPrices('${lid}')">↺ Tout réinitialiser</button>`:''}
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--bg3)">
+        <th style="padding:4px 10px;font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;text-align:left;border-bottom:1px solid var(--border);font-weight:500">Désignation</th>
+        <th style="padding:4px 8px;font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;text-align:right;border-bottom:1px solid var(--border);font-weight:500">Base BP</th>
+        <th style="padding:4px 8px;font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;text-align:right;border-bottom:1px solid var(--border);font-weight:500">Prix unitaire HT</th>
+        <th style="border-bottom:1px solid var(--border);width:24px"></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function exportCSV(){
+  const d=new Date().toLocaleDateString('fr-FR');
+  let s=`Estimateur BTP — ${state.projectName} — ${d}\nLot;Total HT\n`;
+  LM.forEach(m=>{if(state.lots[m.id].on)s+=`${m.label};${fmt(ltot(m.id),2).replace(/\u202f/g,'').replace(',','.')}\n`;});
+  const gt=gtot(),tva=gt*state.tva/100;
+  s+=`\nTotal HT;${fmt(gt,2).replace(/\u202f/g,'').replace(',','.')}\n`;
+  if(state.tva>0){s+=`TVA ${state.tva}%;${fmt(tva,2).replace(/\u202f/g,'').replace(',','.')}\nTotal TTC;${fmt(gt+tva,2).replace(/\u202f/g,'').replace(',','.')}\n`;}
+  navigator.clipboard.writeText(s).then(()=>toast('Résumé CSV copié')).catch(()=>toast('Erreur copie'));
+}
+
+function exportShoppingList(){
+  const d=new Date().toLocaleDateString('fr-FR');
+  const activeLots=LM.filter(m=>state.lots[m.id].on);
+  function packFor(key){return PACK[key]||{factor:1,packQty:1,packLabel:'unité'};}
+  function fmtN(n){return n%1===0?n:+n.toFixed(1);}
+  function row(hl,lbl,note,besoin,cond,achat){
+    return`<tr class="${hl?'hl':''}"><td>${lbl}${note?`<br><small>${note}</small>`:''}</td><td class="r">${besoin}</td><td>${cond}</td><td class="r nb">${achat}</td></tr>`;
+  }
+
+  let sections='';
+  let hasCarrNote=false;
+
+  activeLots.forEach(m=>{
+    const items=calcItems(m.id);
+    if(!items.length) return;
+    let rows='';
+    let hasHidden=false;
+
+    items.forEach(i=>{
+      if(!i.qty||i.qty<=0) return;
+      const p=packFor(i.key);
+
+      // Appareillage global masqué
+      if(p.hideInShop){hasHidden=true;return;}
+
+      // Multi-lignes (ICTA, plomberie…)
+      if(p.shopItems){
+        p.shopItems.forEach(si=>{
+          const nb=Math.ceil(i.qty*si.factor/si.packQty);
+          if(nb>0) rows+=row(i.hl,si.label,i.lbl,`~${fmtN(i.qty*si.factor)} ml`,si.packLabel,nb);
+        });
+        return;
+      }
+
+      // Peinture en litres
+      if(p.showL){
+        const L=Math.ceil(i.qty*p.lPerQty);
+        rows+=row(i.hl,i.lbl||i.key,i.note||null,`${fmtN(i.qty)} ${i.unit||''}`.trim(),p.packLabel,`~${L} L`);
+        return;
+      }
+
+      // Ragréage : sacs selon épaisseur réelle
+      let nb;
+      if((i.key==='ragreage_simple'||i.key==='ragreage_fibre')&&i.epa!=null){
+        nb=Math.ceil(i.qty*i.epa*(i.key==='ragreage_fibre'?1.75:1.8)/25);
+      } else {
+        nb=Math.ceil(i.qty*(p.factor||1)/p.packQty);
+      }
+      if(nb<=0) return;
+
+      const qtyDisp=`${fmtN(i.qty)} ${i.unit||''}`.trim();
+      const isKit=p.packQty===1&&/kit|forfait/.test(p.packLabel||'');
+      let achat=isKit?qtyDisp:`${nb}`;
+      if(p.packNote){achat+=`<sup style="color:#aa7700">†</sup>`;hasCarrNote=true;}
+
+      rows+=row(i.hl,i.lbl||i.key,i.note||null,qtyDisp,p.packLabel,achat);
+    });
+
+    if(hasHidden){
+      rows+=`<tr><td colspan="4" style="font-size:10px;color:#888;padding:6px 8px;font-style:italic">Appareillage électrique (prises, inter, DCL…) : activer le détail dans le devis pour obtenir les quantités pièce par pièce.</td></tr>`;
+    }
+    if(!rows) return;
+
+    sections+=`<div class="lot-block">
+      <div class="lot-title">${m.label}<span class="lot-sub"> — ${m.sub}</span></div>
+      <table>
+        <thead><tr><th>Désignation</th><th class="r">Besoin</th><th>Conditionnement</th><th class="r">À acheter</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  });
+
+  const carrNote=hasCarrNote
+    ?`<p style="margin-top:6px;font-size:10px">† Nombre indicatif calculé pour un format standard (ex. 40×60 cm). Recalculez selon le format exact de votre carrelage ou faïence.</p>`
+    :'';
+
+  const html=`<!DOCTYPE html><html lang="fr"><head>
+  <meta charset="UTF-8"><title>${state.projectName} — Liste d'achat</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#fff;padding:20px 24px}
+    .doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2px solid #1a1a1a;margin-bottom:20px}
+    .doc-title{font-size:20px;font-weight:700;letter-spacing:-.02em}
+    .doc-meta{font-size:11px;color:#555;margin-top:4px}
+    .doc-actions{margin-bottom:14px;text-align:right}
+    .doc-actions button{font-size:11px;padding:5px 14px;background:#3a6149;color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:inherit}
+    .lot-block{margin-bottom:24px;page-break-inside:avoid}
+    .lot-title{font-size:13px;font-weight:700;background:#f4f4f4;padding:6px 10px;border-left:3px solid #4d7a60;margin-bottom:0}
+    .lot-sub{font-weight:400;color:#666;font-size:11px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    thead tr{background:#f9f9f9}
+    th{padding:5px 8px;text-align:left;border-bottom:2px solid #ddd;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#555}
+    th.r{text-align:right}
+    td{padding:5px 8px;border-bottom:1px solid #eee;vertical-align:top}
+    td.r{text-align:right;white-space:nowrap}
+    td.nb{font-size:15px;font-weight:700;color:#3a6149;white-space:nowrap}
+    small{display:block;color:#888;font-size:10px;margin-top:1px}
+    tr.hl td{background:#f0f7f3}
+    .note{margin-top:20px;padding:10px 14px;background:#fffbee;border:1px solid #ddc060;border-radius:4px;font-size:11px;color:#665500;line-height:1.6}
+    @media print{body{padding:10px 14px}.lot-block{page-break-inside:avoid}.doc-actions{display:none}}
+  </style>
+  </head><body>
+  <div class="doc-actions"><button onclick="window.print()">Imprimer / PDF</button></div>
+  <div class="doc-header"><div>
+    <div class="doc-title">${state.projectName}</div>
+    <div class="doc-meta">Liste d'achat — Fournitures BTP · Éditée le ${d}</div>
+    <div class="doc-meta" style="margin-top:2px">Surface habitable : ${fmt(state.globalSurf,0)} m²</div>
+  </div></div>
+  ${sections}
+  <div class="note">⚠ Quantités arrondies au conditionnement supérieur. Vérifiez les dosages fabricants avant commande, notamment pour les ragréages (épaisseur réelle), peintures (absorbance du support) et colles carrelage (format des carreaux).${carrNote}</div>
+  </body></html>`;
+
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();}
+}
+
+function copyLot(lid){
+  const items=calcItems(lid),S=lsurf(lid),d=new Date().toLocaleDateString('fr-FR');
+  const meta=LM.find(m=>m.id===lid);
+  let txt=`${meta.label} — ${state.projectName} — ${d}\n${'─'.repeat(64)}\n`;
+  items.forEach(i=>txt+=`${(i.lbl||i.label||'').padEnd(44)} ${fmt(i.qty,1).padStart(7)} ${(i.unit||'').padEnd(5)} × ${fmt(i.p,2)} € = ${fmt(i.total,0)} €\n`);
+  const sub=items.reduce((a,i)=>a+i.total,0);
+  txt+=`${'─'.repeat(64)}\nTotal HT : ${fmt(sub,0)} €  (${fmt(sub/S,0)} €/m²)\n`;
+  navigator.clipboard.writeText(txt).then(()=>toast('Lot copié')).catch(()=>toast('Erreur'));
+}
+
+function renderOpts(lid){
+  const o=state.lots[lid].o;
+  const seg=(k,ch,lbl)=>`<div class="opt-group"><label>${lbl}</label><div class="mini-seg">${ch.map(([v,t])=>`<button class="${o[k]===v?'on':''}" onclick="setOpt('${lid}','${k}','${v}')">${t}</button>`).join('')}</div></div>`;
+  const chk=(k,lbl)=>`<label class="opt-chk"><input type="checkbox"${o[k]?' checked':''} onchange="setOpt('${lid}','${k}',this.checked)"> ${lbl}</label>`;
+  const sel=(k,ch,lbl)=>`<div class="opt-group"><label>${lbl}</label><select onchange="setOpt('${lid}','${k}',this.value)">${ch.map(([v,t])=>`<option value="${v}"${o[k]===v?' selected':''}>${t}</option>`).join('')}</select></div>`;
+  const num=(k,lbl,mn,mx,w)=>`<div class="opt-group"><label>${lbl}</label><input type="number" value="${o[k]}" min="${mn}" max="${mx}" style="width:${w||52}px;text-align:right" onchange="setOpt('${lid}','${k}',parseFloat(this.value)||0)"></div>`;
+  const matCards=(k,ch,lbl)=>`<div class="matc-wrap"><span class="matc-lbl">${lbl}</span><div class="matc-row">${ch.map(([v,t,s])=>`<button class="matc${o[k]===v?' on':''}" onclick="setOpt('${lid}','${k}','${v}')">${t}${s?`<span class="ms">${s}</span>`:''}</button>`).join('')}</div></div>`;
+  const zoneCard=(n,lbl,typeKey,typeOpts,extraBody='')=>{
+    const on=o[`z${n}_on`],m2=o[`z${n}_m2`]||0;
+    const typeLbl=typeOpts.find(([v])=>v===o[`z${n}_${typeKey}`])?.[1]||'';
+    return`<div class="zone-card-n${on?' zon':''}">
+      <div class="zhead" onclick="setOpt('${lid}','z${n}_on',${!on})">
+        <div class="zsw"></div>
+        <span class="zname">${lbl}</span>
+        ${on?`<span class="ztype">${typeLbl}</span><span class="ztype">${m2} m²</span>`:''}
+      </div>
+      ${on?`<div class="zbody">
+        ${num(`z${n}_m2`,'Surface m²',0,9999,60)}
+        ${matCards(`z${n}_${typeKey}`,typeOpts,'Type')}
+        ${extraBody}
+      </div>`:''}
+    </div>`;
+  };
+  switch(lid){
+    case'demolition':{
+      const protRow=(k,lbl,unit)=>{
+        const on=o[`${k}_on`],qty=o[`${k}_m2`]||0,nb=o['nb_bennes']||0;
+        if(k==='benne'){
+          return`<div class="prot-row">
+            <span class="pr-name">Benne 10 m³</span>
+            <div class="pr-qty">
+              <label>Nb</label>
+              <input type="number" value="${nb}" min="0" max="20" style="width:46px;text-align:right" onchange="setOpt('${lid}','nb_bennes',parseInt(this.value)||0)">
+            </div>
+          </div>`;
+        }
+        return`<div class="prot-row">
+          <span class="pr-name">${lbl}</span>
+          <div class="pr-qty" style="gap:8px">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+              <input type="checkbox"${on?' checked':''} onchange="setOpt('${lid}','${k}_on',this.checked)">
+              Inclure
+            </label>
+            ${on?`<label>${unit}</label><input type="number" value="${qty}" min="0" max="9999" style="width:56px;text-align:right" onchange="setOpt('${lid}','${k}_m2',parseFloat(this.value)||0)">`:``}
+          </div>
+        </div>`;
+      };
+      return`<div class="eq-rows" style="width:100%">
+        ${protRow('benne','Benne 10 m³','')}
+        ${protRow('poly','Film polyane 200µ','m²')}
+        ${protRow('adh','Film auto-adhésif','m²')}
+        ${protRow('kraft','Papier kraft','m²')}
+      </div>`;
+    }
+    case'iti':{
+      const epaOpts=o.iso==='steico'
+        ?[['60','60 mm'],['80','80 mm'],['100','100 mm'],['120','120 mm'],['140','140 mm']]
+        :[['80','80 mm'],['100','100 mm'],['120','120 mm'],['140','140 mm'],['160','160 mm']];
+      return[
+        num('m2','Surface ITI (m²)',0,9999,60),
+        matCards('iso',[['gr32','GR32 Kraft','Laine de verre'],['steico','Steicoflex 036','Fibre de bois']],'Isolant'),
+        matCards('epa',epaOpts,'Épaisseur'),
+        chk('membrane','Membrane Vario Xtra'),
+        matCards('parement',[['aucun','Sans parement',''],['ba13_std','BA13 standard',''],['ba13_hydro','BA13 hydrofuge','Zones humides']],'Parement'),
+      ].join('');
+    }
+    case'cloisons':{
+      const plaqTypes=[
+        ['std',  'BA13 standard',     'Pièces sèches'],
+        ['hydro','BA13 hydrofuge',     'Zones humides'],
+        ['hd',   'BA13 haute dureté', 'Couloirs / chocs'],
+        ['feu',  'BA13 coupe-feu',    'Local technique'],
+      ];
+      const zones=plaqTypes.map(([k,lbl,sub])=>{
+        const isOn=o[`${k}_on`];
+        const m2=o[`${k}_m2`]||0;
+        const oss=o[`${k}_oss`]||'m48';
+        const peaux=o[`${k}_peaux`]||'2';
+        const acou=o[`${k}_acou`]||'non';
+        return`<div class="zone-card-n${isOn?' zon':''}">
+          <div class="zhead" onclick="setOpt('cloisons','${k}_on',${!isOn})">
+            <div class="zsw"></div>
+            <span class="zname">${lbl}</span>
+            <span class="ztype">${sub}</span>
+            ${isOn?`<span class="ztype">${m2} m²</span>`:''}
+          </div>
+          ${isOn?`<div class="zbody">
+            ${num(`${k}_m2`,'Surface m²',0,9999,60)}
+            ${matCards(`${k}_oss`,[['m48','M48','Standard'],['m70','M70','Acoustique'],['m90','M90','Haute perf.']],'Rails / Montants')}
+            ${matCards(`${k}_peaux`,[['2','Simple peau','1 plaque/face'],['4','Double peau','2 plaques/face']],'Peaux')}
+            ${matCards(`${k}_acou`,[['non','Sans isolant',''],['lv45','LV 45mm','Laine de verre'],['lr45','LR 45mm','Laine de roche']],'Isolant phonique')}
+            ${chk(`${k}_dbl_mont`,'Doubler les montants')}
+          </div>`:''}
+        </div>`;
+      }).join('');
+      const paintSurf=['std','hydro','hd','feu'].filter(k=>o[`${k}_on`]&&(o[`${k}_m2`]||0)>0).reduce((a,k)=>a+(o[`${k}_m2`]||0),0)*2;
+      const paintHint=paintSurf>0?`<div style="font-size:9px;color:var(--text2);font-family:var(--mono);padding:2px 0">→ surface à peindre : <strong>${paintSurf} m²</strong> (2 faces)</div>`:'';
+      return`<div class="zones-wrap" style="width:100%">${zones}
+        <div style="width:100%;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center">
+          ${num('chute','Chute % (global)',0,30,44)}
+          ${paintHint}
+        </div>
+      </div>`;
+    }
+    case'elec':{
+      const qLbl={std:'GSB / Mosaic',mid:'Céliane / Unica',prm:'Connecté / USB'};
+      const qUnit={std:7,mid:12,prm:20};
+      const appField=(k,lbl,def)=>`<div class="opt-group"><label>${lbl}</label><input type="number" value="${o[k]!==undefined?o[k]:def}" min="0" max="99" style="width:44px;text-align:right" onchange="setOpt('elec','${k}',parseInt(this.value)||0)"></div>`;
+      const detailPanel=o.detail_app
+        ?`<div style="width:100%;border-top:1px solid var(--border);padding:5px 0 1px;display:flex;flex-wrap:wrap;gap:6px 12px">
+            ${appField('app_prises','Prises 2P+T',15)}
+            ${appField('app_inter','Interrupteurs',8)}
+            ${appField('app_vav','Va-et-vient',6)}
+            ${appField('app_dcl','Points DCL',8)}
+            ${appField('app_rj45','Prises RJ45',4)}
+            ${o.appareillage!=='std'?appField('app_usb','Prises USB',0):''}
+            ${appField('app_variateur','Variateurs',2)}
+          </div>`
+        :`<div class="opt-group"><span style="font-size:9px;color:var(--text3);font-family:var(--mono)">${qLbl[o.appareillage]} · ${qUnit[o.appareillage]} €/m² SHON</span></div>`;
+      return[
+        matCards('appareillage',[['std','Standard','GSB, Mosaic'],['mid','Intermédiaire','Céliane, Unica'],['prm','Premium','Connecté, USB']],'Appareillage'),
+        chk('detail_app','Détailler les appareillages'),
+        detailPanel,
+        matCards('vmc',[['non','Sans VMC',''],['sf','VMC simple flux','Hygro-réglable'],['df','VMC double flux','Récupération chaleur']],'VMC'),
+      ].join('');
+    }
+    case'peinture':{
+      const finOpts=[['mat','Mat','Plafonds, chambres'],['velours','Velours','Pièces de vie'],['satin','Satin','Zones humides']];
+      const passOpts=[['0','0 passe','Support neuf lisse'],['1','1 passe','Rattrapage léger'],['2','2 passes','Standard'],['3','3 passes','Support abîmé']];
+      const zones=[1,2,3,4].map(n=>{
+        const on=o[`z${n}_on`],m2=o[`z${n}_m2`]||0;
+        const finLbl=finOpts.find(([v])=>v===o[`z${n}_fin`])?.[1]||'';
+        return`<div class="zone-card-n${on?' zon':''}">
+          <div class="zhead" onclick="setOpt('peinture','z${n}_on',${!on})">
+            <div class="zsw"></div>
+            <span class="zname">Zone ${n}</span>
+            ${on?`<span class="ztype">${finLbl}</span><span class="ztype">${m2} m²</span>`:''}
+          </div>
+          ${on?`<div class="zbody">
+            ${num(`z${n}_m2`,'Surface m²',0,9999,60)}
+            ${matCards(`z${n}_fin`,finOpts,'Finition')}
+            ${matCards(`z${n}_passes`,passOpts,'Enduit')}
+            ${parseInt(o[`z${n}_passes`])===3?chk(`z${n}_treillis`,'Toile treillis de verre'):''}
+            ${chk(`z${n}_imp`,'Impression fixante')}
+          </div>`:''}
+        </div>`;
+      }).join('');
+      return`<div class="zones-wrap" style="width:100%">${zones}</div>`;
+    }
+    case'plombs':{
+      const pts=o.pts;
+      const wcRow=(key,lbl)=>{
+        const qty=o[key]!==undefined?o[key]:0;
+        return`<div class="eq-row">
+          <div class="eq-head">
+            <span class="eq-name">${lbl}</span>
+            <div class="eq-qty">
+              <button onclick="setOpt('plombs','${key}',Math.max(0,(state.lots.plombs.o['${key}']||0)-1))">−</button>
+              <span>${qty}</span>
+              <button onclick="setOpt('plombs','${key}',(state.lots.plombs.o['${key}']||0)+1)">+</button>
+            </div>
+          </div>
+        </div>`;
+      };
+      const eqRow=(k,lbl,variants)=>{
+        const qty=pts[k]||0;
+        const hasVariants=variants&&variants.length>0;
+        return`<div class="eq-row${qty>0&&hasVariants?' eq-on':''}">
+          <div class="eq-head">
+            <span class="eq-name">${lbl}</span>
+            <div class="eq-qty">
+              <button onclick="setOptN('plombs','pts','${k}',Math.max(0,(state.lots.plombs.o.pts.${k}||0)-1))">−</button>
+              <span>${qty}</span>
+              <button onclick="setOptN('plombs','pts','${k}',(state.lots.plombs.o.pts.${k}||0)+1)">+</button>
+            </div>
+          </div>
+          ${hasVariants&&qty>0?`<div class="eq-variants">${variants.map(([v,t,s])=>`<button class="eq-var${o[k+'_type']===v?' on':''}" onclick="setOpt('plombs','${k}_type','${v}')">${t}${s?` — <span style="opacity:.6;font-size:9px">${s}</span>`:''}</button>`).join('')}</div>`:``}
+        </div>`;
+      };
+      return`<div class="eq-rows" style="width:100%">
+        ${wcRow('wc_sol','WC au sol')}
+        ${wcRow('wc_susp','WC suspendu')}
+        ${eqRow('douche','Douche',[['receveur','Receveur 90×90','prêt à poser'],['carreler','À carreler','Wedi / Schlüter']])}
+        ${eqRow('lavabo','Lavabo',[])}
+        ${eqRow('bain','Baignoire',[])}
+        ${eqRow('cuisine','Évier cuisine',[])}
+      </div>
+      <div style="width:100%;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;display:flex;flex-wrap:wrap;gap:6px 12px">
+        ${matCards('reseau_type',[['mc','Multicouche PER','Gainé ~12 €/m²'],['cu','Cuivre','Recuit ~24 €/m²']],'Réseau')}
+        ${matCards('ce',[['ce_elec_100','Élec 100L','~220 €'],['ce_elec_150','Élec 150L','~295 €'],['ce_thermo','Thermodynamique','~1 100 €']],'Chauffe-eau')}
+      </div>`;
+    }
+    // BUG FIX: pose mutuel exclusif via seg (plus de doubles checkboxes contradictoires)
+    case'parquet':{
+      const typOpts=[['parquet_strat','Stratifié','~15 €/m²'],['parquet_contre','Contrecollé','~48 €/m²'],['parquet_massif','Massif','~70 €/m²']];
+      const poseOpts=[['flottant','Flottant','Sur sous-couche'],['colle','Collé','MS polymère']];
+      const zones=[1,2,3].map(n=>{
+        const on=o[`z${n}_on`],m2=o[`z${n}_m2`]||0;
+        const tLbl=typOpts.find(([v])=>v===o[`z${n}_type`])?.[1]||'';
+        return`<div class="zone-card-n${on?' zon':''}">
+          <div class="zhead" onclick="setOpt('parquet','z${n}_on',${!on})">
+            <div class="zsw"></div><span class="zname">Zone ${n}</span>
+            ${on?`<span class="ztype">${tLbl}</span><span class="ztype">${m2} m²</span>`:''}
+          </div>
+          ${on?`<div class="zbody">
+            ${num(`z${n}_m2`,'Surface m²',0,9999,60)}
+            ${matCards(`z${n}_type`,typOpts,'Type de parquet')}
+            ${matCards(`z${n}_pose`,poseOpts,'Pose')}
+            ${o[`z${n}_pose`]==='flottant'
+              ?matCards(`z${n}_sc`,[['std','Mousse','Standard'],['liege','Liège 2 mm','Naturel / phonique']],'Sous-couche')
+              :`<label class="opt-chk"><input type="checkbox"${o[`z${n}_sc`]==='liege'?' checked':''} onchange="setOpt('parquet','z${n}_sc',this.checked?'liege':'std')"> Sous-couche liège 2 mm</label>`}
+            ${num(`z${n}_chute`,'Chute %',0,30,44)}
+          </div>`:''}
+        </div>`;
+      }).join('');
+      return`<div class="zones-wrap" style="width:100%">${zones}</div>`;
+    }
+    case'carrelage':{
+      const typOpts=[['carrelage_std','Céramique','~18 €/m²'],['gres_cerame','Grès cérame','~28 €/m²'],['grand_format','Grand format','~52 €/m²']];
+      const zones=[1,2,3].map(n=>{
+        const on=o[`z${n}_on`],m2=o[`z${n}_m2`]||0;
+        const tLbl=typOpts.find(([v])=>v===o[`z${n}_type`])?.[1]||'';
+        return`<div class="zone-card-n${on?' zon':''}">
+          <div class="zhead" onclick="setOpt('carrelage','z${n}_on',${!on})">
+            <div class="zsw"></div><span class="zname">Zone ${n}</span>
+            ${on?`<span class="ztype">${tLbl}</span><span class="ztype">${m2} m²</span>`:''}
+          </div>
+          ${on?`<div class="zbody">
+            ${num(`z${n}_m2`,'Surface m²',0,9999,60)}
+            ${matCards(`z${n}_type`,typOpts,'Type de carrelage')}
+            ${matCards(`z${n}_peigne`,[['v3','V3 3mm','< 10 cm'],['v4','V4 4mm','10–30 cm'],['b10','B10 10mm','30–60 cm'],['b12','B12 12mm','> 60 cm']],'Peigne colle')}
+            ${num(`z${n}_chute`,'Chute %',0,30,44)}
+          </div>`:''}
+        </div>`;
+      }).join('');
+      return`<div class="zones-wrap" style="width:100%">${zones}</div>`;
+    }
+    case'faience':{
+      const typOpts=[['faience_std','Faïence 20×30','~18 €/m²'],['gres_mural','Grès mural','~30 €/m²'],['gf_mural','Grand format','~55 €/m²']];
+      const zones=[1,2,3].map(n=>{
+        const on=o[`z${n}_on`],m2=o[`z${n}_m2`]||0;
+        const tLbl=typOpts.find(([v])=>v===o[`z${n}_type`])?.[1]||'';
+        return`<div class="zone-card-n${on?' zon':''}">
+          <div class="zhead" onclick="setOpt('faience','z${n}_on',${!on})">
+            <div class="zsw"></div><span class="zname">Zone ${n}</span>
+            ${on?`<span class="ztype">${tLbl}</span><span class="ztype">${m2} m²</span>`:''}
+          </div>
+          ${on?`<div class="zbody">
+            ${num(`z${n}_m2`,'Surface m²',0,9999,60)}
+            ${matCards(`z${n}_type`,typOpts,'Type de faïence')}
+            ${matCards(`z${n}_peigne`,[['v3','V3 3mm','< 10 cm'],['v4','V4 4mm','10–30 cm'],['b10','B10 10mm','30–60 cm'],['b12','B12 12mm','> 60 cm']],'Peigne colle')}
+            ${num(`z${n}_profiles_ml`,'Profilés ml',0,999,58)}
+            ${num(`z${n}_chute`,'Chute %',0,30,44)}
+          </div>`:''}
+        </div>`;
+      }).join('');
+      return`<div class="zones-wrap" style="width:100%">${zones}</div>`;
+    }
+    case'ragreage':{
+      const typOpts=[['ragreage_simple','Autonivelant','Standard'],['ragreage_fibre','Fibré','Plancher chauffant']];
+      const zones=[1,2,3].map(n=>{
+        const on=o[`z${n}_on`],m2=o[`z${n}_m2`]||0;
+        const tLbl=typOpts.find(([v])=>v===o[`z${n}_type`])?.[1]||'';
+        return`<div class="zone-card-n${on?' zon':''}">
+          <div class="zhead" onclick="setOpt('ragreage','z${n}_on',${!on})">
+            <div class="zsw"></div><span class="zname">Zone ${n}</span>
+            ${on?`<span class="ztype">${tLbl}</span><span class="ztype">${m2} m²</span>`:''}
+          </div>
+          ${on?`<div class="zbody">
+            ${num(`z${n}_m2`,'Surface m²',0,9999,60)}
+            ${matCards(`z${n}_type`,typOpts,'Type')}
+            ${num(`z${n}_epa_mm`,'Épaisseur mm',1,50,52)}
+          </div>`:''}
+        </div>`;
+      }).join('');
+      return`<div class="zones-wrap" style="width:100%">${zones}
+        <div style="display:flex;flex-wrap:wrap;gap:8px 14px;padding-top:8px;border-top:1px solid var(--border);margin-top:4px">
+          ${chk('primaire','Primaire d\'accrochage')}
+          ${chk('bandes','Bandes résilientes')}
+          ${o.bandes?num('ml_bandes','Périmètre ml',0,999,58):''}
+        </div>
+      </div>`;
+    }
+    case'etancheite':return[
+      num('m2','Surface (m²)',0,9999,60),
+      matCards('mode',[['liquide','Membrane liquide','Douche / SdB'],['natte_e','Natte étanchéité','Zones humides'],['natte_d','Natte désolidarisation','Grand format / plancher']],'Mode'),
+      chk('primaire','Primaire d\'accrochage'),
+      num('ml_bandes','Bandes périm. (ml)',0,999,58),
+    ].join('');
+    case'menus':{
+      const nbPortes=o.nb_portes||0;
+      return`<div class="eq-rows" style="width:100%">
+        <div class="eq-row${nbPortes>0?' eq-on':''}">
+          <div class="eq-head">
+            <span class="eq-name">Portes intérieures</span>
+            <div class="eq-qty">
+              <button onclick="setOpt('menus','nb_portes',Math.max(0,(state.lots.menus.o.nb_portes||0)-1))">−</button>
+              <span>${nbPortes}</span>
+              <button onclick="setOpt('menus','nb_portes',(state.lots.menus.o.nb_portes||0)+1)">+</button>
+            </div>
+          </div>
+          ${nbPortes>0?`<div class="eq-variants">${[['porte_std','Standard','~200 €'],['porte_mid','Intermédiaire','~320 €'],['porte_prm','Premium','~550 €']].map(([v,t,s])=>`<button class="eq-var${o.type_porte===v?' on':''}" onclick="setOpt('menus','type_porte','${v}')">${t} <span style="opacity:.6;font-size:9px">${s}</span></button>`).join('')}</div>`:``}
+        </div>
+      </div>
+      <div style="width:100%;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;display:flex;flex-wrap:wrap;gap:8px 14px">
+        ${num('m_plinthes','Plinthes (ml)',0,9999,60)}
+        ${matCards('type_plinthe',[['plinthe_mdf','MDF','~3 €/ml'],['plinthe_bois','Bois massif','~7 €/ml']],'Plinthe')}
+        ${num('nb_seuils','Barres de seuil',0,30,48)}
+      </div>`;
+    }
+    case'menuext':{
+      const extRow=(countKey,lbl,typeKey,typeOpts)=>{
+        const qty=o[countKey]||0;
+        return`<div class="eq-row${qty>0?' eq-on':''}">
+          <div class="eq-head">
+            <span class="eq-name">${lbl}</span>
+            <div class="eq-qty">
+              <button onclick="setOpt('menuext','${countKey}',Math.max(0,(state.lots.menuext.o['${countKey}']||0)-1))">−</button>
+              <span>${qty}</span>
+              <button onclick="setOpt('menuext','${countKey}',(state.lots.menuext.o['${countKey}']||0)+1)">+</button>
+            </div>
+          </div>
+          ${qty>0?`<div class="eq-variants">${typeOpts.map(([v,t,s])=>`<button class="eq-var${o[typeKey]===v?' on':''}" onclick="setOpt('menuext','${typeKey}','${v}')">${t} <span style="opacity:.6;font-size:9px">${s}</span></button>`).join('')}</div>`:``}
+        </div>`;
+      };
+      return`<div class="eq-rows" style="width:100%">
+        ${extRow('nb_fen','Fenêtres','type_fen',[['fenetre_pvc','PVC','~280 €'],['fenetre_alu','Alu','~450 €'],['fenetre_bois','Bois','~650 €']])}
+        ${extRow('nb_pf','Portes-fenêtres','type_pf',[['pf_pvc','PVC','~600 €'],['pf_alu','Alu','~950 €'],['pf_bois','Bois','~1 350 €']])}
+        ${extRow('nb_vol','Volets','type_vol',[['volet_bat_pvc','Battant PVC','~120 €'],['volet_bat_alu','Battant alu','~210 €'],['volet_roul','Roulant élec.','~380 €']])}
+        ${extRow('nb_porte_entree','Porte d\'entrée','porte_entree',[['porte_entree_std','Standard','~800 €'],['porte_entree_prm','Premium','~1 600 €']])}
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
+        ${num('nb_seuils_ext','Seuils ext.',0,10,48)}
+      </div>`;
+    }
+    case'cuisine':return`<div style="width:100%;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 14px">
+        ${num('ml_bas','Meubles bas (ml)',0,20,50)}
+        ${num('ml_haut','Meubles hauts (ml)',0,20,50)}
+        ${num('ml_pt','Plan de travail (ml)',0,20,50)}
+        ${matCards('type_pt',[['plan_travail','Stratifié','~85 €/ml'],['plan_travail_qtz','Quartz','~220 €/ml']],'Plan de travail')}
+        ${num('m2_cred','Crédence (m²)',0,20,50)}
+      </div>
+      <div>
+        <div class="matc-lbl" style="margin-bottom:5px">Électroménager</div>
+        <div class="appgrid">
+          ${[['evier','🚿','Évier'],['four','🔥','Four'],['plaques','⬜','Plaques'],['hotte','💨','Hotte'],['lave_vaisselle','🫧','Lave-vaisselle']].map(([k,ic,t])=>`<div class="appcard${o[k]?' on':''}" onclick="setOpt('cuisine','${k}',${!o[k]})"><div class="ac-icon">${ic}</div><div class="ac-name">${t}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+    case'fauxplafond':return[
+      matCards('suspente',[['res','Suspente standard','Anti-vibratile'],['cav','Cavalier pivot','Fixe']],'Suspente'),
+      matCards('entraxe',[['0.60','60 cm','Standard'],['0.50','50 cm','Intermédiaire'],['0.40','40 cm','Renforcé']],'Entraxe fourrures'),
+      matCards('plaque',[['fp_ba13_std','BA13 standard',''],['fp_ba13_hydro','BA13 hydrofuge','Sdb · Cuisine'],['fp_ba13_feu','BA13 coupe-feu',''],['fp_ba13_phon','BA13 phonique','']],'Plaque'),
+      seg('peaux',[['1','1 peau'],['2','2 peaux']],'Peaux'),
+      chk('avec_isolant','Isolant'),
+      ...(o.avec_isolant?[matCards('isolant',[['fp_lv_45','LV 45 mm','Laine de verre'],['fp_lr_45','LR 45 mm','Laine de roche'],['fp_lv_100','LV 100 mm',''],['fp_lr_100','LR 100 mm',''],['fp_ouate','Ouate 100 mm','']],'Type isolant')]:[]),
+      chk('joints','Bandes + enduit joints'),
+      num('chute','Chute %',0,30,44),
+    ].join('');
+    default:return'';
+  }
+}
+
+function renderTable(lid){
+  const items=calcItems(lid),S=lsurf(lid);
+  const matHT=items.reduce((a,i)=>a+i.total,0);
+  const marge=state.lots[lid].m||0;
+  const avecM=matHT*(1+marge/100);
+  const pm2=S>0?avecM/S:0;
+  const inS=(type,val,ph,w,onch)=>`<input type="${type}" value="${val}" placeholder="${ph}" style="width:${w};background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--text);font-family:${type==='number'?'var(--mono)':'var(--sans)'};font-size:11px;padding:1px 2px;outline:none;text-align:${type==='number'?'right':'left'}" onchange="${onch}" onfocus="this.select()">`;
+  const rows=items.map(item=>{
+    if(item.custom){
+      const cid=item.customId;
+      const UNITS=['m²','ml','kg','pce','forfait','m³','L','h'];
+      const unitSel=`<select onchange="setCustomLine('${lid}','${cid}','unit',this.value)" style="padding:2px 3px;font-size:10px;font-family:var(--mono);background:var(--bg3);border:1px solid var(--border2);border-radius:3px;color:var(--text);width:58px">${UNITS.map(u=>`<option value="${u}"${item.unit===u?' selected':''}>${u}</option>`).join('')}</select>`;
+      const qtyInp=`<input id="cqty_${cid}" type="number" value="${item.qty}" min="0" step="0.1" style="width:52px;text-align:right;font-family:var(--mono);font-size:11px;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--text);outline:none;padding:1px 2px" oninput="liveCustomTotal('${cid}')" onchange="setCustomLine('${lid}','${cid}','qty',this.value)" onfocus="this.select()">`;
+      const priInp=`<input id="cpri_${cid}" type="number" value="${item.p}" min="0" step="0.01" style="width:58px;text-align:right;font-family:var(--mono);font-size:11px;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--text);outline:none;padding:1px 2px" oninput="liveCustomTotal('${cid}')" onchange="setCustomLine('${lid}','${cid}','p',this.value)" onfocus="this.select()"> €`;
+      return`<tr style="background:rgba(77,122,96,.04)">
+        <td class="desc">${inS('text',item.lbl.replace(/"/g,'&quot;'),'Désignation…','100%',`setCustomLine('${lid}','${cid}','lbl',this.value)`)}</td>
+        <td class="qty">${qtyInp}</td>
+        <td class="unit">${unitSel}</td>
+        <td class="price-cell">${priInp}</td>
+        <td class="total" id="ctot_${cid}" style="white-space:nowrap">${fmt(item.total,0)} € <button onclick="removeCustomLine('${lid}','${cid}')" title="Supprimer" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 4px;vertical-align:middle;font-family:var(--mono)" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">×</button></td>
+      </tr>`;
+    }
+    const isEd=state.editCell&&state.editCell.lid===lid&&state.editCell.key===item.key;
+    const mod=isMod(lid,item.key);
+    const qty=(item.qty||0)%1!==0?fmt(item.qty,1):fmt(item.qty,0);
+    const lbl=item.lbl||item.label||'';
+    let pCell;
+    if(isEd){
+      pCell=`<div class="price-edit"><input id="pei" type="number" value="${state.editVal}" step="0.01" min="0" onkeydown="if(event.key==='Enter')commitEdit();if(event.key==='Escape')cancelEdit()" oninput="state.editVal=this.value"><button class="ok" onclick="commitEdit()">✓</button><button class="cancel" onclick="cancelEdit()">✕</button>${mod?`<button class="reset-btn" onclick="rstPrice('${lid}','${item.key}')">↺</button>`:''}</div>`;
+    } else {
+      pCell=`<span class="price-display${mod?' modified':''}" onclick="startEdit('${lid}','${item.key}')">${fmt(item.p,2)} €<span class="edit-icon">✎</span>${mod?`<button class="reset-btn" onclick="event.stopPropagation();rstPrice('${lid}','${item.key}')">↺</button>`:''}</span>`;
+    }
+    return`<tr><td class="desc">${lbl}${tipHtml(item.key)}${item.note?`<small>${item.note}</small>`:''}${mod?'<span class="opt-badge">modifié</span>':''}</td><td class="qty">${qty}</td><td class="unit">${item.unit||''}</td><td class="price-cell">${pCell}</td><td class="total${item.hl?' hl':''}">${fmt(item.total,0)} €</td></tr>`;
+  }).join('');
+  const addRow=`<tr><td colspan="5" style="padding:6px 10px"><button onclick="addCustomLine('${lid}')" style="font-size:9px;font-family:var(--mono);color:var(--accent);background:transparent;border:1px dashed var(--accent);border-radius:4px;padding:3px 10px;cursor:pointer;opacity:.7;transition:opacity .12s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity='.7'">+ Ajouter une ligne</button></td></tr>`;
+  const margeHtml=marge>0?`<div class="ft-marged">Avec marge ${marge}% : ${fmt(avecM,0)} €</div>`:'';
+  return`<div class="table-wrap"><table class="ptable"><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">Unité</th><th class="r">Prix unit. HT</th><th class="r">Total HT</th></tr></thead><tbody>${rows}${addRow}</tbody></table></div>
+  <div class="lot-footer"><div class="footer-meta">Surface : ${fmt(S,0)} m² · ${items.length} lignes<br>Clic prix pour modifier · ↺ réinitialiser</div><div class="footer-marge"><label>Marge</label><input type="number" value="${marge}" min="0" max="100" step="0.5" style="width:44px;text-align:right" onchange="setMarge('${lid}',this.value)"><span>%</span></div><div class="footer-total"><div class="ft-label">Total matériaux HT</div><div class="ft-amount">${fmt(matHT,0)} €</div>${margeHtml}<div class="ft-m2">${fmt(pm2,0)} €/m² · base ${fmt(S,0)} m²</div></div></div>`;
+}
+
+function renderSummary(){
+  const gt=gtot(),gs=state.globalSurf||1,tvaAmt=gt*state.tva/100;
+
+  const nLots=LM.filter(m=>state.lots[m.id].on).length;
+
+  // Bloc 1 — HT + TTC fusionnés
+  const htBlock=`<div class="sg-block">
+    <div class="sg-label">Total HT</div>
+    <div class="sg-amount">${fmt(gt,0)} €</div>
+    <div class="sg-ht-sub">${nLots} lot${nLots>1?'s':''} actif${nLots>1?'s':''}</div>
+    ${state.tva>0?`<div class="sg-label" style="margin-top:12px">Total TTC</div>
+    <div class="sg-ttc-amount">${fmt(gt+tvaAmt,0)} €</div>
+    <div class="sg-tva-note">dont TVA ${state.tva}% · ${fmt(tvaAmt,0)} €</div>`:''}
+  </div>`;
+
+  // Bloc 2 — Prix au m² (même hiérarchie, plus petit)
+  const m2Block=`<div class="sg-block">
+    <div class="sg-label">Prix au m²</div>
+    <div style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--accent);line-height:1;margin-top:4px">${fmt(gt/gs,0)} €</div>
+    <div style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px${state.tva>0?';margin-bottom:8px':''}">HT / m²</div>
+    ${state.tva>0?`<div style="font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text);letter-spacing:-.02em;line-height:1">${fmt((gt+tvaAmt)/gs,0)} €</div>
+    <div style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px">TTC / m²</div>`:''}
+  </div>`;
+
+  // Bloc 4 — Répartition
+  const activeLots=LM.filter(m=>state.lots[m.id].on&&ltot(m.id)>0);
+  const amax=Math.max(...activeLots.map(m=>ltot(m.id)),1);
+  const bars=activeLots.map(m=>{
+    const t=ltot(m.id),pct=Math.round(t/amax*100),pgt=gt>0?Math.round(t/gt*100):0;
+    const n=m.label.length>14?m.label.slice(0,13)+'…':m.label;
+    return`<div class="bar-row">
+      <span class="bar-name">${n}</span><span class="bar-pct">${pgt}%</span>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <span class="bar-amt">${fmt(t,0)} €</span>
+    </div>`;
+  }).join('');
+  const barsBlock=bars?`<div class="sg-block"><div class="sg-label">Répartition</div>${bars}</div>`:'';
+
+  $('sum-grand').innerHTML=htBlock+m2Block+barsBlock;
+
+  ['0','10','20'].forEach(v=>{const el=$(`tva${v}`);if(el)el.className=state.tva===parseInt(v)?'on':'';});
+}
+
+function render(){
+  const lid=state.cur,l=state.lots[lid],meta=LM.find(m=>m.id===lid),S=lsurf(lid);
+  const noSurf=['demolition','iti','cloisons','peinture','etancheite','parquet','carrelage','faience','ragreage','menus','menuext','cuisine'];
+  const surfCtrl=noSurf.includes(lid)?'':
+    `<div class="surf-group"><label>Surface</label><input type="number" value="${S}" min="1" max="9999" style="width:54px;text-align:right" onchange="setSurf('${lid}',this.value)"><span>m²</span></div>`;
+  const QLABELS={std:'Éco',mid:'Standard',prm:'Premium'};
+  const lotsAvecGamme=['elec','cuisine','menus','menuext','plombs'];
+  const qCards=lotsAvecGamme.includes(lid)?['std','mid','prm'].map(q=>`<button class="qcard${l.q===q?' active':''}" onclick="setQuality('${lid}','${q}')"><span class="qc-lbl">${QLABELS[q]}</span></button>`).join(''):'';
+  $('lot-view').innerHTML=`
+    <div class="lot-header">
+      <div class="lot-sw-wrap${l.on?'':' off'}" onclick="toggleLot('${lid}')">
+        <div class="lot-sw${l.on?' on':''}"></div>
+        <div class="lot-title"><h2>${meta.label}</h2><p>${meta.sub}</p></div>
+      </div>
+      ${surfCtrl}
+      ${qCards?`<div class="qual-cards">${qCards}</div>`:''}
+      <button class="hdr-btn${l.tarifs_open?' active-lot':''}" onclick="toggleTarifs('${lid}')">⚙ Modifier tarifs</button>
+    </div>
+    <div class="lot-options">${renderOpts(lid)}</div>
+    ${l.tarifs_open?renderTarifs(lid):''}
+    ${l.on?renderTable(lid):'<div class="inactive-msg">Lot désactivé — utiliser le commutateur en haut à gauche pour l\'activer</div>'}`;
+
+  $('nav-lots').innerHTML=LM.map((m,i)=>{
+    const t=ltot(m.id),on=state.lots[m.id].on,n=i<9?`0${i+1}`:`${i+1}`;
+    return`<div class="nav-item${state.cur===m.id?' active':''}${!on?' disabled':''}" onclick="setLot('${m.id}')"><span class="nav-num">${n}</span><div class="nav-info"><div class="nav-label">${m.label}</div><div class="nav-sub">${m.sub}</div></div><div class="nav-amount">${on?fmt(t,0)+' €':'—'}</div></div>`;
+  }).join('');
+
+  renderSummary();
+  save();
+}
+
+let _rArmed=false,_rTimer=null;
+function resetProject(){
+  var btn=document.getElementById('reset-btn');
+  if(!_rArmed){
+    _rArmed=true;
+    btn.textContent='\u26a0 Cliquer \xe0 nouveau pour confirmer';
+    btn.style.color='#b05050';
+    btn.style.borderColor='#b05050';
+    clearTimeout(_rTimer);
+    _rTimer=setTimeout(function(){
+      _rArmed=false;
+      btn.textContent='\u21ba R\xe9initialiser le projet';
+      btn.style.color='';btn.style.borderColor='';
+    },5000);
+    return;
+  }
+  clearTimeout(_rTimer);
+  _rArmed=false;
+  state.projectName='';
+  state.globalSurf=0;
+  state.tva=0;
+  state.globalCoeff=0;
+  state.corpView=false;
+  state.editCell=null;
+  state.editVal='';
+  state.cur=Object.keys(state.lots)[0]||'demolition';
+  Object.keys(state.lots).forEach(function(id){
+    var lot=state.lots[id];
+    lot.on=false;
+    lot.cp={};
+    lot.m=0;
+    lot.surf=null;
+    lot.q='std';
+    lot.custom=[];
+    lot.o=JSON.parse(JSON.stringify(lot.o),function(_,v){
+      if(typeof v==='number')return 0;
+      if(typeof v==='boolean')return false;
+      return v;
+    });
+  });
+  function setVal(id,v){var el=document.getElementById(id);if(el)el.value=v;}
+  setVal('gs-input','');
+  setVal('proj-input','');
+  try{localStorage.removeItem('btp_v9');}catch(e){}
+  btn.textContent='\u21ba R\xe9initialiser le projet';
+  btn.style.color='';btn.style.borderColor='';
+  render();
+  toast('Projet r\xe9initialis\xe9');
+}
+function save(){try{localStorage.setItem('btp_v9',JSON.stringify({projectName:state.projectName,globalSurf:state.globalSurf,tva:state.tva,corpView:state.corpView,globalCoeff:state.globalCoeff,lots:state.lots}));}catch(e){}}
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem('btp_v9')||'null');
+    if(!s)return;
+    if(s.projectName)state.projectName=s.projectName;
+    if(s.globalSurf)state.globalSurf=s.globalSurf;
+    if(s.tva!==undefined)state.tva=s.tva;
+    if(s.corpView!==undefined)state.corpView=s.corpView;
+    if(s.globalCoeff!==undefined)state.globalCoeff=s.globalCoeff;
+    if(s.lots)Object.entries(s.lots).forEach(([id,sl])=>{
+      if(!state.lots[id])return;
+      Object.assign(state.lots[id],sl);
+      // Migration : pts booleans → integers (compatibilité sessions antérieures)
+      if(id==='plombs'&&state.lots.plombs.o.pts){
+        const pts=state.lots.plombs.o.pts;
+        Object.keys(pts).forEach(k=>{if(typeof pts[k]==='boolean')pts[k]=pts[k]?1:0;});
+        // Migration : wc_type + pts.wc → wc_sol / wc_susp
+        if(state.lots.plombs.o.wc_sol===undefined){
+          const tot=pts.wc||0;
+          const was_susp=(state.lots.plombs.o.wc_type||'sol')==='suspendu';
+          state.lots.plombs.o.wc_sol=was_susp?0:tot;
+          state.lots.plombs.o.wc_susp=was_susp?tot:0;
+        }
+      }
+    });
+  }catch(e){}
+}
+
+load();
+$('gs-input').value=state.globalSurf;
+$('proj-input').value=state.projectName;
+$('gs-input').addEventListener('change',function(){setGS(this.value);});
+$('proj-input').addEventListener('change',function(){setProj(this.value);});
+render();
+</script>
+</body>
+</html>

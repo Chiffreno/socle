@@ -72,7 +72,22 @@ create table if not exists public.devis (
   chantier_adresse     text not null default '',
   chantier_code_postal text not null default '',
   chantier_ville       text not null default '',
-  lots            jsonb not null default '[]'::jsonb,   -- Lot[] (avec lignes[] ; chaque ligne : nature 'normal'|'option', prix mat + prix pose par unité, coûts internes par unité)
+  -- ─── P2 : moteur ChiffReno (15 lots) ───
+  global_surf     numeric(10,2) not null default 0,    -- surface chantier (m²)
+  tva_par_defaut  numeric(4,2)  not null default 10
+                    check (tva_par_defaut in (5.5, 10, 20)),
+  -- EngineState complet : { lots: Record<LotId, LotState>, globalSurf,
+  -- tvaParDefaut, remiseMode, remiseValeur, globalCoeff }.
+  -- LotState contient : on, surf, q, m (margePct), tempsMoHeures,
+  -- coutRevientPoints?, o (config technique), cp (overrides prix), custom[],
+  -- tva? (override TVA par lot, ex: ITI 5,5% rénovation énergétique).
+  engine          jsonb not null default '{
+                    "lots":{},"globalSurf":0,"tvaParDefaut":10,
+                    "remiseMode":"aucune","remiseValeur":0,"globalCoeff":0
+                  }'::jsonb,
+  -- @deprecated P2 — modèle C1 ligne-par-ligne, vidé par la migration.
+  -- Sera DROP-é en P3 quand DevisEditor sera réécrit autour de `engine`.
+  lots            jsonb not null default '[]'::jsonb,
   acompte_pct     numeric(5,2) not null default 30
                     check (acompte_pct >= 0 and acompte_pct <= 100),
   lettre_intro    text not null default '',

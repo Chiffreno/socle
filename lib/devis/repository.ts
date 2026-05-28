@@ -6,12 +6,17 @@
 // Clés : socle_entreprise (objet|null) · socle_clients (Client[]) ·
 //        socle_devis (Devis[]) · socle_devis_seq (cf. numerotation.ts)
 //
-// Migration silencieuse : les devis pré-correction (lignes avec
-// `prixUnitaireHT`/`statut`/coûts absolus, sans `remiseMode`/`detailMatPose`)
-// sont normalisés à la lecture. Le ré-enregistrement persiste le nouveau shape.
+// MIGRATIONS SILENCIEUSES (à la lecture) :
+//   - C0 → C1 : anciennes lignes (prixUnitaireHT/statut/coûts absolus)
+//     converties vers le shape C1 (mat+pose par unité, nature).
+//   - C1 → P2 : devis sans `engine` → init avec EngineState vide, lots
+//     vidés à []. L'en-tête (client, titre, dates, remise…) est préservé.
 // ============================================================
 
-import { calcDevisTotaux } from "./calc";
+import { calcEngineTotaux } from "./engine/totals";
+import { createInitialEngineState } from "./engine/lots";
+import { normalizeEngine } from "./engine/normalize";
+import type { EngineState } from "./engine/types";
 import { allocateNumero } from "./numerotation";
 import type {
   Client,
@@ -21,12 +26,9 @@ import type {
   DevisStatut,
   Entreprise,
   EntrepriseInput,
-  Ligne,
-  LigneNature,
   Lot,
   RemiseMode,
   TauxTVA,
-  Unite,
 } from "./types";
 
 // ─── Contrats ───
@@ -104,65 +106,10 @@ function asNumber(v: unknown, def = 0): number {
   return Number.isFinite(n) ? n : def;
 }
 
-function normLigne(raw: unknown): Ligne {
-  const r = (raw ?? {}) as Raw;
-  const isNew =
-    typeof r.prixPoseUnitaire === "number" ||
-    typeof r.prixMateriauxUnitaire === "number" ||
-    typeof r.nature === "string";
-
-  if (isNew) {
-    const natureRaw = r.nature;
-    const nature: LigneNature = natureRaw === "option" ? "option" : "normal";
-    return {
-      id: asString(r.id, uid()) || uid(),
-      nature,
-      prestationId:
-        typeof r.prestationId === "string" ? r.prestationId : undefined,
-      libelle: asString(r.libelle),
-      description: asString(r.description),
-      quantite: asNumber(r.quantite),
-      unite: (r.unite as Unite) || "u",
-      prixMateriauxUnitaire: asNumber(r.prixMateriauxUnitaire),
-      prixPoseUnitaire: asNumber(r.prixPoseUnitaire),
-      tva: (r.tva as TauxTVA) ?? 10,
-      coutMateriauxAchat:
-        r.coutMateriauxAchat == null ? undefined : asNumber(r.coutMateriauxAchat),
-      coutMoInterne:
-        r.coutMoInterne == null ? undefined : asNumber(r.coutMoInterne),
-    };
-  }
-
-  // Ancien shape : on convertit.
-  const oldStatut = r.statut;
-  const isOffert = oldStatut === "offert"; // → forcé à 0/0 (instruction utilisateur)
-  const nature: LigneNature = oldStatut === "option" ? "option" : "normal";
-  const oldPrix = asNumber(r.prixUnitaireHT);
-  return {
-    id: asString(r.id, uid()) || uid(),
-    nature,
-    libelle: asString(r.libelle),
-    description: asString(r.description),
-    quantite: asNumber(r.quantite),
-    unite: (r.unite as Unite) || "u",
-    prixMateriauxUnitaire: 0,
-    prixPoseUnitaire: isOffert ? 0 : oldPrix,
-    tva: (r.tva as TauxTVA) ?? 10,
-  };
-}
-
-function normLot(raw: unknown): Lot {
-  const r = (raw ?? {}) as Raw;
-  return {
-    id: asString(r.id, uid()) || uid(),
-    titre: asString(r.titre),
-    lignes: Array.isArray(r.lignes) ? r.lignes.map(normLigne) : [],
-  };
-}
-
 function normalizeDevis(raw: unknown): Devis {
   const r = (raw ?? {}) as Raw;
-  const lots = Array.isArray(r.lots) ? r.lots.map(normLot) : [];
+
+  // ─── Header ───
   const remiseModeRaw = r.remiseMode;
   const remiseMode: RemiseMode =
     remiseModeRaw === "pourcent" || remiseModeRaw === "euros"
@@ -170,11 +117,33 @@ function normalizeDevis(raw: unknown): Devis {
       : "aucune";
   const remiseValeur = asNumber(r.remiseValeur);
   const detailMatPose = Boolean(r.detailMatPose);
+  const globalSurf = asNumber(r.globalSurf, 0);
+  const tvaParDefaut: TauxTVA =
+    r.tvaParDefaut === 5.5 || r.tvaParDefaut === 10 || r.tvaParDefaut === 20
+      ? (r.tvaParDefaut as TauxTVA)
+      : 10;
 
-  // Recalcul des totaux à la lecture (les anciens totaux peuvent être obsolètes
-  // après migration des prix). Le prochain `update` persistera ces nouveaux totaux.
-  const t = calcDevisTotaux(lots, remiseMode, remiseValeur);
+  // ─── Engine (source de vérité chiffrage P2) ───
+  // Migration C1 → P2 : `lots` ligne-par-ligne est vidé, l'engine est init.
+  // Si déjà migré (engine présent), on le re-normalise pour garantir toutes
+  // les clés de lots ChiffReno (ajouts futurs sans casser les devis stockés).
+  const engine = normalizeEngine(r.engine, {
+    globalSurf,
+    tvaParDefaut,
+    remiseMode,
+    remiseValeur,
+  });
 
+  // ─── @deprecated `lots` ───
+  // Forcé à [] : la migration vide les anciens devis C1. Les nouveaux devis
+  // ne s'en servent jamais. DevisEditor compile mais affiche un éditeur vide
+  // jusqu'à la réécriture P3.
+  const lots: Lot[] = [];
+
+  // Les totaux dénormalisés sont recalculés au prochain `update` (qui passe
+  // par `withTotaux` async, lit l'entreprise.tauxHoraire et appelle
+  // calcEngineTotaux). À la simple lecture, on garde ce qui était en base —
+  // si rien, on met 0 ; le prochain `update` corrigera.
   return {
     id: asString(r.id, uid()) || uid(),
     numero: asString(r.numero),
@@ -190,6 +159,9 @@ function normalizeDevis(raw: unknown): Devis {
     chantierAdresse: asString(r.chantierAdresse),
     chantierCodePostal: asString(r.chantierCodePostal),
     chantierVille: asString(r.chantierVille),
+    globalSurf,
+    tvaParDefaut,
+    engine,
     lots,
     acomptePct: asNumber(r.acomptePct, 30),
     lettreIntro: asString(r.lettreIntro),
@@ -197,33 +169,53 @@ function normalizeDevis(raw: unknown): Devis {
     detailMatPose,
     remiseMode,
     remiseValeur,
-    totalHT: t.totalHT,
-    totalTVA: t.totalTVA,
-    totalTTC: t.totalTTC,
-    margeHT: t.margeHT,
+    totalHT: asNumber(r.totalHT, 0),
+    totalTVA: asNumber(r.totalTVA, 0),
+    totalTTC: asNumber(r.totalTTC, 0),
+    margeHT: asNumber(r.margeHT, 0),
     createdAt: asString(r.createdAt, nowISO()) || nowISO(),
     updatedAt: asString(r.updatedAt, nowISO()) || nowISO(),
   };
 }
 
-/** Recalcule et applique les totaux dénormalisés sur un devis (avec remise). */
-function withTotaux<
-  T extends Pick<Devis, "lots" | "remiseMode" | "remiseValeur">,
+/** Sync header → engine puis recalcule les totaux dénormalisés via le moteur.
+ *  Lit `entreprise.tauxHoraire` (0 si entreprise non configurée → le flag
+ *  `tauxHoraireManquant` du moteur signalera la sous-évaluation MO à l'UI). */
+async function withTotaux<
+  T extends Pick<
+    Devis,
+    "engine" | "globalSurf" | "tvaParDefaut" | "remiseMode" | "remiseValeur"
+  >,
 >(
   devis: T
-): T & {
-  totalHT: number;
-  totalTVA: number;
-  totalTTC: number;
-  margeHT: number;
-} {
-  const t = calcDevisTotaux(devis.lots, devis.remiseMode, devis.remiseValeur);
+): Promise<
+  T & {
+    totalHT: number;
+    totalTVA: number;
+    totalTTC: number;
+    margeHT: number;
+  }
+> {
+  const ent = await entrepriseRepo.get();
+  const tauxHoraire = ent?.tauxHoraire ?? 0;
+
+  // Le header est la source de vérité pour ces 4 champs ; on les pousse
+  // dans l'engine avant chaque calcul pour éviter toute désynchronisation.
+  const engineSynced: EngineState = {
+    ...devis.engine,
+    globalSurf: devis.globalSurf,
+    tvaParDefaut: devis.tvaParDefaut,
+    remiseMode: devis.remiseMode,
+    remiseValeur: devis.remiseValeur,
+  };
+  const t = calcEngineTotaux(engineSynced, tauxHoraire);
   return {
     ...devis,
+    engine: engineSynced,
     totalHT: t.totalHT,
     totalTVA: t.totalTVA,
     totalTTC: t.totalTTC,
-    margeHT: t.margeHT,
+    margeHT: t.margeGlobaleTracked, // marge sur déboursé + marge points trackés
   };
 }
 
@@ -303,8 +295,25 @@ const devisRepo: DevisRepository = {
   },
   async create(data) {
     const list = readDevisRaw().map(normalizeDevis);
-    const base: Devis = withTotaux({
+    // Défauts neutres pour les 3 champs P2 si l'appelant (ancien
+    // DevisEditor C1) ne les fournit pas.
+    const globalSurf = data.globalSurf ?? 0;
+    const tvaParDefaut = data.tvaParDefaut ?? 10;
+    const remiseMode = data.remiseMode ?? "aucune";
+    const remiseValeur = data.remiseValeur ?? 0;
+    const engine =
+      data.engine ??
+      createInitialEngineState({
+        globalSurf,
+        tvaParDefaut,
+        remiseMode,
+        remiseValeur,
+      });
+    const base: Devis = await withTotaux({
       ...data,
+      globalSurf,
+      tvaParDefaut,
+      engine,
       id: uid(),
       numero: allocateNumero(),
       totalHT: 0,
@@ -313,7 +322,7 @@ const devisRepo: DevisRepository = {
       margeHT: 0,
       createdAt: nowISO(),
       updatedAt: nowISO(),
-    });
+    } as Devis);
     writeJSON(KEY_DEVIS, [...list, base]);
     return base;
   },
@@ -323,7 +332,7 @@ const devisRepo: DevisRepository = {
     if (idx === -1) throw new Error(`[devis] devis introuvable: ${id}`);
     const existing = normalizeDevis(list[idx]);
     const merged: Devis = { ...existing, ...data, id, updatedAt: nowISO() };
-    const record = withTotaux(merged);
+    const record = await withTotaux(merged);
     list[idx] = record;
     writeJSON(KEY_DEVIS, list);
     return record;
