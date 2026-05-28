@@ -111,7 +111,7 @@ export function row(
     hl: false,
     prixEstFinal: false,
     afficheFourniture: deriveAfficheFourniture(lotId, false, false),
-    tva: state.tvaParDefaut,
+    tva: state.lots[lotId].tva ?? state.tvaParDefaut,
   };
 }
 
@@ -138,7 +138,7 @@ export function hrow(
     hl: true,
     prixEstFinal: false,
     afficheFourniture: deriveAfficheFourniture(lotId, true, false),
-    tva: state.tvaParDefaut,
+    tva: state.lots[lotId].tva ?? state.tvaParDefaut,
   };
 }
 
@@ -193,7 +193,7 @@ function customRow(
     afficheFourniture: false,
     custom: true,
     customId: c.id,
-    tva: state.tvaParDefaut,
+    tva: state.lots[lotId].tva ?? state.tvaParDefaut,
   };
 }
 
@@ -413,7 +413,7 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
           prixEstFinal: false,
           afficheFourniture: false, // ragreage = consommable
           epa: z.epa,
-          tva: state.tvaParDefaut,
+          tva: state.lots[lotId].tva ?? state.tvaParDefaut,
         });
       }
       return items;

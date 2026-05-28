@@ -57,6 +57,9 @@ export interface LotState {
   cp: Record<string, number>;
   /** Lignes ajoutées manuellement (hors moteur). */
   custom: CustomLigne[];
+  /** Override TVA pour toutes les lignes du lot (ex: ITI éligible 5,5%
+   *  rénovation énergétique). Si undefined → tvaParDefaut du devis. */
+  tva?: TauxTVA;
 }
 
 /** Une ligne produite par le moteur de calcul (transient, recalculée à chaque appel). */

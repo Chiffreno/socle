@@ -194,13 +194,16 @@ export function createInitialLotStates(): Record<LotId, LotState> {
 export function createInitialEngineState(opts?: {
   globalSurf?: number;
   tvaParDefaut?: TauxTVA;
+  remiseMode?: RemiseMode;
+  remiseValeur?: number;
+  globalCoeff?: number;
 }): EngineState {
   return {
     globalSurf: opts?.globalSurf ?? 0,
     tvaParDefaut: opts?.tvaParDefaut ?? 10,
-    remiseMode: "aucune" as RemiseMode,
-    remiseValeur: 0,
-    globalCoeff: 0,
+    remiseMode: opts?.remiseMode ?? ("aucune" as RemiseMode),
+    remiseValeur: opts?.remiseValeur ?? 0,
+    globalCoeff: opts?.globalCoeff ?? 0,
     lots: createInitialLotStates(),
   };
 }
