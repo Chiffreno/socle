@@ -7,7 +7,9 @@
 // ============================================================
 
 import { BP } from "./bp";
+import { CATALOGUE_DEMOLITION } from "./catalogue-demolition";
 import { LOTS_PRODUIT_FINI } from "./lots";
+import { findPrestation, type PointPrestation } from "./points";
 import type {
   CustomLigne,
   EngineLigne,
@@ -139,6 +141,35 @@ export function hrow(
   };
 }
 
+/**
+ * Construit une ligne depuis un catalogue "par points" (élec, démolition…).
+ * prixEstFinal=true → aucune marge ni MO ajoutée par le moteur.
+ * afficheFourniture=false → forcé (prix monolithique, pas de split fourniture).
+ * TVA portée par la prestation du catalogue, pas par tvaParDefaut du devis.
+ */
+export function pointRow(
+  _state: EngineState,
+  lotId: LotId,
+  prestation: PointPrestation,
+  qty: number
+): EngineLigne {
+  return {
+    key: prestation.id,
+    lotId,
+    qty,
+    lbl: prestation.libelle,
+    unit: prestation.unite,
+    note: prestation.description,
+    p: prestation.prixVente,
+    total: qty * prestation.prixVente,
+    hl: false,
+    prixEstFinal: true,
+    afficheFourniture: false,
+    prestationId: prestation.id,
+    tva: prestation.tva,
+  };
+}
+
 /** Construit une ligne custom (manuelle) à partir d'une CustomLigne stockée. */
 function customRow(
   state: EngineState,
@@ -198,13 +229,26 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
   // Variables utilisées par les cases à venir — `void` pour éviter les warnings
   // d'unused dans le file initial (ce sera retiré quand les cases arriveront).
   void lot;
-  void o;
   void S;
   void _row;
   void _hrow;
 
   switch (lotId) {
-    // ── cases ajoutés par les paquets 2 → 5 ──
+    case "demolition": {
+      // Lot 100% postes à prix ferme (catalogue-demolition.ts).
+      // Pas d'infrastructure à déboursé : on itère uniquement sur o.points.
+      const items: EngineLigne[] = [];
+      const points = (o.points as Record<string, number> | undefined) || {};
+      for (const [pid, qty] of Object.entries(points)) {
+        if (!qty || qty <= 0) continue;
+        const prestation = findPrestation(CATALOGUE_DEMOLITION, pid);
+        if (!prestation) continue;
+        items.push(pointRow(state, lotId, prestation, qty));
+      }
+      return items;
+    }
+
+    // ── autres cases ajoutés par les paquets 2b → 5 ──
     default:
       return [];
   }
