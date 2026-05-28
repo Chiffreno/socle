@@ -42,6 +42,6 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 export const NAV_BOTTOM: NavItem[] = [
-  { label: "Paramètres", href: "/parametres", icon: "settings" },
+  { label: "Paramètres", href: "/construction/parametres", icon: "settings" },
   { label: "Déconnexion", href: "/", icon: "logout" },
 ];

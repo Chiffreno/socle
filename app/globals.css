@@ -241,6 +241,52 @@ input:focus, select:focus, textarea:focus {
 }
 .main-inner { max-width: 860px; margin: 0 auto; }
 
+/* ─── SIDEBAR REPLIABLE ─── */
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 20px;
+  margin-bottom: 2px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--gray2);
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray4);
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+.sidebar-toggle:hover { color: var(--black); background: var(--gray-bg); }
+.sidebar-toggle i { font-size: 18px; color: var(--gray3); flex-shrink: 0; }
+
+.sidebar.is-collapsed { width: 64px; }
+.sidebar.is-collapsed .sidebar-toggle { justify-content: center; padding: 10px 0; }
+.sidebar.is-collapsed .sidebar-section { padding: 12px 0 4px; }
+.sidebar.is-collapsed .nav-item { justify-content: center; gap: 0; padding: 10px 0; }
+.sidebar.is-collapsed .nav-item i { font-size: 19px; }
+
+.layout.is-collapsed .main { margin-left: 64px; max-width: calc(100vw - 64px); }
+
+/* ─── SIDEBAR — variante éditeur (rail sous la topbar fine 56px) ─── */
+.sidebar.is-editor { top: 56px; } /* rail sous la topbar fine pleine largeur */
+.sidebar-logo {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  font-family: var(--ff);
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: var(--black);
+  text-decoration: none;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--gray2);
+}
+.sidebar-logo .logo-dot { background: var(--green); }
+
 /* ─── FULLSCREEN (outils pleine largeur, ex: chiffrage) ─── */
 .fullscreen-shell {
   padding-top: 52px;

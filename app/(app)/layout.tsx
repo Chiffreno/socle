@@ -1,5 +1,5 @@
 import Topbar from "@/components/Topbar";
-import Sidebar from "@/components/Sidebar";
+import AppShell from "@/components/AppShell";
 
 export default function AppLayout({
   children,
@@ -7,12 +7,7 @@ export default function AppLayout({
   return (
     <>
       <Topbar />
-      <div className="layout">
-        <Sidebar />
-        <main className="main">
-          <div className="main-inner">{children}</div>
-        </main>
-      </div>
+      <AppShell>{children}</AppShell>
     </>
   );
 }

@@ -1,0 +1,133 @@
+/* ── Liste devis — scopé .devis-liste-tool ── */
+
+/* En-tête : titre à gauche, action à droite */
+.devis-liste-tool .page-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; margin-bottom: 28px; flex-wrap: wrap;
+}
+.devis-liste-tool .page-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--gray3);
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.devis-liste-tool .page-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gray3); }
+.devis-liste-tool .page-title {
+  font-family: var(--ff); font-weight: 700; font-size: clamp(1.8rem, 3vw, 2.4rem);
+  letter-spacing: -0.02em; line-height: 1.05;
+}
+
+/* Bouton primaire */
+.devis-liste-tool .btn-primary {
+  display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px;
+  background: var(--black); color: var(--white); border: 1px solid var(--black);
+  border-radius: 0; font-family: var(--ff); font-size: 14px; font-weight: 600;
+  text-decoration: none; cursor: pointer; transition: background .15s, border-color .15s;
+}
+.devis-liste-tool .btn-primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
+.devis-liste-tool .btn-primary i { font-size: 18px; }
+
+/* Toolbar : recherche + filtres */
+.devis-liste-tool .toolbar { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+.devis-liste-tool .search {
+  width: 100%; max-width: 360px; padding: 10px 14px; background: var(--white);
+  border: 1px solid var(--gray2); border-radius: 0; font-family: var(--ff);
+  font-size: 14px; color: var(--black);
+}
+.devis-liste-tool .search:focus { outline: none; border-color: var(--black); }
+
+.devis-liste-tool .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.devis-liste-tool .pill {
+  padding: 7px 14px; background: var(--white); border: 1px solid var(--gray2);
+  border-radius: 0; font-family: var(--ff); font-size: 13px; font-weight: 500;
+  color: var(--gray4); cursor: pointer; transition: border-color .15s, color .15s;
+}
+.devis-liste-tool .pill:hover { border-color: var(--gray3); color: var(--black); }
+.devis-liste-tool .pill.active { border-color: var(--black); color: var(--black); font-weight: 600; }
+.devis-liste-tool .pill .count { font-family: var(--mono); font-size: 11px; color: var(--gray3); margin-left: 4px; }
+.devis-liste-tool .pill.active .count { color: var(--gray4); }
+
+/* Table */
+.devis-liste-tool .table-wrap { border: 1px solid var(--gray2); background: var(--white); overflow-x: auto; }
+.devis-liste-tool table { width: 100%; border-collapse: collapse; }
+.devis-liste-tool thead th {
+  font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--gray3);
+  letter-spacing: .1em; text-transform: uppercase; text-align: left;
+  padding: 12px 16px; border-bottom: 1px solid var(--gray2); white-space: nowrap;
+  user-select: none;
+}
+.devis-liste-tool thead th.sortable { cursor: pointer; }
+.devis-liste-tool thead th.sortable:hover { color: var(--black); }
+.devis-liste-tool thead th .caret { margin-left: 4px; color: var(--black); }
+.devis-liste-tool thead th.num, .devis-liste-tool td.num { text-align: right; }
+
+.devis-liste-tool tbody td {
+  padding: 14px 16px; border-bottom: 1px solid var(--gray2); font-size: 14px;
+  color: var(--black); vertical-align: middle;
+}
+.devis-liste-tool tbody tr:last-child td { border-bottom: none; }
+.devis-liste-tool tbody tr:hover { background: var(--gray-bg); }
+.devis-liste-tool td.numero { font-family: var(--mono); font-size: 13px; color: var(--gray4); white-space: nowrap; }
+.devis-liste-tool td.date { font-family: var(--mono); font-size: 13px; color: var(--gray4); white-space: nowrap; }
+.devis-liste-tool td.client { font-weight: 500; }
+.devis-liste-tool td.titre { color: var(--gray4); }
+.devis-liste-tool td.montant { font-family: var(--mono); font-weight: 500; white-space: nowrap; }
+
+/* Badges de statut */
+.devis-liste-tool .badge {
+  display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 0;
+  border: 1px solid var(--gray2); background: var(--gray-bg); color: var(--gray4); white-space: nowrap;
+}
+.devis-liste-tool .badge.brouillon { background: var(--gray-bg); color: var(--gray4); border-color: var(--gray2); }
+.devis-liste-tool .badge.envoye { background: var(--orange-bg); color: var(--orange); border-color: var(--orange-b); }
+.devis-liste-tool .badge.signe { background: var(--green-light); color: var(--green); border-color: var(--green-b); }
+.devis-liste-tool .badge.refuse,
+.devis-liste-tool .badge.expire { background: var(--red-bg); color: var(--red); border-color: var(--red-b); }
+
+/* Actions */
+.devis-liste-tool td.actions { white-space: nowrap; text-align: right; }
+.devis-liste-tool .action-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; background: transparent; border: 1px solid transparent;
+  border-radius: 0; color: var(--gray3); cursor: pointer; transition: color .15s, border-color .15s;
+}
+.devis-liste-tool .action-btn:hover { color: var(--black); border-color: var(--gray2); }
+.devis-liste-tool .action-btn.danger:hover { color: var(--red); border-color: var(--red-b); }
+.devis-liste-tool .action-btn i { font-size: 17px; }
+
+/* Empty state */
+.devis-liste-tool .empty {
+  border: 1px solid var(--gray2); background: var(--white); padding: 64px 24px;
+  text-align: center;
+}
+.devis-liste-tool .empty .empty-title { font-size: 16px; font-weight: 600; color: var(--black); margin-bottom: 6px; }
+.devis-liste-tool .empty .empty-sub { font-size: 14px; color: var(--gray4); margin-bottom: 24px; }
+
+/* Modal de confirmation */
+.devis-liste-tool .modal-overlay {
+  position: fixed; inset: 0; z-index: 200; background: rgba(10, 10, 10, 0.4);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.devis-liste-tool .modal {
+  background: var(--white); border: 1px solid var(--gray2); border-radius: 0;
+  max-width: 420px; width: 100%; padding: 28px;
+}
+.devis-liste-tool .modal h3 { font-family: var(--ff); font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+.devis-liste-tool .modal p { font-size: 14px; color: var(--gray4); line-height: 1.6; margin-bottom: 24px; }
+.devis-liste-tool .modal p .num { font-family: var(--mono); color: var(--black); }
+.devis-liste-tool .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.devis-liste-tool .btn-ghost {
+  padding: 10px 18px; background: transparent; border: 1px solid var(--gray2);
+  border-radius: 0; font-family: var(--ff); font-size: 14px; font-weight: 600;
+  color: var(--black); cursor: pointer; transition: border-color .15s;
+}
+.devis-liste-tool .btn-ghost:hover { border-color: var(--black); }
+.devis-liste-tool .btn-danger {
+  padding: 10px 18px; background: var(--red); border: 1px solid var(--red);
+  border-radius: 0; font-family: var(--ff); font-size: 14px; font-weight: 600;
+  color: var(--white); cursor: pointer; transition: background .15s;
+}
+.devis-liste-tool .btn-danger:hover { background: #b91c1c; }
+
+/* Loading discret */
+.devis-liste-tool .loading { padding: 48px 24px; text-align: center; color: var(--gray3); font-family: var(--mono); font-size: 13px; }

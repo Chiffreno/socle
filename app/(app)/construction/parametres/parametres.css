@@ -1,0 +1,103 @@
+/* ── Paramètres entreprise — scopé .params-tool ── */
+.params-tool { max-width: 720px; margin: 0 auto; }
+
+/* En-tête de page */
+.params-tool .page-header { margin-bottom: 36px; }
+.params-tool .page-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--gray3);
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.params-tool .page-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gray3); }
+.params-tool .page-title {
+  font-family: var(--ff); font-weight: 700; font-size: clamp(1.8rem, 3vw, 2.4rem);
+  letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 10px;
+}
+.params-tool .page-sub { font-size: 15px; color: var(--gray4); line-height: 1.6; max-width: 560px; }
+
+/* Sections (cards) — espacement large entre elles */
+.params-tool .section {
+  background: var(--white); border: 1px solid var(--gray2); border-radius: 0;
+  padding: 28px; margin-bottom: 32px;
+}
+.params-tool .section-title {
+  font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--gray3);
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 22px;
+}
+
+/* Champs */
+.params-tool .field { margin-bottom: 18px; }
+.params-tool .field:last-child { margin-bottom: 0; }
+.params-tool .field-label {
+  display: block; font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 7px;
+}
+.params-tool .input,
+.params-tool .select,
+.params-tool .textarea {
+  width: 100%; padding: 12px 14px; background: var(--white);
+  border: 1px solid var(--gray2); border-radius: 0; font-family: var(--ff);
+  font-size: 14px; color: var(--black); transition: border-color .15s;
+}
+.params-tool .input:hover,
+.params-tool .select:hover,
+.params-tool .textarea:hover { border-color: var(--gray3); }
+.params-tool .input:focus,
+.params-tool .select:focus,
+.params-tool .textarea:focus { outline: none; border-color: var(--black); }
+.params-tool .input.mono { font-family: var(--mono); font-weight: 500; }
+.params-tool .textarea { resize: vertical; min-height: 220px; line-height: 1.6; }
+
+/* Rangées multi-champs */
+.params-tool .row { display: grid; gap: 16px; }
+.params-tool .row.cols-2 { grid-template-columns: 1fr 1fr; }
+.params-tool .row.cp-ville { grid-template-columns: 140px 1fr; }
+.params-tool .row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 640px) {
+  .params-tool .row.cols-2,
+  .params-tool .row.cols-4,
+  .params-tool .row.cp-ville { grid-template-columns: 1fr; }
+}
+
+/* Champ avec suffixe (€, %, jours, €/h) */
+.params-tool .input-suffix { position: relative; }
+.params-tool .input-suffix .input { padding-right: 52px; }
+.params-tool .input-suffix .suffix {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  font-family: var(--mono); font-size: 12px; color: var(--gray3); pointer-events: none;
+}
+
+/* SIREN + bouton auto-complétion */
+.params-tool .siren-row { display: flex; gap: 10px; align-items: flex-start; }
+.params-tool .siren-row .input { flex: 1; }
+.params-tool .btn-secondary {
+  flex-shrink: 0; padding: 12px 16px; background: transparent;
+  border: 1px solid var(--gray2); border-radius: 0; font-family: var(--ff);
+  font-size: 13px; font-weight: 600; color: var(--black); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  transition: border-color .15s;
+}
+.params-tool .btn-secondary:hover { border-color: var(--black); }
+.params-tool .btn-secondary:disabled {
+  color: var(--gray3); cursor: not-allowed; border-color: var(--gray2);
+}
+.params-tool .btn-secondary:disabled:hover { border-color: var(--gray2); }
+.params-tool .btn-secondary i { font-size: 16px; }
+
+/* Warning non bloquant */
+.params-tool .field-warn {
+  margin-top: 6px; font-family: var(--mono); font-size: 11px; color: var(--orange);
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* Indicateur de sauvegarde — fixe bas-droite, discret */
+.params-tool .save-indicator {
+  position: fixed; bottom: 18px; right: 18px; z-index: 60;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--white); border: 1px solid var(--gray2); border-radius: 0;
+  padding: 7px 12px; font-family: var(--mono); font-size: 11px; color: var(--gray4);
+}
+.params-tool .save-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--gray3);
+}
+.params-tool .save-indicator.saved .save-dot { background: var(--green); }
+.params-tool .save-indicator.saving .save-dot { background: var(--orange); }
