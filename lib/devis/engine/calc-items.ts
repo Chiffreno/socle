@@ -380,7 +380,159 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
       return items;
     }
 
-    // ── autres cases ajoutés par les paquets 3 → 5 ──
+    case "ragreage": {
+      const zones = [1, 2, 3]
+        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
+        .map((n) => ({
+          n,
+          m2: Number(o[`z${n}_m2`]) || 0,
+          type: String(o[`z${n}_type`] || "ragreage_simple"),
+          epa: Number(o[`z${n}_epa_mm`]) || 5,
+        }));
+      if (zones.length === 0) return [];
+      const items: EngineLigne[] = [];
+      const S_total = zones.reduce((a, z) => a + z.m2, 0);
+      if (o.primaire) items.push(_row("primaire_ragreage", S_total, "Primaire d'accrochage", "m²", "Favorise adhérence ragréage"));
+      const ml_b = Number(o.ml_bandes) || 0;
+      if (o.bandes && ml_b > 0) items.push(_row("bande_resiliente", ml_b, `Bandes résilientes périphériques — ${ml_b} ml`, "ml", "Désolidarisation phonique"));
+      for (const z of zones) {
+        const p = pxRag(state, lotId, z.type, z.epa);
+        const lbl = z.type === "ragreage_fibre" ? "Ragréage fibré autonivelant" : "Ragréage autonivelant classique";
+        // Item construit manuellement pour porter `epa` (utilisé par la liste d'achat).
+        items.push({
+          key: z.type,
+          lotId,
+          qty: z.m2,
+          lbl: `${lbl} — Zone ${z.n}`,
+          unit: "m²",
+          note: `${z.epa} mm — ${z.m2} m²`,
+          p,
+          total: z.m2 * p,
+          hl: true,
+          prixEstFinal: false,
+          afficheFourniture: false, // ragreage = consommable
+          epa: z.epa,
+          tva: state.tvaParDefaut,
+        });
+      }
+      return items;
+    }
+
+    case "etancheite": {
+      const mode = String(o.mode || "liquide");
+      const ml_b = Number(o.ml_bandes) || 0;
+      const m2 = Number(o.m2) || 0;
+      const items: EngineLigne[] = [];
+      if (o.primaire) items.push(_row("primaire_etanche", m2, "Primaire d'accrochage étanchéité", "m²", "Pénétration / consolidation support"));
+      if (mode === "natte_e") {
+        items.push(_hrow("natte_etanche", m2, "Natte d'étanchéité — KERDI / Wedi", "m²", "Zones humides"));
+        items.push(_row("colle_c2s", Math.round(m2 * 3), "Colle C2S — spatule 3×3 mm", "kg", "~3 kg/m²"));
+        if (ml_b > 0) items.push(_row("bande_natte", ml_b, `Bandes de rives — ${ml_b} ml`, "ml", "Raccord natte / mur"));
+      } else if (mode === "natte_d" || mode === "natte") {
+        items.push(_hrow("natte_desoli", m2, "Natte de désolidarisation — DITRA", "m²", "Découplage + drainage"));
+        items.push(_row("colle_c2s", Math.round(m2 * 5), "Colle C2S — spatule 10×10 mm", "kg", "~5 kg/m²"));
+        if (ml_b > 0) items.push(_row("bande_natte", ml_b, `Bandes de rives — ${ml_b} ml`, "ml", "Raccord natte / mur"));
+      } else {
+        items.push(_hrow("etanche_liquide", m2, "Membrane étanchéité liquide — Sika Level-01 / Knauf", "m²", "2 couches croisées"));
+        if (ml_b > 0) items.push(_row("bande_etanche", ml_b, `Bandes armature tissu — ${ml_b} ml`, "ml", "Angles et périmètre"));
+      }
+      return items;
+    }
+
+    case "parquet": {
+      const typeLbl: Record<string, string> = {
+        parquet_strat: "Parquet stratifié 8mm",
+        parquet_contre: "Parquet contrecollé 14mm",
+        parquet_massif: "Parquet massif 20mm",
+      };
+      const zones = [1, 2, 3]
+        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
+        .map((n) => ({
+          n,
+          m2: Number(o[`z${n}_m2`]) || 0,
+          type: String(o[`z${n}_type`] || "parquet_strat"),
+          pose: String(o[`z${n}_pose`] || "flottant"),
+          sc: String(o[`z${n}_sc`] || "std"),
+          chute: Number(o[`z${n}_chute`]) || 0,
+        }));
+      if (zones.length === 0) return [];
+      const items: EngineLigne[] = [];
+      for (const z of zones) {
+        const brut = chuted(z.m2, z.chute);
+        items.push(_hrow(z.type, brut, `${typeLbl[z.type] || z.type} — Zone ${z.n}`, "m²", `Brut : ${brut} m² (+${z.chute}% chute, net ${z.m2} m²)`));
+        if (z.pose === "flottant") {
+          const scKey = z.sc === "liege" ? "sous_couche_liege" : "sous_couche";
+          const scLbl = z.sc === "liege" ? "Sous-couche liège 2 mm" : "Sous-couche mousse";
+          items.push(_row(scKey, z.m2, `${scLbl} — Zone ${z.n}`, "m²"));
+        } else {
+          if (z.sc === "liege") items.push(_row("sous_couche_liege", z.m2, `Sous-couche liège 2 mm — Zone ${z.n}`, "m²"));
+          items.push(_row("colle_parquet", z.m2, `Colle MS polymère — Zone ${z.n}`, "m²", "1,2 kg/m² × 8 €/kg"));
+        }
+      }
+      return items;
+    }
+
+    case "carrelage": {
+      const typeLbl: Record<string, string> = {
+        carrelage_std: "Carrelage céramique standard",
+        gres_cerame: "Grès cérame rectifié",
+        grand_format: "Grand format 60×120",
+      };
+      const PEIGNE_KG: Record<string, number> = { v3: 2, v4: 3, b10: 5, b12: 7 };
+      const PEIGNE_LBL: Record<string, string> = { v3: "V3 3mm", v4: "V4 4mm", b10: "B10 10mm", b12: "B12 12mm" };
+      const zones = [1, 2, 3]
+        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
+        .map((n) => ({
+          n,
+          m2: Number(o[`z${n}_m2`]) || 0,
+          type: String(o[`z${n}_type`] || "carrelage_std"),
+          peigne: String(o[`z${n}_peigne`] || "b10"),
+          chute: Number(o[`z${n}_chute`]) || 0,
+        }));
+      if (zones.length === 0) return [];
+      const items: EngineLigne[] = [];
+      for (const z of zones) {
+        const brut = chuted(z.m2, z.chute);
+        const kg_m2 = PEIGNE_KG[z.peigne] || 5;
+        const kg = Math.ceil(z.m2 * kg_m2);
+        items.push(_hrow(z.type, brut, `${typeLbl[z.type] || z.type} — Zone ${z.n}`, "m²", `Brut : ${brut} m² (+${z.chute}% chute, net ${z.m2} m²)`));
+        items.push(_row("colle_carrelage", kg, `Colle C2 peigne ${PEIGNE_LBL[z.peigne] || z.peigne} (${kg_m2} kg/m²) — Zone ${z.n}`, "kg"));
+      }
+      return items;
+    }
+
+    case "faience": {
+      const typeLbl: Record<string, string> = {
+        faience_std: "Faïence standard 20×30",
+        gres_mural: "Grès cérame mural rectifié",
+        gf_mural: "Grand format mural 60×120",
+      };
+      const PEIGNE_KG: Record<string, number> = { v3: 2, v4: 3, b10: 5, b12: 7 };
+      const PEIGNE_LBL: Record<string, string> = { v3: "V3 3mm", v4: "V4 4mm", b10: "B10 10mm", b12: "B12 12mm" };
+      const zones = [1, 2, 3]
+        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
+        .map((n) => ({
+          n,
+          m2: Number(o[`z${n}_m2`]) || 0,
+          type: String(o[`z${n}_type`] || "faience_std"),
+          peigne: String(o[`z${n}_peigne`] || "v4"),
+          profiles_ml: Number(o[`z${n}_profiles_ml`]) || 0,
+          chute: Number(o[`z${n}_chute`]) || 0,
+        }));
+      if (zones.length === 0) return [];
+      const items: EngineLigne[] = [];
+      for (const z of zones) {
+        const brut = chuted(z.m2, z.chute);
+        const kg_m2 = PEIGNE_KG[z.peigne] || 3;
+        const kg = Math.ceil(z.m2 * kg_m2);
+        items.push(_hrow(z.type, brut, `${typeLbl[z.type] || z.type} — Zone ${z.n}`, "m²", `Brut : ${brut} m² (+${z.chute}% chute, net ${z.m2} m²)`));
+        items.push(_row("colle_faience", kg, `Colle C2S1 peigne ${PEIGNE_LBL[z.peigne] || z.peigne} (${kg_m2} kg/m²) — Zone ${z.n}`, "kg"));
+        if (z.profiles_ml > 0) items.push(_row("profiles_alu", z.profiles_ml, `Profilés alu — Zone ${z.n} — ${z.profiles_ml} ml`, "ml", "Nez de carreau / jonction"));
+      }
+      return items;
+    }
+
+    // ── autres cases ajoutés par les paquets 4 → 5 ──
     default:
       return [];
   }
