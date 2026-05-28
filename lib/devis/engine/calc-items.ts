@@ -8,6 +8,7 @@
 
 import { BP } from "./bp";
 import { CATALOGUE_DEMOLITION } from "./catalogue-demolition";
+import { CATALOGUE_ELEC } from "./catalogue-elec";
 import { LOTS_PRODUIT_FINI } from "./lots";
 import { findPrestation, type PointPrestation } from "./points";
 import type {
@@ -667,7 +668,44 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
       return items;
     }
 
-    // ── case 'elec' ajouté au paquet 5 ──
+    case "elec": {
+      // Lot HYBRIDE :
+      //   - infrastructure (tableau, GTL, Consuel, terre, VMC) → prixEstFinal=false
+      //     (déboursé matériau + marge + MO via totals.ts au paquet 6)
+      //   - points (31 prestations catalogue-elec) → prixEstFinal=true
+      //     (prix vente final, marge trackée via lot.coutRevientPoints)
+      const items: EngineLigne[] = [];
+
+      // Infrastructure
+      const tr = Number(o.tableau_rangees) || 0;
+      if (tr > 0 && tr <= 6) {
+        items.push(
+          _row(
+            `elec_tableau_${tr}r`,
+            1,
+            `Tableau électrique ${tr} rangée${tr > 1 ? "s" : ""}`,
+            "forfait",
+            "GTL + différentiels + disjoncteurs + parafoudre"
+          )
+        );
+      }
+      if (o.gtl) items.push(_row("elec_gtl", 1, "Gaine Technique Logement (GTL)", "forfait"));
+      if (o.consuel) items.push(_row("elec_consuel", 1, "Attestation Consuel", "forfait", "Visa de conformité"));
+      if (o.terre) items.push(_row("elec_terre", 1, "Mise à la terre + distribution principale", "forfait", "Conducteur de terre + barrette + distribution réseau"));
+      if (o.vmc === "sf") items.push(_row("elec_vmc_sf", 1, "VMC simple flux hygro-réglable", "forfait"));
+      else if (o.vmc === "df") items.push(_row("elec_vmc_df", 1, "VMC double flux à échangeur", "forfait", "Rendement ≥ 85%"));
+
+      // Points (catalogue-elec.ts) — postes inconnus ignorés silencieusement
+      const points = (o.points as Record<string, number> | undefined) || {};
+      for (const [pid, qty] of Object.entries(points)) {
+        if (!qty || qty <= 0) continue;
+        const prestation = findPrestation(CATALOGUE_ELEC, pid);
+        if (!prestation) continue;
+        items.push(pointRow(state, lotId, prestation, qty));
+      }
+      return items;
+    }
+
     default:
       return [];
   }
