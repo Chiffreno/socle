@@ -1,4 +1,4 @@
-import DevisEditor from "@/components/devis/DevisEditor";
+import DevisEditorEngine from "@/components/devis/DevisEditorEngine";
 
 export default async function EditerDevisPage({
   params,
@@ -6,5 +6,5 @@ export default async function EditerDevisPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <DevisEditor devisId={id} />;
+  return <DevisEditorEngine devisId={id} />;
 }

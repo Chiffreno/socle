@@ -1,400 +1,374 @@
 "use client";
 
-import { useEffect, useState } from "react";
+// ============================================================
+// SOCLE — Aperçu client minimal P3
+//
+// Réécriture P3 pour rester branchée sur le moteur (calcEngineTotaux +
+// calcItems). Volontairement BRUT : ce n'est PAS le document client
+// final stylé (réécrit en P5, cf. memory devis-p5-apercu-spec.md). Le
+// but est uniquement de permettre la vérification visuelle pendant P3
+// et P4 — chiffres lisibles, structure claire, aucune mise en forme PDF.
+//
+// RÈGLES CLIENT NON NÉGOCIABLES :
+//   - AUCUN coût interne / MO / marge / récap artisan : prix de vente
+//     UNIQUEMENT.
+//   - Vert INTERDIT (le vert reste réservé à l'interface artisan dans
+//     l'éditeur). Noir, gris uniquement.
+//
+// Prix de vente affiché par ligne :
+//   - prixEstFinal=true (points)   → item.p (prix catalogue brut)
+//   - prixEstFinal=false (déboursé) → item.p × coefDeboursé, où
+//                                      coefDeboursé = caDeboursé / deboursé
+//     (distribue matériaux + MO + marge proportionnellement aux lignes).
+//   La remise globale n'est PAS distribuée par ligne (apparaît en bas
+//   du document comme un poste séparé, comme sur un devis classique).
+// ============================================================
+
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { repository } from "@/lib/devis/repository";
-import {
-  calcDevisTotaux,
-  ligneBrutHT,
-  montantAcompte,
-  round2,
-  ventilationTVA,
-} from "@/lib/devis/calc";
-import { formatDateFR, formatEuro } from "@/lib/devis/format";
+import { calcEngineTotaux, type LotTotaux } from "@/lib/devis/engine/totals";
+import { calcItems } from "@/lib/devis/engine/calc-items";
+import { LM } from "@/lib/devis/engine/lots";
+import type { LotId, EngineLigne } from "@/lib/devis/engine/types";
+import { formatEuro, formatDateFR } from "@/lib/devis/format";
+import { STATUT_LABEL } from "@/lib/devis/devis-status";
 import type { Devis, Entreprise } from "@/lib/devis/types";
 import "./apercu.css";
 
-const SEUIL_GRATUIT_TTC = 1500;
+interface Props {
+  devisId: string;
+}
 
-export default function ApercuDevis({ devisId }: { devisId: string }) {
+export default function ApercuDevis({ devisId }: Props) {
   const [devis, setDevis] = useState<Devis | null>(null);
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    let active = true;
+    let alive = true;
     (async () => {
-      const [d, e] = await Promise.all([
+      const [d, ent] = await Promise.all([
         repository.devis.get(devisId),
         repository.entreprise.get(),
       ]);
-      if (!active) return;
+      if (!alive) return;
       setDevis(d);
-      setEntreprise(e);
-      setLoading(false);
+      setEntreprise(ent);
+      setLoaded(true);
     })();
     return () => {
-      active = false;
+      alive = false;
     };
   }, [devisId]);
 
-  if (loading) {
-    return (
-      <div className="apercu-tool">
-        <div className="loading">Chargement…</div>
-      </div>
-    );
-  }
+  // Totaux (entreprise.tauxHoraire utilisé pour la formule marge — il
+  // alimente les totaux client via caDeboursé, mais aucun champ interne
+  // n'est exposé sur le document ci-dessous).
+  const totaux = useMemo(() => {
+    if (!devis?.engine) return null;
+    return calcEngineTotaux(devis.engine, entreprise?.tauxHoraire ?? 0);
+  }, [devis, entreprise]);
+
+  if (!loaded) return <div className="ap-page">Chargement…</div>;
   if (!devis) {
     return (
-      <div className="apercu-tool">
-        <div className="notfound">Devis introuvable.</div>
+      <div className="ap-page">
+        <p>Devis introuvable.</p>
+        <Link href="/chantier/devis">← Retour à la liste</Link>
       </div>
     );
   }
 
-  const ent = entreprise;
-  const cli = devis.clientSnapshot;
-  const totaux = calcDevisTotaux(devis.lots, devis.remiseMode, devis.remiseValeur);
-  const ventil = ventilationTVA(devis.lots, devis.remiseMode, devis.remiseValeur);
-  const acompte = montantAcompte({
-    totalTTC: totaux.totalTTC,
-    acomptePct: devis.acomptePct,
-  });
-  const solde = round2(totaux.totalTTC - acompte);
+  const lotsActifs = LM.filter((m) => devis.engine.lots[m.id]?.on);
 
-  const isParticulier = cli?.type === "particulier";
-  const hasTVA55 = devis.lots.some((l) =>
-    l.lignes.some((g) => g.tva === 5.5)
-  );
-  const isGratuit = totaux.totalTTC < SEUIL_GRATUIT_TTC;
-  const today = formatDateFR(new Date().toISOString().slice(0, 10));
-  const raison = ent?.raisonSociale || "Votre entreprise";
-
-  const clientNom = cli
-    ? cli.type === "professionnel"
-      ? cli.nom
-      : [cli.prenom, cli.nom].filter(Boolean).join(" ").trim() || cli.nom
-    : "—";
-
-  const entConfigured = Boolean(ent && ent.raisonSociale);
-
-  // Lignes "option" éventuelles, à signaler hors total.
-  const optionLines = devis.lots.flatMap((l, li) =>
-    l.lignes
-      .filter((g) => g.nature === "option")
-      .map((g, gi) => ({ num: `${li + 1}.${l.lignes.indexOf(g) + 1}`, g, gi }))
-  );
+  const acompteTTC = totaux
+    ? Math.round(totaux.totalTTC * (devis.acomptePct / 100) * 100) / 100
+    : 0;
+  const soldeTTC = totaux ? totaux.totalTTC - acompteTTC : 0;
 
   return (
-    <div className="apercu-tool">
-      {/* Barre d'actions (non imprimée) */}
-      <div className="toolbar">
-        <Link href="/chantier/devis" className="btn-back">
-          Retour
+    <div className="ap-page">
+      <div className="ap-toolbar">
+        <Link href={`/chantier/devis/${devisId}/editer`} className="ap-btn">
+          ← Retour à l&apos;éditeur
         </Link>
-        <button className="btn-print" onClick={() => window.print()}>
-          <i className="ti ti-printer" aria-hidden="true" />
-          Imprimer
-        </button>
+        <span className="ap-toolbar-note">
+          Aperçu minimal P3 — document client stylé en P5
+        </span>
       </div>
 
-      {!entConfigured && (
-        <div className="config-warn">
-          Renseignez vos informations d&apos;entreprise dans Paramètres pour un
-          devis complet (coordonnées, assurance, IBAN, CGV).
-        </div>
-      )}
+      <article className="ap-doc">
+        {/* ── EN-TÊTE ENTREPRISE + MÉTA DOCUMENT ─────────────────── */}
+        <header className="ap-doc-head">
+          <div className="ap-ent">
+            <h1 className="ap-ent-name">
+              {entreprise?.raisonSociale || "(Entreprise non configurée)"}
+            </h1>
+            {(entreprise?.formeJuridique || entreprise?.capital != null) && (
+              <p className="ap-ent-line">
+                {entreprise.formeJuridique}
+                {entreprise.capital != null
+                  ? ` — Capital ${formatEuro(entreprise.capital)}`
+                  : ""}
+              </p>
+            )}
+            <p className="ap-ent-line">
+              {entreprise?.adresse}
+              {entreprise?.codePostal && entreprise?.ville
+                ? `, ${entreprise.codePostal} ${entreprise.ville}`
+                : ""}
+            </p>
+            <p className="ap-ent-line">
+              {entreprise?.siret ? `SIRET ${entreprise.siret}` : ""}
+              {entreprise?.tvaIntracom
+                ? ` · TVA ${entreprise.tvaIntracom}`
+                : ""}
+            </p>
+            {(entreprise?.email || entreprise?.telephone) && (
+              <p className="ap-ent-line">
+                {entreprise.email}
+                {entreprise.email && entreprise.telephone ? " · " : ""}
+                {entreprise.telephone}
+              </p>
+            )}
+            {entreprise?.assuranceCompagnie && (
+              <p className="ap-ent-line ap-ent-assurance">
+                Assurance décennale : {entreprise.assuranceCompagnie}
+                {entreprise.assurancePolice
+                  ? ` — police ${entreprise.assurancePolice}`
+                  : ""}
+              </p>
+            )}
+          </div>
+          <div className="ap-meta">
+            <p className="ap-meta-titre">DEVIS</p>
+            <p className="ap-meta-num">N° {devis.numero || "—"}</p>
+            <p className="ap-meta-line">
+              Édité le {formatDateFR(devis.dateCreation)}
+            </p>
+            {devis.dateValidite && (
+              <p className="ap-meta-line">
+                Valide jusqu&apos;au {formatDateFR(devis.dateValidite)}
+              </p>
+            )}
+            <p className="ap-meta-statut">
+              {STATUT_LABEL[devis.statut] || devis.statut}
+            </p>
+          </div>
+        </header>
 
-      <div className="sheet">
-        {/* EN-TÊTE */}
-        <div className="doc-head">
+        {/* ── PARTIES : Client + Chantier ─────────────────────────── */}
+        <section className="ap-parties">
           <div>
-            <div className="ent-name">{raison}</div>
-            {ent?.formeJuridique && (
-              <div className="ent-line">
-                {ent.formeJuridique}
-                {ent.capital ? ` · Capital ${formatEuro(ent.capital)}` : ""}
-              </div>
-            )}
-            {(ent?.adresse || ent?.ville) && (
-              <div className="ent-line">
-                {[ent?.adresse, [ent?.codePostal, ent?.ville].filter(Boolean).join(" ")]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </div>
-            )}
-            {(ent?.email || ent?.telephone) && (
-              <div className="ent-line">
-                {[ent?.email, ent?.telephone].filter(Boolean).join(" · ")}
-              </div>
-            )}
-            {(ent?.siren || ent?.siret || ent?.tvaIntracom) && (
-              <div className="ent-line">
-                {[
-                  ent?.siren && `SIREN ${ent.siren}`,
-                  ent?.siret && `SIRET ${ent.siret}`,
-                  ent?.tvaIntracom && `TVA ${ent.tvaIntracom}`,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </div>
-            )}
-            {ent?.assuranceCompagnie && (
-              <div className="ent-line">
-                Décennale {ent.assuranceCompagnie}
-                {ent.assurancePolice ? ` · police ${ent.assurancePolice}` : ""}
-                {ent.assuranceZone ? ` · ${ent.assuranceZone}` : ""}
-              </div>
-            )}
-          </div>
-
-          <div className="cli-block">
-            <div className="cli-label">À l&apos;attention de</div>
-            <div className="cli-name">{clientNom}</div>
-            {cli?.type === "professionnel" && cli.contact && (
-              <div className="cli-line">{cli.contact}</div>
-            )}
-            {cli && (cli.adresse || cli.ville) && (
-              <div className="cli-line">
-                {[cli.adresse, [cli.codePostal, cli.ville].filter(Boolean).join(" ")]
-                  .filter(Boolean)
-                  .join(", ")}
-              </div>
-            )}
-            {cli && (cli.email || cli.telephone) && (
-              <div className="cli-line">
-                {[cli.email, cli.telephone].filter(Boolean).join(" · ")}
-              </div>
-            )}
-            {(devis.chantierAdresse || devis.chantierVille) && (
-              <div className="cli-chantier">
-                Chantier :{" "}
-                {[
-                  devis.chantierAdresse,
-                  [devis.chantierCodePostal, devis.chantierVille]
+            <h3 className="ap-h3">Client</h3>
+            {devis.clientSnapshot ? (
+              <>
+                <p className="ap-strong">
+                  {[devis.clientSnapshot.prenom, devis.clientSnapshot.nom]
                     .filter(Boolean)
-                    .join(" "),
-                ]
-                  .filter(Boolean)
-                  .join(", ")}
-              </div>
+                    .join(" ") || "—"}
+                </p>
+                {devis.clientSnapshot.adresse && (
+                  <p>{devis.clientSnapshot.adresse}</p>
+                )}
+                {(devis.clientSnapshot.codePostal ||
+                  devis.clientSnapshot.ville) && (
+                  <p>
+                    {devis.clientSnapshot.codePostal}{" "}
+                    {devis.clientSnapshot.ville}
+                  </p>
+                )}
+                {devis.clientSnapshot.email && (
+                  <p>{devis.clientSnapshot.email}</p>
+                )}
+                {devis.clientSnapshot.telephone && (
+                  <p>{devis.clientSnapshot.telephone}</p>
+                )}
+              </>
+            ) : (
+              <p className="ap-muted">(Client non renseigné)</p>
             )}
           </div>
-        </div>
-
-        {/* BANDEAU DEVIS */}
-        <div className="doc-meta">
-          <div className="doc-numero">DEVIS {devis.numero}</div>
-          <div className="doc-titre">{devis.titre || "Devis"}</div>
-          <div className="doc-dates">
-            Émis le {formatDateFR(devis.dateCreation)}
-            {devis.dateValidite
-              ? ` · Valable jusqu'au ${formatDateFR(devis.dateValidite)}`
-              : ""}
+          <div>
+            <h3 className="ap-h3">Chantier</h3>
+            {devis.chantierAdresse ? (
+              <>
+                <p>{devis.chantierAdresse}</p>
+                <p>
+                  {devis.chantierCodePostal} {devis.chantierVille}
+                </p>
+              </>
+            ) : (
+              <p className="ap-muted">(Adresse non renseignée)</p>
+            )}
           </div>
-        </div>
+        </section>
 
-        {devis.lettreIntro && <div className="doc-intro">{devis.lettreIntro}</div>}
-
-        {/* RÉCAPITULATIF (avant le détail) */}
-        <div className="sec-title">Récapitulatif</div>
-        {devis.lots.map((lot, li) => (
-          <div className="recap-row" key={lot.id}>
-            <span>
-              <span className="num">{li + 1}.0</span>
-              {lot.titre || `Lot ${li + 1}`}
-            </span>
-            <span className="amt">
-              {formatEuro(calcDevisTotaux([lot]).subTotalHT)} HT
-            </span>
-          </div>
-        ))}
-        <div className="recap-total">
-          <span>Total HT</span>
-          <span className="amt">{formatEuro(totaux.totalHT)}</span>
-        </div>
-
-        {/* DÉTAIL */}
-        <div className="sec-title">Détail</div>
-        {devis.lots.map((lot, li) => (
-          <div className="lot-detail" key={lot.id}>
-            <div className="lot-detail-head">
-              <span className="num">{li + 1}</span>
-              {lot.titre || `Lot ${li + 1}`}
-            </div>
-            <table className="lignes">
-              <tbody>
-                {lot.lignes.map((g, gi) => {
-                  const brut = ligneBrutHT(g);
-                  return (
-                    <tr key={g.id}>
-                      <td className="l-num">
-                        {li + 1}.{gi + 1}
-                      </td>
-                      <td className="l-desc">
-                        <div>
-                          {g.libelle || "—"}
-                          {g.nature === "option" && <span className="tag">Option</span>}
-                        </div>
-                        {g.description && <div className="d">{g.description}</div>}
-                      </td>
-                      <td className="l-qty">
-                        {g.quantite} {g.unite} ×{" "}
-                        {formatEuro(g.prixMateriauxUnitaire + g.prixPoseUnitaire)}
-                      </td>
-                      <td className="l-tva">{g.tva} %</td>
-                      <td className="l-amt">{formatEuro(brut)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div className="lot-soustotal">
-              <span>Sous-total lot {li + 1}</span>
-              <span className="amt">
-                {formatEuro(calcDevisTotaux([lot]).subTotalHT)} HT
-              </span>
-            </div>
-          </div>
-        ))}
-
-        {optionLines.length > 0 && (
-          <div className="options-note">
-            Options proposées (hors total) :{" "}
-            {optionLines
-              .map((o) => `${o.num} ${o.g.libelle} — ${formatEuro(ligneBrutHT(o.g))} HT`)
-              .join(" · ")}
-          </div>
+        {devis.titre && (
+          <section className="ap-objet">
+            <h2 className="ap-h2">{devis.titre}</h2>
+          </section>
         )}
-
-        {/* TOTAUX */}
-        <div className="totaux">
-          <div className="tot-row">
-            <span className="l">Total HT</span>
-            <span className="v">{formatEuro(totaux.totalHT)}</span>
-          </div>
-          {Object.keys(ventil)
-            .map(Number)
-            .sort((a, b) => a - b)
-            .map((t) => (
-              <div className="tot-row sub" key={t}>
-                <span className="l">dont TVA {t} %</span>
-                <span className="v">{formatEuro(ventil[t])}</span>
-              </div>
+        {devis.lettreIntro && (
+          <section className="ap-intro">
+            {devis.lettreIntro.split("\n").map((line, i) => (
+              <p key={i}>{line}</p>
             ))}
-          <div className="tot-row">
-            <span className="l">Total TVA</span>
-            <span className="v">{formatEuro(totaux.totalTVA)}</span>
-          </div>
-          <div className="tot-ttc">
-            <span>Total TTC</span>
-            <span className="v">{formatEuro(totaux.totalTTC)}</span>
-          </div>
-          <div className="tot-row acompte">
-            <span className="l">Acompte {devis.acomptePct} % à la signature</span>
-            <span className="v">{formatEuro(acompte)}</span>
-          </div>
-          <div className="tot-row">
-            <span className="l">Solde à l&apos;achèvement</span>
-            <span className="v">{formatEuro(solde)}</span>
-          </div>
-        </div>
-
-        {/* MENTIONS LÉGALES */}
-        <div className="mentions">
-          {devis.dateValidite && (
-            <p>
-              Devis valable jusqu&apos;au {formatDateFR(devis.dateValidite)}.
-              Au-delà, les prix sont susceptibles d&apos;être réévalués.
-            </p>
-          )}
-          <p>
-            Prix exprimés en euros. TVA applicable aux taux en vigueur, indiqués
-            pour chaque ligne.
-          </p>
-          <p>
-            Modalités de règlement : acompte de {devis.acomptePct} % soit{" "}
-            {formatEuro(acompte)} TTC à la signature, solde de {formatEuro(solde)}{" "}
-            TTC à l&apos;achèvement des travaux. Règlement par virement (IBAN
-            ci-dessous) ou chèque à l&apos;ordre de {raison}.
-          </p>
-          <p>
-            Pénalités de retard : en cas de retard de paiement, des pénalités sont
-            exigibles au taux d&apos;intérêt légal majoré de 10 points. Pour les
-            clients professionnels, une indemnité forfaitaire de 40 € pour frais
-            de recouvrement est due (article D441-5 du Code de commerce).
-          </p>
-          <p>
-            {raison} est titulaire d&apos;une assurance de responsabilité civile
-            professionnelle et décennale
-            {ent?.assuranceCompagnie ? ` auprès de ${ent.assuranceCompagnie}` : ""}
-            {ent?.assurancePolice ? ` (police n° ${ent.assurancePolice})` : ""}
-            {ent?.assuranceZone ? `, valable pour ${ent.assuranceZone}` : ""}.
-          </p>
-          {isParticulier && (
-            <p>
-              Conformément aux articles L.221-18 et suivants du Code de la
-              consommation, pour tout contrat conclu hors établissement, le client
-              dispose d&apos;un délai de rétractation de quatorze (14) jours à
-              compter de sa signature.
-            </p>
-          )}
-          {hasTVA55 && (
-            <p>
-              Le taux de TVA de 5,5 % s&apos;applique aux travaux d&apos;amélioration
-              de la qualité énergétique (art. 278-0 bis A du CGI). Le client atteste
-              que le logement est achevé depuis plus de deux ans et s&apos;engage à
-              signer l&apos;attestation correspondante.
-            </p>
-          )}
-          <p>
-            Le présent devis est régi par les conditions générales de vente
-            annexées.
-          </p>
-          {isGratuit && (
-            <p className="gratuit">
-              Devis gratuit — l&apos;établissement du présent devis est gratuit et
-              ne constitue pas un engagement de la part du client.
-            </p>
-          )}
-          {ent?.iban && (
-            <div className="iban-line">
-              Coordonnées bancaires — IBAN : <span className="v">{ent.iban}</span>
-            </div>
-          )}
-        </div>
-
-        {/* SIGNATURES */}
-        <div className="signatures">
-          <div className="sign-box">
-            <div className="sign-title">L&apos;entreprise</div>
-            <div className="sign-line">
-              <strong>{raison}</strong>
-            </div>
-            <div className="sign-line">
-              Fait à {ent?.ville || "…"}, le {today}
-            </div>
-            <div className="sign-line">Signature :</div>
-          </div>
-          <div className="sign-box">
-            <div className="sign-title">Le client</div>
-            <div className="sign-line">
-              <strong>« Bon pour accord, devis reçu »</strong>
-            </div>
-            <div className="sign-line">Date :</div>
-            <div className="sign-line">Signature :</div>
-          </div>
-        </div>
-
-        {/* ANNEXE CGV */}
-        {ent?.cgv && (
-          <div className="mentions">
-            <div className="sec-title">Conditions générales de vente</div>
-            <p style={{ whiteSpace: "pre-wrap" }}>{ent.cgv}</p>
-          </div>
+          </section>
         )}
-      </div>
+
+        {/* ── DÉTAIL PAR LOT ──────────────────────────────────────── */}
+        {lotsActifs.length === 0 ? (
+          <p className="ap-muted">Aucun lot actif sur ce devis.</p>
+        ) : (
+          <section className="ap-lots">
+            {lotsActifs.map((meta) => {
+              const lotTotaux = totaux?.parLot.find(
+                (l) => l.lotId === meta.id
+              );
+              const items = calcItems(devis.engine, meta.id);
+              return (
+                <LotTable
+                  key={meta.id}
+                  label={meta.label}
+                  items={items}
+                  lotTotaux={lotTotaux}
+                />
+              );
+            })}
+          </section>
+        )}
+
+        {/* ── TOTAUX ──────────────────────────────────────────────── */}
+        {totaux && (
+          <section className="ap-totaux">
+            <dl>
+              <dt>Sous-total HT</dt>
+              <dd>{formatEuro(totaux.subTotalHT)}</dd>
+              {totaux.remiseHT > 0 && (
+                <Fragment>
+                  <dt>
+                    Remise
+                    {devis.remiseMode === "pourcent"
+                      ? ` (${devis.remiseValeur} %)`
+                      : ""}
+                  </dt>
+                  <dd>−{formatEuro(totaux.remiseHT)}</dd>
+                </Fragment>
+              )}
+              <dt className="ap-strong">Total HT</dt>
+              <dd className="ap-strong">{formatEuro(totaux.totalHT)}</dd>
+              {Object.entries(totaux.ventilationTVA)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([taux, m]) => (
+                  <Fragment key={taux}>
+                    <dt>TVA {taux} %</dt>
+                    <dd>{formatEuro(m)}</dd>
+                  </Fragment>
+                ))}
+              <dt className="ap-ttc">Total TTC</dt>
+              <dd className="ap-ttc">{formatEuro(totaux.totalTTC)}</dd>
+            </dl>
+          </section>
+        )}
+
+        {totaux && totaux.totalTTC > 0 && (
+          <section className="ap-acompte">
+            <h3 className="ap-h3">Modalités de règlement</h3>
+            <p>
+              Acompte de {devis.acomptePct} % à la commande :{" "}
+              <strong>{formatEuro(acompteTTC)}</strong> TTC.
+            </p>
+            <p>
+              Solde à la fin des travaux :{" "}
+              <strong>{formatEuro(soldeTTC)}</strong> TTC.
+            </p>
+          </section>
+        )}
+
+        {/* Mentions légales BTP : réintégrées sur le document final en
+            P5 (cf. devis-p5-apercu-spec.md). En P3 on n'affiche qu'un
+            rappel pour ne pas brouiller la vérification visuelle. */}
+        <section className="ap-mentions">
+          <p className="ap-muted ap-mentions-note">
+            (Les mentions légales BTP, conditions générales et bloc
+            signatures seront réintégrés sur le document final en P5.)
+          </p>
+        </section>
+      </article>
     </div>
   );
 }
+
+// ─── LotTable ────────────────────────────────────────────────────────
+// Affiche les lignes d'un lot avec leur prix de vente unitaire et total
+// LIGNE PAR LIGNE (= caDeboursé distribué × coefDeboursé pour les
+// déboursé, prix catalogue tel quel pour les points prix ferme).
+function LotTable({
+  label,
+  items,
+  lotTotaux,
+}: {
+  label: string;
+  items: EngineLigne[];
+  lotTotaux: LotTotaux | undefined;
+}) {
+  const coefDeboursé =
+    lotTotaux && lotTotaux.deboursé > 0
+      ? lotTotaux.caDeboursé / lotTotaux.deboursé
+      : 0;
+
+  return (
+    <div className="ap-lot">
+      <div className="ap-lot-head">
+        <h3 className="ap-lot-title">{label}</h3>
+        <span className="ap-lot-sub">
+          {lotTotaux ? formatEuro(lotTotaux.caLot) + " HT" : ""}
+        </span>
+      </div>
+      {items.length === 0 ? (
+        <p className="ap-muted">
+          Lot actif sans configuration — aucune ligne.
+        </p>
+      ) : (
+        <table className="ap-lot-items">
+          <thead>
+            <tr>
+              <th className="lbl">Désignation</th>
+              <th className="qty">Qté</th>
+              <th className="qty">U.</th>
+              <th className="pu">P.U. HT</th>
+              <th className="tva">TVA</th>
+              <th className="total">Total HT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((it, i) => {
+              const lineCA = it.prixEstFinal
+                ? it.total
+                : it.total * coefDeboursé;
+              const lineP = it.qty > 0 ? lineCA / it.qty : 0;
+              return (
+                <tr key={i}>
+                  <td className="lbl">
+                    {it.lbl}
+                    {it.note && <small>{it.note}</small>}
+                  </td>
+                  <td className="qty">{it.qty}</td>
+                  <td className="qty">{it.unit}</td>
+                  <td className="pu">{formatEuro(lineP)}</td>
+                  <td className="tva">{it.tva ?? "—"} %</td>
+                  <td className="total">{formatEuro(lineCA)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+// Used only by Lot label resolution if needed in the future.
+export type _UnusedLotId = LotId;

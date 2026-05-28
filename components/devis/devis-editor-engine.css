@@ -1,0 +1,497 @@
+/* ============================================================
+   SOCLE — DevisEditorEngine (P3 — shell 3 colonnes)
+   Toutes les règles scopées sous .dee-* pour éviter toute fuite vers
+   la chrome SOCLE. Respect strict du DESIGN.md :
+   zéro radius (sauf 50% sémantique), zéro shadow, zéro gradient,
+   vert réservé aux chiffres clés + états actifs.
+   ============================================================ */
+
+/* ── Racine + layout 3 colonnes ─────────────────────────────────── */
+.dee-shell {
+  min-height: 100vh;
+  background: var(--gray-bg);
+  font-family: var(--ff);
+  color: var(--black);
+}
+
+/* ── Topbar fine (sticky en haut) ───────────────────────────────── */
+.dee-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray2);
+  min-height: 52px;
+}
+.dee-topbar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray4);
+  text-decoration: none;
+  cursor: pointer;
+}
+.dee-topbar-back:hover { border-color: var(--black); color: var(--black); }
+.dee-topbar-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: var(--gray3);
+}
+.dee-topbar-titre {
+  flex: 1;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--black);
+  min-width: 200px;
+}
+.dee-topbar-titre:focus { border-color: var(--black); outline: none; }
+.dee-topbar-titre::placeholder { color: var(--gray3); }
+.dee-topbar-statut {
+  padding: 4px 10px;
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+.dee-topbar-save {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gray3);
+  letter-spacing: .04em;
+}
+.dee-topbar-save.is-dirty { color: var(--orange); }
+.dee-topbar-save.is-saved { color: var(--gray3); }
+.dee-topbar-actions { display: flex; gap: 8px; }
+.dee-btn {
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dee-btn:hover:not(:disabled) { border-color: var(--black); }
+.dee-btn:disabled { color: var(--gray3); cursor: not-allowed; }
+.dee-btn-primary {
+  background: var(--black);
+  border-color: var(--black);
+  color: var(--white);
+}
+.dee-btn-primary:hover:not(:disabled) { background: var(--green-dark); border-color: var(--green-dark); }
+
+/* ── Bandeau entête repliable (<details>) ───────────────────────── */
+.dee-entete {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray2);
+}
+.dee-entete > summary {
+  padding: 12px 24px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--ff);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+.dee-entete > summary::-webkit-details-marker { display: none; }
+.dee-entete > summary::before {
+  content: "+";
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--gray3);
+}
+.dee-entete[open] > summary::before { content: "−"; }
+.dee-entete-body {
+  padding: 0 24px 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px 16px;
+}
+.dee-entete-body .col-2 { grid-column: span 2; }
+.dee-entete-body .col-full { grid-column: 1 / -1; }
+.dee-field { display: flex; flex-direction: column; gap: 4px; }
+.dee-field-label {
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.dee-input, .dee-select, .dee-textarea {
+  padding: 8px 11px;
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--black);
+  width: 100%;
+  box-sizing: border-box;
+}
+.dee-input:focus, .dee-select:focus, .dee-textarea:focus {
+  outline: none;
+  border-color: var(--black);
+}
+.dee-input[type="number"] { font-family: var(--mono); }
+.dee-textarea { min-height: 60px; font-family: var(--ff); resize: vertical; }
+.dee-input-row { display: flex; gap: 6px; align-items: center; }
+
+/* ── Grille 3 colonnes ──────────────────────────────────────────── */
+.dee-cols {
+  display: grid;
+  grid-template-columns: 260px 1fr 340px;
+  min-height: calc(100vh - 52px);
+}
+@media (max-width: 1200px) {
+  .dee-cols { grid-template-columns: 220px 1fr 300px; }
+}
+@media (max-width: 980px) {
+  .dee-cols { grid-template-columns: 1fr; }
+  .dee-cols-left, .dee-cols-right { border-right: none; border-left: none; border-bottom: 1px solid var(--gray2); }
+}
+
+/* ── Colonne gauche : liste des 15 lots ─────────────────────────── */
+.dee-cols-left {
+  background: var(--white);
+  border-right: 1px solid var(--gray2);
+  padding: 16px 0 24px;
+}
+.dee-cols-left-title {
+  padding: 0 18px 10px;
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+.dee-lot-list { list-style: none; margin: 0; padding: 0; }
+.dee-lot-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 18px;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--gray4);
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.dee-lot-item:hover { background: var(--gray-bg); color: var(--black); }
+.dee-lot-item.is-on { color: var(--black); }
+.dee-lot-item.is-current {
+  background: var(--green-light);
+  border-left-color: var(--green);
+  color: var(--black);
+  font-weight: 500;
+}
+.dee-lot-item .dee-lot-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gray2);
+  flex-shrink: 0;
+}
+.dee-lot-item.is-on .dee-lot-dot { background: var(--green); }
+.dee-lot-item .dee-lot-label { flex: 1; }
+.dee-lot-item .dee-lot-total {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green);
+}
+.dee-lot-item:not(.is-on) .dee-lot-total { display: none; }
+
+.dee-lot-foot {
+  margin-top: 18px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--gray2);
+}
+.dee-lot-foot-label {
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 4px;
+}
+.dee-lot-foot-amount {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--green);
+}
+
+/* ── Colonne centrale : config du lot courant ───────────────────── */
+.dee-cols-center {
+  padding: 24px 28px 80px;
+  background: var(--gray-bg);
+  overflow-x: hidden;
+}
+.dee-config-head { margin-bottom: 20px; }
+.dee-config-eyebrow {
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 4px;
+}
+.dee-config-title {
+  font-family: var(--ff);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--black);
+  margin: 0 0 10px;
+}
+.dee-config-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--black);
+  cursor: pointer;
+}
+.dee-config-toggle.is-on { border-color: var(--green); background: var(--green-light); }
+
+.dee-config-block {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.dee-config-block-title {
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin: 0 0 14px;
+}
+.dee-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.dee-config-placeholder {
+  padding: 28px 24px;
+  background: var(--white);
+  border: 1px dashed var(--gray3);
+  text-align: center;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--gray4);
+}
+.dee-config-placeholder strong { color: var(--black); font-weight: 600; }
+
+/* Lignes auto-générées par le moteur (debug visuel P3) */
+.dee-engine-items {
+  margin-top: 14px;
+  background: var(--white);
+  border: 1px solid var(--gray2);
+}
+.dee-engine-items > summary {
+  padding: 10px 16px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--ff);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+.dee-engine-items > summary::-webkit-details-marker { display: none; }
+.dee-engine-items > summary::before {
+  content: "▸ ";
+  color: var(--gray3);
+}
+.dee-engine-items[open] > summary::before { content: "▾ "; }
+.dee-engine-items table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dee-engine-items th, .dee-engine-items td {
+  padding: 6px 10px;
+  border-top: 1px solid var(--gray2);
+  text-align: left;
+}
+.dee-engine-items th {
+  font-family: var(--ff);
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--gray-bg);
+}
+.dee-engine-items td.num { font-family: var(--mono); text-align: right; }
+.dee-engine-items td.lbl { color: var(--black); }
+.dee-engine-items td.lbl small { display: block; color: var(--gray3); font-family: var(--mono); font-size: 10px; }
+
+.dee-config-remove {
+  margin-top: 24px;
+  padding: 9px 16px;
+  background: transparent;
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 12px;
+  color: var(--gray4);
+  cursor: pointer;
+}
+.dee-config-remove:hover { border-color: var(--red); color: var(--red); }
+
+/* Quality cards std/mid/prm */
+.dee-quality { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.dee-quality-card {
+  padding: 10px 12px;
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--black);
+  cursor: pointer;
+  text-align: center;
+}
+.dee-quality-card.is-active { border-color: var(--green); background: var(--green-light); font-weight: 500; }
+
+/* ── Colonne droite : récap temps réel ──────────────────────────── */
+.dee-cols-right {
+  background: var(--white);
+  border-left: 1px solid var(--gray2);
+  padding: 24px 22px;
+}
+.dee-recap-title {
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin: 0 0 14px;
+}
+.dee-recap-list {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 10px;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+.dee-recap-list dt { color: var(--gray4); font-family: var(--ff); }
+.dee-recap-list dd { margin: 0; font-family: var(--mono); color: var(--black); text-align: right; }
+.dee-recap-list dt.strong, .dee-recap-list dd.strong { font-weight: 600; color: var(--black); }
+.dee-recap-list dt.big, .dee-recap-list dd.big { font-size: 16px; }
+.dee-recap-list dd.green { color: var(--green); font-weight: 500; }
+.dee-recap-list dd.green-big { color: var(--green); font-weight: 500; font-size: 18px; }
+.dee-recap-divider { border: none; border-top: 1px solid var(--gray2); margin: 18px 0 14px; }
+
+/* Alerts (tauxHoraireManquant + pointsLotsNonRenseignes) */
+.dee-alert {
+  padding: 10px 12px;
+  background: var(--orange-bg);
+  border: 1px solid var(--orange-b);
+  margin-bottom: 12px;
+  font-family: var(--ff);
+  font-size: 12px;
+  color: var(--orange);
+  line-height: 1.45;
+}
+.dee-alert .ti { margin-right: 6px; }
+.dee-alert a {
+  display: block;
+  margin-top: 6px;
+  font-weight: 500;
+  color: var(--orange);
+  text-decoration: underline;
+}
+
+/* Mini bandeau au-dessus de l'éditeur quand taux horaire manquant */
+.dee-banner {
+  padding: 9px 24px;
+  background: var(--orange-bg);
+  border-bottom: 1px solid var(--orange-b);
+  font-family: var(--ff);
+  font-size: 12px;
+  color: var(--orange);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dee-banner a { color: var(--orange); font-weight: 500; text-decoration: underline; margin-left: auto; }
+
+/* Toast simple bas-droit */
+.dee-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  padding: 10px 16px;
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--ff);
+  font-size: 13px;
+}
+
+/* Modale (création client minimaliste héritée du C1) */
+.dee-modal-bg {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,.32);
+  display: flex; align-items: center; justify-content: center;
+}
+.dee-modal {
+  width: min(520px, 90vw);
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  padding: 22px 24px;
+}
+.dee-modal h3 {
+  margin: 0 0 14px;
+  font-family: var(--ff); font-size: 16px; font-weight: 600; color: var(--black);
+}
+.dee-modal-actions { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; }

@@ -1,110 +1,337 @@
-/* ── Aperçu client (document A4) — scopé .apercu-tool ──
-   Document remis au client : SOBRE, NOIR UNIQUEMENT (pas de vert).
-   Le vert SOCLE est réservé à l'interface artisan. */
+/* ============================================================
+   SOCLE — Aperçu client minimal P3 — scopé .ap-*
+   RÈGLES NON NÉGOCIABLES : noir + gris uniquement, AUCUN vert
+   (réservé à l'interface artisan). Zéro radius, zéro shadow, zéro
+   gradient. Mise en forme PDF stylée → P5.
+   ============================================================ */
 
-/* Barre d'actions (non imprimée) */
-.apercu-tool .toolbar {
-  display: flex; gap: 10px; justify-content: flex-end; align-items: center;
-  max-width: 800px; margin: 0 auto 16px;
-}
-.apercu-tool .btn-print {
-  display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;
-  background: var(--black); color: var(--white); border: 1px solid var(--black);
-  border-radius: 0; font-family: var(--ff); font-size: 14px; font-weight: 600; cursor: pointer;
-}
-.apercu-tool .btn-print:hover { background: var(--gray4); border-color: var(--gray4); }
-.apercu-tool .btn-back {
-  padding: 10px 16px; background: transparent; border: 1px solid var(--gray2);
-  border-radius: 0; font-family: var(--ff); font-size: 14px; font-weight: 600;
-  color: var(--black); text-decoration: none;
-}
-.apercu-tool .btn-back:hover { border-color: var(--black); }
-.apercu-tool .config-warn {
-  max-width: 800px; margin: 0 auto 16px; padding: 10px 14px;
-  background: var(--orange-bg); border: 1px solid var(--orange-b); color: var(--orange);
-  font-family: var(--mono); font-size: 12px;
+.ap-page {
+  background: var(--gray-bg);
+  min-height: 100vh;
+  font-family: var(--ff);
+  color: var(--black);
+  padding: 18px 24px 60px;
 }
 
-/* Feuille A4 */
-.apercu-tool .sheet {
-  max-width: 800px; margin: 0 auto; background: var(--white);
-  border: 1px solid var(--gray2); padding: 48px 52px;
-  color: var(--black); font-size: 13px; line-height: 1.5;
+/* Barre d'actions (hors document, non imprimable) */
+.ap-toolbar {
+  max-width: 920px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  background: var(--white);
+  border: 1px solid var(--gray2);
+}
+.ap-btn {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--black);
+  text-decoration: none;
+  cursor: pointer;
+}
+.ap-btn:hover { border-color: var(--black); }
+.ap-toolbar-note {
+  margin-left: auto;
+  font-family: var(--ff);
+  font-size: 12px;
+  color: var(--gray3);
+  letter-spacing: .04em;
 }
 
-/* En-tête (≤ ¼ page) : coords gauche / destinataire droite */
-.apercu-tool .doc-head { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding-bottom: 18px; border-bottom: 1px solid var(--black); }
-.apercu-tool .ent-name { font-family: var(--ff); font-weight: 700; font-size: 16px; letter-spacing: -0.01em; margin-bottom: 6px; }
-.apercu-tool .ent-line, .apercu-tool .cli-line { font-size: 12px; color: var(--gray4); line-height: 1.55; }
-.apercu-tool .cli-block { text-align: right; }
-.apercu-tool .cli-label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 6px; }
-.apercu-tool .cli-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-.apercu-tool .cli-chantier { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--gray2); font-size: 11px; color: var(--gray4); }
+/* Document A4 simulé */
+.ap-doc {
+  max-width: 920px;
+  margin: 0 auto;
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  padding: 40px 48px;
+  color: var(--black);
+}
 
-/* Bandeau devis */
-.apercu-tool .doc-meta { margin: 22px 0; }
-.apercu-tool .doc-numero { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: var(--gray4); }
-.apercu-tool .doc-titre { font-family: var(--ff); font-weight: 700; font-size: 22px; letter-spacing: -0.02em; margin: 4px 0 6px; }
-.apercu-tool .doc-dates { font-family: var(--mono); font-size: 12px; color: var(--gray4); }
-.apercu-tool .doc-intro { margin: 18px 0 26px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+/* En-tête entreprise + meta document */
+.ap-doc-head {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 32px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--gray2);
+  margin-bottom: 22px;
+}
+.ap-ent-name {
+  margin: 0 0 6px;
+  font-family: var(--ff);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--black);
+}
+.ap-ent-line {
+  margin: 1px 0;
+  font-family: var(--ff);
+  font-size: 12px;
+  color: var(--gray4);
+  line-height: 1.4;
+}
+.ap-ent-assurance { margin-top: 6px; }
+.ap-meta { text-align: right; }
+.ap-meta-titre {
+  margin: 0 0 4px;
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .14em;
+}
+.ap-meta-num {
+  margin: 0 0 12px;
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--black);
+}
+.ap-meta-line {
+  margin: 1px 0;
+  font-family: var(--ff);
+  font-size: 12px;
+  color: var(--gray4);
+}
+.ap-meta-statut {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid var(--gray2);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
 
-/* Titres de section */
-.apercu-tool .sec-title { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray4); margin: 26px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--gray2); }
+/* Sections génériques */
+.ap-h2 {
+  margin: 0 0 12px;
+  font-family: var(--ff);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--black);
+}
+.ap-h3 {
+  margin: 0 0 8px;
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+.ap-strong { font-weight: 600; color: var(--black); }
+.ap-muted { color: var(--gray3); font-style: italic; }
 
-/* Récap lots */
-.apercu-tool .recap-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; border-bottom: 1px solid var(--gray2); }
-.apercu-tool .recap-row .num { font-family: var(--mono); color: var(--gray4); margin-right: 8px; }
-.apercu-tool .recap-row .amt { font-family: var(--mono); font-weight: 500; }
-.apercu-tool .recap-total { display: flex; justify-content: space-between; padding: 10px 0; font-weight: 700; font-size: 14px; }
-.apercu-tool .recap-total .amt { font-family: var(--mono); }
+/* Parties Client / Chantier */
+.ap-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-bottom: 24px;
+}
+.ap-parties p {
+  margin: 1px 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--black);
+  line-height: 1.45;
+}
 
-/* Détail */
-.apercu-tool .lot-detail { margin-bottom: 18px; }
-.apercu-tool .lot-detail-head { font-family: var(--ff); font-weight: 600; font-size: 14px; margin: 16px 0 8px; }
-.apercu-tool .lot-detail-head .num { font-family: var(--mono); color: var(--gray4); margin-right: 8px; }
-.apercu-tool table.lignes { width: 100%; border-collapse: collapse; }
-.apercu-tool table.lignes td { padding: 6px 4px; vertical-align: top; border-bottom: 1px solid var(--gray2); font-size: 12.5px; }
-.apercu-tool td.l-num { font-family: var(--mono); color: var(--gray4); width: 38px; white-space: nowrap; }
-.apercu-tool td.l-desc .d { font-size: 11px; color: var(--gray3); margin-top: 2px; }
-.apercu-tool td.l-qty, .apercu-tool td.l-tva { font-family: var(--mono); color: var(--gray4); white-space: nowrap; text-align: right; }
-.apercu-tool td.l-amt { font-family: var(--mono); font-weight: 500; text-align: right; white-space: nowrap; }
-.apercu-tool .tag { font-family: var(--mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; color: var(--gray3); border: 1px solid var(--gray2); padding: 1px 5px; margin-left: 6px; }
-.apercu-tool .l-amt.offert { color: var(--gray3); }
-.apercu-tool .lot-soustotal { display: flex; justify-content: flex-end; gap: 16px; padding: 8px 4px; font-size: 12.5px; }
-.apercu-tool .lot-soustotal .amt { font-family: var(--mono); font-weight: 600; }
+/* Objet + intro */
+.ap-objet { margin-bottom: 16px; }
+.ap-intro {
+  margin-bottom: 24px;
+  padding: 12px 0;
+  border-top: 1px solid var(--gray2);
+  border-bottom: 1px solid var(--gray2);
+}
+.ap-intro p {
+  margin: 4px 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--gray4);
+  line-height: 1.5;
+}
 
-/* Totaux (alignés à droite) */
-.apercu-tool .totaux { margin: 24px 0 0; margin-left: auto; max-width: 340px; }
-.apercu-tool .tot-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: var(--gray4); }
-.apercu-tool .tot-row .v { font-family: var(--mono); color: var(--black); }
-.apercu-tool .tot-row.sub .l { color: var(--gray3); font-size: 12px; }
-.apercu-tool .tot-ttc { display: flex; justify-content: space-between; padding: 10px 0; margin-top: 6px; border-top: 2px solid var(--black); font-weight: 700; font-size: 16px; color: var(--black); }
-.apercu-tool .tot-ttc .v { font-family: var(--mono); }       /* NOIR — pas de vert sur le doc client */
-.apercu-tool .tot-row.acompte { font-weight: 600; color: var(--black); }
-.apercu-tool .options-note { margin-top: 16px; font-size: 12px; color: var(--gray4); }
-.apercu-tool .options-note .num { font-family: var(--mono); }
+/* Détail par lot */
+.ap-lots { margin-bottom: 28px; }
+.ap-lot { margin-bottom: 26px; }
+.ap-lot-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--gray2);
+  margin-bottom: 8px;
+}
+.ap-lot-title {
+  margin: 0;
+  font-family: var(--ff);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--black);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.ap-lot-sub {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+}
 
-/* Mentions légales */
-.apercu-tool .mentions { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--gray2); }
-.apercu-tool .mentions p { font-size: 10.5px; line-height: 1.5; color: var(--gray4); margin-bottom: 7px; }
-.apercu-tool .mentions .gratuit { font-weight: 700; color: var(--black); text-transform: uppercase; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; }
-.apercu-tool .iban-line { font-size: 11px; color: var(--gray4); margin-top: 4px; }
-.apercu-tool .iban-line .v { font-family: var(--mono); color: var(--black); }
+/* Table des lignes du lot */
+.ap-lot-items {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.ap-lot-items th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--gray2);
+  font-family: var(--ff);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--gray4);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: transparent;
+}
+.ap-lot-items td {
+  padding: 8px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--gray2);
+  font-family: var(--ff);
+  color: var(--black);
+}
+.ap-lot-items td.lbl { color: var(--black); }
+.ap-lot-items td.lbl small {
+  display: block;
+  margin-top: 2px;
+  color: var(--gray3);
+  font-family: var(--ff);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.ap-lot-items th.qty,
+.ap-lot-items td.qty,
+.ap-lot-items th.pu,
+.ap-lot-items td.pu,
+.ap-lot-items th.tva,
+.ap-lot-items td.tva,
+.ap-lot-items th.total,
+.ap-lot-items td.total {
+  text-align: right;
+  white-space: nowrap;
+}
+.ap-lot-items td.pu,
+.ap-lot-items td.qty,
+.ap-lot-items td.tva,
+.ap-lot-items td.total {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.ap-lot-items td.total { font-weight: 500; color: var(--black); }
 
-/* Signatures */
-.apercu-tool .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 36px; }
-.apercu-tool .sign-box { border: 1px solid var(--gray2); padding: 16px; min-height: 130px; }
-.apercu-tool .sign-title { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 10px; }
-.apercu-tool .sign-line { font-size: 12px; color: var(--gray4); margin-bottom: 6px; }
-.apercu-tool .sign-line strong { color: var(--black); font-weight: 600; }
+/* Totaux du devis */
+.ap-totaux {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--gray2);
+  display: flex;
+  justify-content: flex-end;
+}
+.ap-totaux dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 28px;
+  row-gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  min-width: 320px;
+}
+.ap-totaux dt {
+  color: var(--gray4);
+  font-family: var(--ff);
+  text-align: right;
+}
+.ap-totaux dd {
+  margin: 0;
+  font-family: var(--mono);
+  color: var(--black);
+  text-align: right;
+}
+.ap-totaux dt.ap-strong,
+.ap-totaux dd.ap-strong {
+  color: var(--black);
+  font-weight: 600;
+  border-top: 1px solid var(--gray2);
+  padding-top: 6px;
+  margin-top: 4px;
+}
+.ap-totaux dt.ap-ttc,
+.ap-totaux dd.ap-ttc {
+  color: var(--black);
+  font-weight: 600;
+  font-size: 16px;
+  border-top: 2px solid var(--black);
+  padding-top: 8px;
+  margin-top: 6px;
+}
 
-.apercu-tool .loading, .apercu-tool .notfound { max-width: 800px; margin: 40px auto; text-align: center; color: var(--gray3); font-family: var(--mono); font-size: 13px; }
+/* Modalités d'acompte */
+.ap-acompte {
+  margin-top: 24px;
+  padding: 14px 0;
+  border-top: 1px solid var(--gray2);
+}
+.ap-acompte p {
+  margin: 4px 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--black);
+}
 
-/* ── IMPRESSION : masquer la chrome de l'app + la barre d'actions ── */
+/* Mentions légales (placeholder P3) */
+.ap-mentions {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--gray2);
+}
+.ap-mentions-note {
+  margin: 0;
+  font-family: var(--ff);
+  font-size: 11px;
+  color: var(--gray3);
+  font-style: italic;
+}
+
+/* Impression : enlève la chrome SOCLE et la toolbar */
 @media print {
-  .topbar, .sidebar { display: none !important; }
-  .main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
-  .main-inner { max-width: none !important; }
-  .apercu-tool .toolbar, .apercu-tool .config-warn { display: none !important; }
-  .apercu-tool .sheet { border: none; max-width: none; padding: 0; }
+  body { background: white; }
+  .ap-toolbar { display: none; }
+  .ap-page { padding: 0; background: white; }
+  .ap-doc { border: none; padding: 20px; max-width: 100%; }
+}
+
+/* Mobile */
+@media (max-width: 720px) {
+  .ap-doc { padding: 24px 18px; }
+  .ap-doc-head { grid-template-columns: 1fr; gap: 16px; }
+  .ap-meta { text-align: left; }
+  .ap-parties { grid-template-columns: 1fr; gap: 18px; }
+  .ap-lot-items { font-size: 11px; }
+  .ap-lot-items th, .ap-lot-items td { padding: 5px 4px; }
 }
