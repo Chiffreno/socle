@@ -29,6 +29,10 @@ import Link from "next/link";
 import { repository } from "@/lib/devis/repository";
 import { calcEngineTotaux, type LotTotaux } from "@/lib/devis/engine/totals";
 import { calcItems } from "@/lib/devis/engine/calc-items";
+import {
+  agregerLignesClient,
+  type LigneClient,
+} from "@/lib/devis/engine/agregation";
 import { LM } from "@/lib/devis/engine/lots";
 import type { LotId, EngineLigne } from "@/lib/devis/engine/types";
 import { formatEuro, formatDateFR } from "@/lib/devis/format";
@@ -236,11 +240,17 @@ export default function ApercuDevis({ devisId }: Props) {
                 (l) => l.lotId === meta.id
               );
               const items = calcItems(devis.engine, meta.id);
+              // Brique 1 : lignes client agrégées si le lot a une stratégie
+              // (cloisons). Sinon null → rendu legacy ligne-à-ligne.
+              const lignesClient = lotTotaux
+                ? agregerLignesClient(devis.engine, lotTotaux)
+                : null;
               return (
                 <LotTable
                   key={meta.id}
                   label={meta.label}
                   items={items}
+                  lignesClient={lignesClient}
                   lotTotaux={lotTotaux}
                 />
               );
@@ -316,16 +326,26 @@ export default function ApercuDevis({ devisId }: Props) {
 function LotTable({
   label,
   items,
+  lignesClient,
   lotTotaux,
 }: {
   label: string;
   items: EngineLigne[];
+  /** Brique 1 : lignes client agrégées (cloisons). null → rendu legacy. */
+  lignesClient: LigneClient[] | null;
   lotTotaux: LotTotaux | undefined;
 }) {
   const coefDeboursé =
     lotTotaux && lotTotaux.deboursé > 0
       ? lotTotaux.caDeboursé / lotTotaux.deboursé
       : 0;
+
+  // Rendu AGRÉGÉ (lignes client synthétiques) si une stratégie existe pour
+  // le lot. Le détail interne (consommables) n'est jamais montré au client.
+  const useAggrege = lignesClient !== null;
+  const isEmpty = useAggrege
+    ? lignesClient!.length === 0
+    : items.length === 0;
 
   return (
     <div className="ap-lot">
@@ -335,7 +355,7 @@ function LotTable({
           {lotTotaux ? formatEuro(lotTotaux.caLot) + " HT" : ""}
         </span>
       </div>
-      {items.length === 0 ? null : (
+      {isEmpty ? null : (
         <table className="ap-lot-items">
           <thead>
             <tr>
@@ -348,25 +368,44 @@ function LotTable({
             </tr>
           </thead>
           <tbody>
-            {items.map((it, i) => {
-              const lineCA = it.prixEstFinal
-                ? it.total
-                : it.total * coefDeboursé;
-              const lineP = it.qty > 0 ? lineCA / it.qty : 0;
-              return (
-                <tr key={i}>
-                  <td className="lbl">
-                    {it.lbl}
-                    {it.note && <small>{it.note}</small>}
-                  </td>
-                  <td className="qty">{it.qty}</td>
-                  <td className="qty">{it.unit}</td>
-                  <td className="pu">{formatEuro(lineP)}</td>
-                  <td className="tva">{it.tva ?? "—"} %</td>
-                  <td className="total">{formatEuro(lineCA)}</td>
-                </tr>
-              );
-            })}
+            {useAggrege
+              ? lignesClient!.map((lc, i) => (
+                  <tr key={i}>
+                    <td className="lbl">
+                      {lc.libelleCommercial}
+                      {lc.afficheFourniture &&
+                        lc.dontFourniture !== undefined && (
+                          <small>
+                            dont fourniture : {formatEuro(lc.dontFourniture)}
+                          </small>
+                        )}
+                    </td>
+                    <td className="qty">{lc.qty}</td>
+                    <td className="qty">{lc.unit}</td>
+                    <td className="pu">{formatEuro(lc.prixUnitaireClient)}</td>
+                    <td className="tva">{lc.tva} %</td>
+                    <td className="total">{formatEuro(lc.prixClient)}</td>
+                  </tr>
+                ))
+              : items.map((it, i) => {
+                  const lineCA = it.prixEstFinal
+                    ? it.total
+                    : it.total * coefDeboursé;
+                  const lineP = it.qty > 0 ? lineCA / it.qty : 0;
+                  return (
+                    <tr key={i}>
+                      <td className="lbl">
+                        {it.lbl}
+                        {it.note && <small>{it.note}</small>}
+                      </td>
+                      <td className="qty">{it.qty}</td>
+                      <td className="qty">{it.unit}</td>
+                      <td className="pu">{formatEuro(lineP)}</td>
+                      <td className="tva">{it.tva ?? "—"} %</td>
+                      <td className="total">{formatEuro(lineCA)}</td>
+                    </tr>
+                  );
+                })}
           </tbody>
         </table>
       )}

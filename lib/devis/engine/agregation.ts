@@ -35,6 +35,8 @@ export interface LigneClient {
   prixClient: number;
   /** prixClient / qty — €/u lisible. */
   prixUnitaireClient: number;
+  /** Taux TVA de la prestation (repris de la ligne hl — homogène dans la zone). */
+  tva: number;
   /** Sous-ligne "dont fourniture" pertinente ? (false pour cloisons — lot non produit-fini.) */
   afficheFourniture: boolean;
   dontFourniture?: number;
@@ -105,6 +107,7 @@ function agregerCloisons(state: EngineState, lt: LotTotaux): LigneClient[] {
       unit: "m²",
       prixClient,
       prixUnitaireClient: qty > 0 ? round2(prixClient / qty) : 0,
+      tva: hl.tva ?? state.tvaParDefaut,
       afficheFourniture: false, // cloisons ∉ LOTS_PRODUIT_FINI
       detailInterne: groupe,
     });
