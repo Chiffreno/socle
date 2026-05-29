@@ -152,6 +152,7 @@ function toInput(d: Devis): DevisInput {
     statut: d.statut,
     dateCreation: d.dateCreation,
     dateValidite: d.dateValidite,
+    chantierId: d.chantierId,
     chantierAdresse: d.chantierAdresse,
     chantierCodePostal: d.chantierCodePostal,
     chantierVille: d.chantierVille,
@@ -429,6 +430,14 @@ export default function DevisEditorEngine({ devisId }: Props) {
         .trim() || draft.clientSnapshot.nom
     : null;
 
+  // Navigation centrée chantier : le retour ramène au dossier chantier
+  // d'origine (devis.chantierId), pas à la liste globale des devis. Fallback
+  // sur la liste des chantiers si le devis n'a pas de chantier rattaché
+  // (cas résiduel — la création hors chantier est supprimée).
+  const retourHref = draft.chantierId
+    ? `/chantiers/${draft.chantierId}`
+    : "/chantiers";
+
   return (
     <div className="dee-shell">
       {totaux?.tauxHoraireManquant && (
@@ -441,8 +450,8 @@ export default function DevisEditorEngine({ devisId }: Props) {
       )}
 
       <header className="dee-topbar">
-        <Link href="/chantier/devis" className="dee-topbar-back">
-          <i className="ti ti-chevron-left" /> Devis
+        <Link href={retourHref} className="dee-topbar-back">
+          <i className="ti ti-chevron-left" /> Retour au chantier
         </Link>
         <span className="dee-topbar-num">{numero ?? "—"}</span>
         <button

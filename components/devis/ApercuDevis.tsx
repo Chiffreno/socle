@@ -80,7 +80,7 @@ export default function ApercuDevis({ devisId }: Props) {
     return (
       <div className="ap-page">
         <p>Devis introuvable.</p>
-        <Link href="/chantier/devis">← Retour à la liste</Link>
+        <Link href="/chantiers">← Retour aux chantiers</Link>
       </div>
     );
   }
