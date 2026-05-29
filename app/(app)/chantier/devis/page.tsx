@@ -9,16 +9,12 @@ import {
   effectiveStatut,
 } from "@/lib/devis/devis-status";
 import { formatDateFR, formatEuro } from "@/lib/devis/format";
-import type { Devis, DevisInput, DevisStatut } from "@/lib/devis/types";
+import type { Devis, DevisStatut } from "@/lib/devis/types";
 import "./devis-liste.css";
 
 type Filter = "tous" | DevisStatut;
 type SortKey = "numero" | "dateCreation" | "client" | "totalHT";
 type SortDir = "asc" | "desc";
-
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function clientName(d: Devis): string {
   const s = d.clientSnapshot;
@@ -27,6 +23,12 @@ function clientName(d: Devis): string {
   return full || "—";
 }
 
+/**
+ * Vue transverse LECTURE SEULE : consulter/chercher tous les devis, tous
+ * chantiers confondus. Plus dans la sidebar ; la création de devis se fait
+ * depuis un chantier (/chantiers/[id]). Chaque ligne renvoie vers l'aperçu
+ * ou le dossier chantier du devis.
+ */
 export default function DevisListePage() {
   const [devis, setDevis] = useState<Devis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,6 @@ export default function DevisListePage() {
     key: "dateCreation",
     dir: "desc",
   });
-  const [toDelete, setToDelete] = useState<Devis | null>(null);
 
   const reload = useCallback(async () => {
     const list = await repository.devis.list();
@@ -97,49 +98,20 @@ export default function DevisListePage() {
       <span className="caret">{sort.dir === "asc" ? "▲" : "▼"}</span>
     ) : null;
 
-  const duplicate = useCallback(
-    async (d: Devis) => {
-      const input: DevisInput = {
-        clientId: d.clientId,
-        clientSnapshot: d.clientSnapshot,
-        titre: d.titre ? `${d.titre} (copie)` : "(copie)",
-        statut: "brouillon",
-        dateCreation: todayISO(),
-        dateValidite: null,
-        chantierAdresse: d.chantierAdresse,
-        chantierCodePostal: d.chantierCodePostal,
-        chantierVille: d.chantierVille,
-        lots: d.lots,
-        acomptePct: d.acomptePct,
-        lettreIntro: d.lettreIntro,
-        detailMatPose: d.detailMatPose,
-        remiseMode: d.remiseMode,
-        remiseValeur: d.remiseValeur,
-        notesInternes: d.notesInternes,
-      };
-      await repository.devis.create(input);
-      await reload();
-    },
-    [reload]
-  );
-
-  const confirmDelete = useCallback(async () => {
-    if (!toDelete) return;
-    await repository.devis.delete(toDelete.id);
-    setToDelete(null);
-    await reload();
-  }, [toDelete, reload]);
-
   return (
     <div className="devis-liste-tool">
       <header className="page-head">
         <div>
           <div className="page-eyebrow">Chantier · Devis</div>
           <h1 className="page-title">Devis</h1>
+          <p className="page-sub">
+            Tous chantiers confondus — consultation. Les devis se créent depuis
+            un chantier.
+          </p>
         </div>
-        <Link href="/chantier/devis/nouveau" className="btn-primary">
-          <i className="ti ti-plus" aria-hidden="true" />
-          Nouveau devis
+        <Link href="/chantiers" className="btn-primary">
+          <i className="ti ti-building" aria-hidden="true" />
+          Mes chantiers
         </Link>
       </header>
 
@@ -176,13 +148,14 @@ export default function DevisListePage() {
         <div className="loading">Chargement…</div>
       ) : devis.length === 0 ? (
         <div className="empty">
-          <div className="empty-title">Vous n&apos;avez pas encore créé de devis</div>
+          <div className="empty-title">Aucun devis pour le moment</div>
           <div className="empty-sub">
-            Crée ton premier devis : en-tête, lots, lignes, puis aperçu et PDF.
+            Les devis se créent depuis un chantier : ouvre un chantier puis
+            « Nouveau devis ».
           </div>
-          <Link href="/chantier/devis/nouveau" className="btn-primary">
-            <i className="ti ti-plus" aria-hidden="true" />
-            Créer mon premier devis
+          <Link href="/chantiers" className="btn-primary">
+            <i className="ti ti-building" aria-hidden="true" />
+            Aller à mes chantiers
           </Link>
         </div>
       ) : rows.length === 0 ? (
@@ -234,13 +207,6 @@ export default function DevisListePage() {
                       <span className={`badge ${eff}`}>{STATUT_LABEL[eff]}</span>
                     </td>
                     <td className="actions">
-                      <Link
-                        className="action-btn"
-                        href={`/chantier/devis/${d.id}/editer`}
-                        title="Éditer"
-                      >
-                        <i className="ti ti-pencil" aria-hidden="true" />
-                      </Link>
                       <a
                         className="action-btn"
                         href={`/chantier/devis/${d.id}/apercu`}
@@ -250,53 +216,29 @@ export default function DevisListePage() {
                       >
                         <i className="ti ti-eye" aria-hidden="true" />
                       </a>
-                      <button
-                        className="action-btn"
-                        onClick={() => duplicate(d)}
-                        title="Dupliquer"
-                      >
-                        <i className="ti ti-copy" aria-hidden="true" />
-                      </button>
-                      <button
-                        className="action-btn danger"
-                        onClick={() => setToDelete(d)}
-                        title="Supprimer"
-                      >
-                        <i className="ti ti-trash" aria-hidden="true" />
-                      </button>
+                      {d.chantierId ? (
+                        <Link
+                          className="action-btn"
+                          href={`/chantiers/${d.chantierId}`}
+                          title="Voir le chantier"
+                        >
+                          <i className="ti ti-building" aria-hidden="true" />
+                        </Link>
+                      ) : (
+                        <span
+                          className="action-btn is-disabled"
+                          title="Devis non rattaché à un chantier"
+                          aria-disabled="true"
+                        >
+                          <i className="ti ti-building-off" aria-hidden="true" />
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {toDelete && (
-        <div
-          className="modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setToDelete(null);
-          }}
-        >
-          <div className="modal" role="dialog" aria-modal="true">
-            <h3>Supprimer ce devis ?</h3>
-            <p>
-              Le devis <span className="num">{toDelete.numero}</span>
-              {clientName(toDelete) !== "—" ? ` (${clientName(toDelete)})` : ""}{" "}
-              sera définitivement supprimé. Cette action est irréversible et le
-              numéro ne sera pas réutilisé.
-            </p>
-            <div className="modal-actions">
-              <button className="btn-ghost" onClick={() => setToDelete(null)}>
-                Annuler
-              </button>
-              <button className="btn-danger" onClick={confirmDelete}>
-                Supprimer
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

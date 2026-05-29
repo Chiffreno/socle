@@ -40,9 +40,9 @@ const PENDANT: Card[] = [
     desc: "Du déboursé sec à la marge, jusqu'au prix de vente. Tu sais ce que tu gagnes.",
   },
   {
-    href: "/chantier/devis",
-    name: "Générateur de devis",
-    desc: "Un devis conforme, propre, exporté en PDF. Prêt à envoyer.",
+    href: "/chantiers",
+    name: "Chantiers & devis",
+    desc: "Pilote tes chantiers et crée tes devis conformes, prêts à envoyer en PDF.",
   },
 ];
 

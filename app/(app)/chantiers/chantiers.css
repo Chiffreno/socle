@@ -68,6 +68,12 @@
 }
 .chantiers-tool .page-back:hover { color: var(--black); }
 .chantiers-tool .page-back i { font-size: 16px; }
+.chantiers-tool .head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
 
 /* ─── Boutons ─── */
 .chantiers-tool .btn-primary {
@@ -487,6 +493,11 @@
   border-color: var(--black);
 }
 .chantiers-modal textarea { resize: vertical; min-height: 72px; }
+.chantiers-modal .modal-text {
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
 .chantiers-modal .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -498,6 +509,71 @@
   font-size: 12px;
   margin-top: 6px;
 }
+
+/* ─── Modale : libellé + action « Nouveau client » ─── */
+.chantiers-modal .label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.chantiers-modal .btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 0 0 6px;
+  font-family: var(--ff);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+  cursor: pointer;
+}
+.chantiers-modal .btn-link:hover { color: var(--green-dark); }
+.chantiers-modal .btn-link i { font-size: 14px; }
+
+/* ─── Sous-formulaire client (création à la volée) ─── */
+.chantiers-modal .client-subform {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--fill-2);
+  padding: 16px;
+}
+.chantiers-modal .client-subform .field:last-of-type { margin-bottom: 0; }
+.chantiers-modal .subform-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ─── Autocomplete adresse ─── */
+.chantiers-modal .addr-ac { position: relative; }
+.chantiers-modal .addr-ac-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-card);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.chantiers-modal .addr-ac-list li {
+  padding: 9px 10px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.chantiers-modal .addr-ac-list li:hover { background: var(--fill); color: var(--black); }
 
 /* ─── Responsive ─── */
 @media (max-width: 720px) {

@@ -24,15 +24,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "CGV", href: "/construction/cgv", icon: "file-description" },
       { label: "Prévisionnel", href: "/construction/previsionnel", icon: "chart-bar" },
       { label: "Taux Horaire", href: "/construction/taux-horaire", icon: "clock-hour-4" },
-      { label: "Décennale", href: "/construction/decennale", icon: "shield-check" },
-    ],
-  },
-  {
-    label: "Chantier",
-    items: [
       { label: "Prix Matériaux", href: "/chantier/materiaux", icon: "package" },
-      { label: "Devis", href: "/chantier/devis", icon: "file-text" },
-      { label: "Facture", href: "/chantier/facture", icon: "receipt" },
+      { label: "Décennale", href: "/construction/decennale", icon: "shield-check" },
     ],
   },
   {

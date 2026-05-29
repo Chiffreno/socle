@@ -51,8 +51,9 @@ function buildSnapshot(c: Client | null): ClientSnapshot | null {
   };
 }
 
+// Zones temps 2 (placeholders). Factures a sa propre section titrée ; les
+// autres restent en soon-cards discrètes.
 const SOON_ZONES = [
-  { icon: "file-invoice", name: "Factures" },
   { icon: "folder", name: "Documents" },
   { icon: "progress", name: "Avancement" },
 ];
@@ -69,6 +70,7 @@ export default function ChantierDossierPage() {
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [toDelete, setToDelete] = useState<Devis | null>(null);
 
   const reload = useCallback(async () => {
     if (!id) return;
@@ -123,6 +125,13 @@ export default function ChantierDossierPage() {
     router.push(`/chantier/devis/${created.id}/editer`);
   }, [chantier, client, router]);
 
+  const confirmDelete = useCallback(async () => {
+    if (!toDelete) return;
+    await repository.devis.delete(toDelete.id);
+    setToDelete(null);
+    await reload();
+  }, [toDelete, reload]);
+
   if (loading) {
     return (
       <div className="chantiers-tool">
@@ -164,9 +173,15 @@ export default function ChantierDossierPage() {
           <div className="page-eyebrow">Dossier chantier</div>
           <h1 className="page-title">{chantier.nom}</h1>
         </div>
-        <span className={`statut-badge ${chantier.statut}`}>
-          {CHANTIER_STATUT_LABEL[chantier.statut]}
-        </span>
+        <div className="head-actions">
+          <Link href="/chantier/materiaux" className="btn-secondary">
+            <i className="ti ti-package" aria-hidden="true" />
+            Prix matériaux
+          </Link>
+          <span className={`statut-badge ${chantier.statut}`}>
+            {CHANTIER_STATUT_LABEL[chantier.statut]}
+          </span>
+        </div>
       </header>
 
       {/* ── Infos chantier ── */}
@@ -212,7 +227,7 @@ export default function ChantierDossierPage() {
         </div>
       </div>
 
-      {/* ── Devis du chantier ── */}
+      {/* ── Section Devis ── */}
       <div className="card">
         <div className="card-head">
           <div className="card-title">
@@ -263,12 +278,31 @@ export default function ChantierDossierPage() {
                     >
                       <i className="ti ti-eye" aria-hidden="true" />
                     </a>
+                    <button
+                      className="action-btn danger"
+                      onClick={() => setToDelete(d)}
+                      title="Supprimer"
+                    >
+                      <i className="ti ti-trash" aria-hidden="true" />
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+      </div>
+
+      {/* ── Section Factures (temps 2) ── */}
+      <div className="card">
+        <div className="card-head">
+          <div className="card-title">Factures</div>
+          <span className="soon-tag">À venir</span>
+        </div>
+        <div className="devis-empty">
+          La facturation (acompte, situations, solde) arrivera ici, rattachée aux
+          devis signés de ce chantier.
+        </div>
       </div>
 
       {/* ── Zones temps 2 (placeholders sobres) ── */}
@@ -293,6 +327,33 @@ export default function ChantierDossierPage() {
             reload();
           }}
         />
+      )}
+
+      {toDelete && (
+        <div
+          className="chantiers-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setToDelete(null);
+          }}
+        >
+          <div className="chantiers-modal" role="dialog" aria-modal="true">
+            <h3>Supprimer ce devis ?</h3>
+            <p className="modal-text">
+              Le devis <span className="num">{toDelete.numero}</span>
+              {toDelete.titre ? ` (${toDelete.titre})` : ""} sera définitivement
+              supprimé. Cette action est irréversible et le numéro ne sera pas
+              réutilisé.
+            </p>
+            <div className="modal-actions">
+              <button className="btn-ghost" onClick={() => setToDelete(null)}>
+                Annuler
+              </button>
+              <button className="btn-danger" onClick={confirmDelete}>
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

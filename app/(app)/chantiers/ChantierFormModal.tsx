@@ -7,7 +7,10 @@ import type {
   ChantierInput,
   ChantierStatut,
   Client,
+  ClientInput,
+  ClientType,
 } from "@/lib/devis/types";
+import AddressAutocomplete from "./AddressAutocomplete";
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -35,6 +38,9 @@ export default function ChantierFormModal({
   onClose,
   onSaved,
 }: Props) {
+  // Liste locale (pour refléter un client créé à la volée sans recharger).
+  const [clientList, setClientList] = useState<Client[]>(clients);
+
   const [nom, setNom] = useState(chantier?.nom ?? "");
   const [clientId, setClientId] = useState<string>(chantier?.clientId ?? "");
   const [adresse, setAdresse] = useState(chantier?.adresse ?? "");
@@ -48,6 +54,59 @@ export default function ChantierFormModal({
   const [notes, setNotes] = useState(chantier?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // ── Mini-formulaire « Nouveau client » ──
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [clType, setClType] = useState<ClientType>("particulier");
+  const [clNom, setClNom] = useState("");
+  const [clPrenom, setClPrenom] = useState("");
+  const [clContact, setClContact] = useState("");
+  const [clEmail, setClEmail] = useState("");
+  const [clTel, setClTel] = useState("");
+  const [clError, setClError] = useState<string | null>(null);
+  const [clSaving, setClSaving] = useState(false);
+
+  const resetClientForm = () => {
+    setClType("particulier");
+    setClNom("");
+    setClPrenom("");
+    setClContact("");
+    setClEmail("");
+    setClTel("");
+    setClError(null);
+  };
+
+  const createClient = async () => {
+    if (!clNom.trim()) {
+      setClError("Le nom du client est obligatoire.");
+      return;
+    }
+    setClSaving(true);
+    const input: ClientInput = {
+      type: clType,
+      nom: clNom.trim(),
+      prenom: clPrenom.trim(),
+      contact: clContact.trim(),
+      email: clEmail.trim(),
+      telephone: clTel.trim(),
+      adresse: "",
+      codePostal: "",
+      ville: "",
+      siren: "",
+      notes: "",
+    };
+    try {
+      const created = await repository.clients.create(input);
+      setClientList((prev) => [...prev, created]);
+      setClientId(created.id); // sélection automatique du client créé
+      setShowClientForm(false);
+      resetClientForm();
+      setClSaving(false);
+    } catch {
+      setClError("Une erreur est survenue à la création du client.");
+      setClSaving(false);
+    }
+  };
 
   const submit = async () => {
     if (!nom.trim()) {
@@ -102,28 +161,131 @@ export default function ChantierFormModal({
         </div>
 
         <div className="field">
-          <label htmlFor="ch-client">Client</label>
-          <select
-            id="ch-client"
-            value={clientId}
-            onChange={(e) => setClientId(e.target.value)}
-          >
-            <option value="">— Aucun client —</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {clientLabel(c)}
-              </option>
-            ))}
-          </select>
+          <div className="label-row">
+            <label htmlFor="ch-client">Client</label>
+            {!showClientForm && (
+              <button
+                type="button"
+                className="btn-link"
+                onClick={() => setShowClientForm(true)}
+              >
+                <i className="ti ti-plus" aria-hidden="true" /> Nouveau client
+              </button>
+            )}
+          </div>
+          {!showClientForm ? (
+            <select
+              id="ch-client"
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+            >
+              <option value="">— Aucun client —</option>
+              {clientList.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {clientLabel(c)}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="client-subform">
+              <div className="field">
+                <label htmlFor="cl-type">Type</label>
+                <select
+                  id="cl-type"
+                  value={clType}
+                  onChange={(e) => setClType(e.target.value as ClientType)}
+                >
+                  <option value="particulier">Particulier</option>
+                  <option value="professionnel">Professionnel</option>
+                </select>
+              </div>
+              <div className="field field-row">
+                <div>
+                  <label htmlFor="cl-nom">Nom</label>
+                  <input
+                    id="cl-nom"
+                    type="text"
+                    value={clNom}
+                    onChange={(e) => setClNom(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="cl-prenom">Prénom</label>
+                  <input
+                    id="cl-prenom"
+                    type="text"
+                    value={clPrenom}
+                    onChange={(e) => setClPrenom(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="field">
+                <label htmlFor="cl-contact">Contact</label>
+                <input
+                  id="cl-contact"
+                  type="text"
+                  value={clContact}
+                  onChange={(e) => setClContact(e.target.value)}
+                />
+              </div>
+              <div className="field field-row">
+                <div>
+                  <label htmlFor="cl-email">Email</label>
+                  <input
+                    id="cl-email"
+                    type="email"
+                    value={clEmail}
+                    onChange={(e) => setClEmail(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="cl-tel">Téléphone</label>
+                  <input
+                    id="cl-tel"
+                    type="tel"
+                    value={clTel}
+                    onChange={(e) => setClTel(e.target.value)}
+                  />
+                </div>
+              </div>
+              {clError && <div className="err">{clError}</div>}
+              <div className="subform-actions">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => {
+                    setShowClientForm(false);
+                    resetClientForm();
+                  }}
+                  disabled={clSaving}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={createClient}
+                  disabled={clSaving}
+                >
+                  {clSaving ? "Création…" : "Créer le client"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="field">
           <label htmlFor="ch-adresse">Adresse</label>
-          <input
+          <AddressAutocomplete
             id="ch-adresse"
-            type="text"
             value={adresse}
-            onChange={(e) => setAdresse(e.target.value)}
+            placeholder="Commence à taper l'adresse…"
+            onChange={setAdresse}
+            onSelect={(v) => {
+              setAdresse(v.adresse);
+              setCodePostal(v.codePostal);
+              setVille(v.ville);
+            }}
           />
         </div>
 
@@ -197,7 +359,11 @@ export default function ChantierFormModal({
             Annuler
           </button>
           <button className="btn-primary" onClick={submit} disabled={saving}>
-            {saving ? "Enregistrement…" : mode === "edit" ? "Enregistrer" : "Créer le chantier"}
+            {saving
+              ? "Enregistrement…"
+              : mode === "edit"
+                ? "Enregistrer"
+                : "Créer le chantier"}
           </button>
         </div>
       </div>

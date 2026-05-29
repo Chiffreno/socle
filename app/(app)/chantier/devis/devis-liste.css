@@ -11,6 +11,7 @@
   display: flex; align-items: center; gap: 10px;
 }
 .devis-liste-tool .page-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gray3); }
+.devis-liste-tool .page-sub { font-size: 14px; color: var(--gray4); margin-top: 8px; max-width: 560px; line-height: 1.5; }
 .devis-liste-tool .page-title {
   font-family: var(--ff); font-weight: 700; font-size: clamp(1.8rem, 3vw, 2.4rem);
   letter-spacing: -0.02em; line-height: 1.05;
@@ -93,6 +94,8 @@
 }
 .devis-liste-tool .action-btn:hover { color: var(--black); border-color: var(--gray2); }
 .devis-liste-tool .action-btn.danger:hover { color: var(--red); border-color: var(--red-b); }
+.devis-liste-tool .action-btn.is-disabled { color: var(--gray3); cursor: default; opacity: .55; }
+.devis-liste-tool .action-btn.is-disabled:hover { color: var(--gray3); border-color: var(--gray2); }
 .devis-liste-tool .action-btn i { font-size: 17px; }
 
 /* Empty state */
