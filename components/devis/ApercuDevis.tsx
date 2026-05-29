@@ -33,7 +33,7 @@ import { LM } from "@/lib/devis/engine/lots";
 import type { LotId, EngineLigne } from "@/lib/devis/engine/types";
 import { formatEuro, formatDateFR } from "@/lib/devis/format";
 import { STATUT_LABEL } from "@/lib/devis/devis-status";
-import type { Devis, Entreprise } from "@/lib/devis/types";
+import type { Chantier, Devis, Entreprise } from "@/lib/devis/types";
 import "./apercu.css";
 
 interface Props {
@@ -43,18 +43,23 @@ interface Props {
 export default function ApercuDevis({ devisId }: Props) {
   const [devis, setDevis] = useState<Devis | null>(null);
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
+  const [chantier, setChantier] = useState<Chantier | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [d, ent] = await Promise.all([
+      // L'adresse de chantier provient du Chantier parent (via chantierId),
+      // plus des champs du devis : on résout via la jointure inverse.
+      const [d, ent, ch] = await Promise.all([
         repository.devis.get(devisId),
         repository.entreprise.get(),
+        repository.chantiers.ofDevis(devisId),
       ]);
       if (!alive) return;
       setDevis(d);
       setEntreprise(ent);
+      setChantier(ch);
       setLoaded(true);
     })();
     return () => {
@@ -192,12 +197,15 @@ export default function ApercuDevis({ devisId }: Props) {
           </div>
           <div>
             <h3 className="ap-h3">Chantier</h3>
-            {devis.chantierAdresse ? (
+            {chantier &&
+            (chantier.adresse || chantier.codePostal || chantier.ville) ? (
               <>
-                <p>{devis.chantierAdresse}</p>
-                <p>
-                  {devis.chantierCodePostal} {devis.chantierVille}
-                </p>
+                {chantier.adresse && <p>{chantier.adresse}</p>}
+                {(chantier.codePostal || chantier.ville) && (
+                  <p>
+                    {chantier.codePostal} {chantier.ville}
+                  </p>
+                )}
               </>
             ) : (
               <p className="ap-muted">(Adresse non renseignée)</p>

@@ -225,6 +225,25 @@
 .dee-textarea { min-height: 64px; font-family: var(--ff); resize: vertical; }
 .dee-input-row { display: flex; gap: 6px; align-items: center; }
 
+/* Bloc lecture seule — ex. adresse de chantier dans la modale d'en-tête :
+   l'adresse provient du Chantier parent, non éditable depuis le devis. */
+.dee-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--dee-fill);
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r-sm);
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--dee-ink-2);
+  line-height: 1.4;
+}
+.dee-readonly.is-empty { color: var(--dee-ink-3); font-style: italic; }
+.dee-readonly-strong { font-weight: 600; color: var(--black); }
+.dee-readonly-hint { margin-top: 4px; font-size: 11px; color: var(--dee-ink-3); }
+
 /* ── Grille 3 colonnes ──────────────────────────────────────────── */
 .dee-cols {
   display: grid;

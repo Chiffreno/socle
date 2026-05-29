@@ -36,6 +36,7 @@ import { formatEuro } from "@/lib/devis/format";
 import { STATUT_LABEL } from "@/lib/devis/devis-status";
 import { TAUX_TVA } from "@/lib/devis/types";
 import type {
+  Chantier,
   Client,
   ClientInput,
   ClientSnapshot,
@@ -174,6 +175,7 @@ export default function DevisEditorEngine({ devisId }: Props) {
   const [numero, setNumero] = useState<string | null>(null);
   const [statut, setStatut] = useState<DevisStatut>("brouillon");
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
+  const [chantier, setChantier] = useState<Chantier | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [cur, setCur] = useState<LotId>("demolition");
@@ -215,6 +217,10 @@ export default function DevisEditorEngine({ devisId }: Props) {
             );
             if (firstActive) setCur(firstActive);
           }
+          // Adresse de chantier en lecture seule : on résout le Chantier
+          // parent via la jointure inverse (null si aucun chantierId).
+          const ch = await repository.chantiers.ofDevis(devisId);
+          if (alive) setChantier(ch);
         }
       } finally {
         if (alive) setLoaded(true);
@@ -567,33 +573,31 @@ export default function DevisEditorEngine({ devisId }: Props) {
               }
             />
           </div>
-          <div className="dee-field col-2">
-            <label className="dee-field-label">Chantier — adresse</label>
-            <input
-              className="dee-input"
-              value={draft.chantierAdresse}
-              onChange={(e) =>
-                patchDraft({ chantierAdresse: e.target.value })
-              }
-            />
-          </div>
-          <div className="dee-field">
-            <label className="dee-field-label">Code postal</label>
-            <input
-              className="dee-input"
-              value={draft.chantierCodePostal}
-              onChange={(e) =>
-                patchDraft({ chantierCodePostal: e.target.value })
-              }
-            />
-          </div>
-          <div className="dee-field">
-            <label className="dee-field-label">Ville</label>
-            <input
-              className="dee-input"
-              value={draft.chantierVille}
-              onChange={(e) => patchDraft({ chantierVille: e.target.value })}
-            />
+          {/* Adresse de chantier : lecture seule. Elle vient désormais du
+              Chantier parent (via chantierId), elle ne se saisit plus dans le
+              devis. Le rattachement du chantierId à l'ouverture sera câblé
+              depuis la page Chantier (autre chantier) — pas de sélecteur ici. */}
+          <div className="dee-field col-full">
+            <label className="dee-field-label">Chantier</label>
+            {chantier ? (
+              <div className="dee-readonly">
+                <span className="dee-readonly-strong">{chantier.nom}</span>
+                {chantier.adresse && <span>{chantier.adresse}</span>}
+                {(chantier.codePostal || chantier.ville) && (
+                  <span>
+                    {chantier.codePostal} {chantier.ville}
+                  </span>
+                )}
+                <span className="dee-readonly-hint">
+                  Adresse gérée depuis le chantier — non modifiable ici.
+                </span>
+              </div>
+            ) : (
+              <div className="dee-readonly is-empty">
+                Aucun chantier rattaché. L&apos;adresse proviendra du chantier
+                depuis lequel le devis est ouvert.
+              </div>
+            )}
           </div>
 
           <div className="dee-field">
