@@ -20,6 +20,7 @@ import Link from "next/link";
 import { repository } from "@/lib/devis/repository";
 import { calcEngineTotaux } from "@/lib/devis/engine/totals";
 import { calcItems } from "@/lib/devis/engine/calc-items";
+import { agregerLignesClient } from "@/lib/devis/engine/agregation";
 import {
   LM,
   LOTS_AVEC_GAMME,
@@ -364,6 +365,33 @@ export default function DevisEditorEngine({ devisId }: Props) {
     draft.tvaParDefaut,
     draft.remiseMode,
     draft.remiseValeur,
+    cur,
+  ]);
+
+  // Lignes client agrégées du lot courant (Brique 1) : null si le lot n'a pas
+  // de stratégie (→ rendu legacy ligne-à-ligne). Réutilise le LotTotaux déjà
+  // calculé pour rester cohérent avec le récap.
+  const curLignesClient = useMemo(() => {
+    if (!draft.engine || !totaux) return null;
+    const lt = totaux.parLot.find((l) => l.lotId === cur);
+    if (!lt) return null;
+    return agregerLignesClient(
+      {
+        ...draft.engine,
+        globalSurf: draft.globalSurf ?? 0,
+        tvaParDefaut: draft.tvaParDefaut ?? 10,
+        remiseMode: draft.remiseMode,
+        remiseValeur: draft.remiseValeur,
+      },
+      lt
+    );
+  }, [
+    draft.engine,
+    draft.globalSurf,
+    draft.tvaParDefaut,
+    draft.remiseMode,
+    draft.remiseValeur,
+    totaux,
     cur,
   ]);
 
@@ -897,43 +925,118 @@ export default function DevisEditorEngine({ devisId }: Props) {
 
           {curLot?.on ? (
             <section className="dee-engine-items">
-              <div className="dee-engine-items-head">
-                <span>Lignes du devis pour ce lot</span>
-                <span className="dee-engine-items-head-count">
-                  {curItems.length} ligne{curItems.length > 1 ? "s" : ""}
-                </span>
-              </div>
-              {curItems.length === 0 ? (
-                <div className="dee-engine-items-empty">
-                  Aucune ligne pour l&apos;instant — le configurateur détaillé
-                  du lot arrive en P4.
-                </div>
+              {curLignesClient !== null ? (
+                // ── Rendu AGRÉGÉ (lot pilote) : 1 ligne client par prestation,
+                //    avec disclosure dépliant le détail interne (EngineLigne
+                //    brutes) — visible artisan uniquement, jamais le client.
+                <>
+                  <div className="dee-engine-items-head">
+                    <span>Prestations du lot</span>
+                    <span className="dee-engine-items-head-count">
+                      {curLignesClient.length} prestation
+                      {curLignesClient.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  {curLignesClient.length === 0 ? (
+                    <div className="dee-engine-items-empty">
+                      Aucune prestation pour l&apos;instant — configurez le lot
+                      (configurateur détaillé à venir).
+                    </div>
+                  ) : (
+                    <div className="dee-cli-list">
+                      {curLignesClient.map((lc, i) => (
+                        <details className="dee-cli" key={i}>
+                          <summary className="dee-cli-row">
+                            <span className="dee-cli-caret" aria-hidden="true">
+                              <i className="ti ti-chevron-right" />
+                            </span>
+                            <span className="dee-cli-lbl">
+                              {lc.libelleCommercial}
+                            </span>
+                            <span className="dee-cli-qty">
+                              {lc.qty} {lc.unit}
+                            </span>
+                            <span className="dee-cli-pu">
+                              {formatEuro(lc.prixUnitaireClient)}
+                            </span>
+                            <span className="dee-cli-total">
+                              {formatEuro(lc.prixClient)}
+                            </span>
+                          </summary>
+                          <div className="dee-cli-detail">
+                            <div className="dee-cli-detail-head">
+                              <i className="ti ti-list-details" aria-hidden="true" />
+                              Détail interne — {lc.detailInterne.length} ligne
+                              {lc.detailInterne.length > 1 ? "s" : ""} (liste de
+                              courses, non visible client)
+                            </div>
+                            <table className="dee-cli-detail-table">
+                              <tbody>
+                                {lc.detailInterne.map((it, j) => (
+                                  <tr key={j}>
+                                    <td className="lbl">
+                                      {it.lbl}
+                                      {it.note && <small>{it.note}</small>}
+                                    </td>
+                                    <td className="num">
+                                      {it.qty} {it.unit}
+                                    </td>
+                                    <td className="num">{formatEuro(it.p)}</td>
+                                    <td className="num">
+                                      {formatEuro(it.total)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  )}
+                </>
               ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th style={{ width: "55%" }}>Libellé</th>
-                      <th>Quantité</th>
-                      <th>P.U.</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {curItems.map((it, i) => (
-                      <tr key={i}>
-                        <td className="lbl">
-                          {it.lbl}
-                          {it.note && <small>{it.note}</small>}
-                        </td>
-                        <td className="num">
-                          {it.qty} {it.unit}
-                        </td>
-                        <td className="num">{formatEuro(it.p)}</td>
-                        <td className="num">{formatEuro(it.total)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                // ── Rendu LEGACY (lots non pilotes) : ligne à ligne brute.
+                <>
+                  <div className="dee-engine-items-head">
+                    <span>Lignes du devis pour ce lot</span>
+                    <span className="dee-engine-items-head-count">
+                      {curItems.length} ligne{curItems.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  {curItems.length === 0 ? (
+                    <div className="dee-engine-items-empty">
+                      Aucune ligne pour l&apos;instant — le configurateur
+                      détaillé du lot arrive en P4.
+                    </div>
+                  ) : (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th style={{ width: "55%" }}>Libellé</th>
+                          <th>Quantité</th>
+                          <th>P.U.</th>
+                          <th>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {curItems.map((it, i) => (
+                          <tr key={i}>
+                            <td className="lbl">
+                              {it.lbl}
+                              {it.note && <small>{it.note}</small>}
+                            </td>
+                            <td className="num">
+                              {it.qty} {it.unit}
+                            </td>
+                            <td className="num">{formatEuro(it.p)}</td>
+                            <td className="num">{formatEuro(it.total)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
               )}
             </section>
           ) : (

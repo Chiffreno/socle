@@ -626,6 +626,91 @@
   font-size: 12px;
 }
 
+/* ── Lignes client agrégées + disclosure détail interne (Brique 1) ───── */
+.dee-cli-list { display: flex; flex-direction: column; }
+.dee-cli { border-top: 1px solid var(--dee-line); }
+.dee-cli:first-child { border-top: none; }
+.dee-cli-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition: background .12s;
+}
+.dee-cli-row::-webkit-details-marker { display: none; }
+.dee-cli-row:hover { background: var(--dee-fill-2); }
+.dee-cli[open] .dee-cli-row { background: var(--dee-fill); }
+.dee-cli-caret { display: inline-flex; color: var(--dee-ink-3); }
+.dee-cli-caret .ti { font-size: 16px; transition: transform .15s ease; }
+.dee-cli[open] .dee-cli-caret .ti { transform: rotate(90deg); color: var(--green); }
+.dee-cli-lbl {
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+  min-width: 0;
+}
+.dee-cli-qty, .dee-cli-pu {
+  font-family: var(--num);
+  font-size: 12px;
+  color: var(--dee-ink-2);
+  white-space: nowrap;
+  text-align: right;
+}
+.dee-cli-total {
+  font-family: var(--num);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  white-space: nowrap;
+  text-align: right;
+  min-width: 78px;
+}
+/* Détail interne : fond légèrement contrasté, marqueur "interne" net. */
+.dee-cli-detail {
+  background: var(--dee-fill-2);
+  border-top: 1px dashed var(--dee-line-2);
+  padding: 4px 16px 12px 46px;
+}
+.dee-cli-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 0 7px;
+  font-family: var(--ff);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--dee-ink-3);
+}
+.dee-cli-detail-head .ti { font-size: 14px; }
+.dee-cli-detail-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dee-cli-detail-table td {
+  padding: 5px 10px 5px 0;
+  border-top: 1px solid var(--dee-line);
+  vertical-align: top;
+}
+.dee-cli-detail-table tr:first-child td { border-top: none; }
+.dee-cli-detail-table td.lbl { color: var(--dee-ink-2); }
+.dee-cli-detail-table td.lbl small {
+  display: block;
+  margin-top: 1px;
+  color: var(--dee-ink-3);
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+.dee-cli-detail-table td.num {
+  font-family: var(--num);
+  text-align: right;
+  white-space: nowrap;
+  color: var(--dee-ink-2);
+}
+
 /* Grille champs (modales "Nouveau client" + "En-tête du devis"). */
 .dee-config-grid {
   display: grid;
