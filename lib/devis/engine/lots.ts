@@ -13,25 +13,27 @@ export interface LotMeta {
   id: LotId;
   label: string;
   sub: string;
+  /** Nom d'icône Tabler (sans le préfixe `ti-`), rendu via `<i className="ti ti-…">`. */
+  icon: string;
 }
 
 /** 15 lots, ordre d'affichage sidebar. */
 export const LM: readonly LotMeta[] = [
-  { id: "demolition", label: "Démolition & Protection", sub: "Bennes + protections chantier" },
-  { id: "iti", label: "Isolation ITI", sub: "Système Optima Isover" },
-  { id: "fauxplafond", label: "Faux plafond", sub: "Suspentes + Isolant" },
-  { id: "cloisons", label: "Cloisons BA13", sub: "Ossature métallique" },
-  { id: "elec", label: "Électricité", sub: "Infrastructure + points" },
-  { id: "plombs", label: "Plomberie", sub: "Réseau multicouche" },
-  { id: "peinture", label: "Enduit & Peinture", sub: "Finition murs / plafonds" },
-  { id: "ragreage", label: "Ragréage", sub: "Préparation support sol" },
-  { id: "etancheite", label: "Étanchéité", sub: "Sol & mur — liquide / natte" },
-  { id: "parquet", label: "Parquet", sub: "Pose flottante / collée" },
-  { id: "carrelage", label: "Carrelage", sub: "Sol grès / céramique" },
-  { id: "faience", label: "Faïence", sub: "Revêtement mural" },
-  { id: "menus", label: "Menuiseries int.", sub: "Portes + Plinthes" },
-  { id: "menuext", label: "Menuiseries ext.", sub: "Fenêtres + Volets" },
-  { id: "cuisine", label: "Cuisine", sub: "Meubles + Électroménager" },
+  { id: "demolition", label: "Démolition & Protection", sub: "Bennes + protections chantier", icon: "hammer" },
+  { id: "iti", label: "Isolation ITI", sub: "Système Optima Isover", icon: "temperature-snow" },
+  { id: "fauxplafond", label: "Faux plafond", sub: "Suspentes + Isolant", icon: "layout-board" },
+  { id: "cloisons", label: "Cloisons BA13", sub: "Ossature métallique", icon: "wall" },
+  { id: "elec", label: "Électricité", sub: "Infrastructure + points", icon: "plug" },
+  { id: "plombs", label: "Plomberie", sub: "Réseau multicouche", icon: "droplet" },
+  { id: "peinture", label: "Enduit & Peinture", sub: "Finition murs / plafonds", icon: "brush" },
+  { id: "ragreage", label: "Ragréage", sub: "Préparation support sol", icon: "trowel" },
+  { id: "etancheite", label: "Étanchéité", sub: "Sol & mur — liquide / natte", icon: "umbrella" },
+  { id: "parquet", label: "Parquet", sub: "Pose flottante / collée", icon: "wood" },
+  { id: "carrelage", label: "Carrelage", sub: "Sol grès / céramique", icon: "grid-4x4" },
+  { id: "faience", label: "Faïence", sub: "Revêtement mural", icon: "grid-pattern" },
+  { id: "menus", label: "Menuiseries int.", sub: "Portes + Plinthes", icon: "door" },
+  { id: "menuext", label: "Menuiseries ext.", sub: "Fenêtres + Volets", icon: "window" },
+  { id: "cuisine", label: "Cuisine", sub: "Meubles + Électroménager", icon: "tools-kitchen-2" },
 ];
 
 /** Regroupement par corps d'état (vue récap interne). */

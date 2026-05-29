@@ -327,11 +327,7 @@ function LotTable({
           {lotTotaux ? formatEuro(lotTotaux.caLot) + " HT" : ""}
         </span>
       </div>
-      {items.length === 0 ? (
-        <p className="ap-muted">
-          Lot actif sans configuration — aucune ligne.
-        </p>
-      ) : (
+      {items.length === 0 ? null : (
         <table className="ap-lot-items">
           <thead>
             <tr>

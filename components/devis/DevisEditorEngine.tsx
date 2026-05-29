@@ -66,6 +66,11 @@ const isoPlusDays = (baseISO: string, n: number) => {
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
 };
+const formatDateFr = (iso: string | null | undefined): string => {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return y && m && d ? `${d}/${m}/${y}` : iso;
+};
 
 function emptyClientForm(): ClientInput {
   return {
@@ -172,7 +177,7 @@ export default function DevisEditorEngine({ devisId }: Props) {
   const [clients, setClients] = useState<Client[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [cur, setCur] = useState<LotId>("demolition");
-  const [enteteOpen, setEnteteOpen] = useState(false);
+  const [enteteModal, setEnteteModal] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [, setTick] = useState(0);
@@ -297,10 +302,19 @@ export default function DevisEditorEngine({ devisId }: Props) {
     scheduleSave();
   }
 
-  // Option B : 2 zones de clic distinctes sur chaque lot.
+  // Activation dissociée :
+  // - Clic sur la ligne du lot → sélectionne ET active (jamais de toggle :
+  //   recliquer un lot déjà actif ne le désactive pas). On ne patche `on`
+  //   que s'il n'était pas déjà actif (évite une sauvegarde inutile).
+  // - La case à cocher → sert UNIQUEMENT à retirer le lot (décocher = on:false).
+  //   La config (surf/marge/MO/options/points/custom) est préservée : seul
+  //   `lot.on` change, recliquer/recocher récupère tout.
+  function onLotClick(lid: LotId) {
+    setCur(lid);
+    if (!draft.engine?.lots?.[lid]?.on) patchLot(lid, { on: true });
+  }
   function onLotCheck(lid: LotId, checked: boolean) {
     patchLot(lid, { on: checked });
-    // Cocher → sélectionne aussi. Décocher → reste sur le lot (vide).
     if (checked) setCur(lid);
   }
 
@@ -400,6 +414,15 @@ export default function DevisEditorEngine({ devisId }: Props) {
   const curLot = draft.engine?.lots?.[cur];
   const lotMeta = LM.find((l) => l.id === cur)!;
 
+  // Résumé affiché dans la barre d'en-tête (repliée) pour donner le contexte
+  // d'un coup d'œil sans déplier.
+  const clientNom = draft.clientSnapshot
+    ? [draft.clientSnapshot.prenom, draft.clientSnapshot.nom]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || draft.clientSnapshot.nom
+    : null;
+
   return (
     <div className="dee-shell">
       {totaux?.tauxHoraireManquant && (
@@ -416,6 +439,30 @@ export default function DevisEditorEngine({ devisId }: Props) {
           <i className="ti ti-chevron-left" /> Devis
         </Link>
         <span className="dee-topbar-num">{numero ?? "—"}</span>
+        <button
+          type="button"
+          className="dee-entete-btn"
+          onClick={() => setEnteteModal(true)}
+          title="Ouvrir l'en-tête du devis"
+        >
+          <i className="ti ti-clipboard-text dee-entete-btn-icon" aria-hidden="true" />
+          {clientNom ? (
+            <span className="dee-entete-btn-summary">
+              <span>
+                <em>Client</em> {clientNom}
+              </span>
+              <span>
+                <em>Validité</em> {formatDateFr(draft.dateValidite)}
+              </span>
+              <span>
+                <em>Acompte</em> {draft.acomptePct}&nbsp;%
+              </span>
+            </span>
+          ) : (
+            <span className="dee-entete-btn-label">En-tête du devis</span>
+          )}
+          <i className="ti ti-pencil dee-entete-btn-edit" aria-hidden="true" />
+        </button>
         <input
           className="dee-topbar-titre"
           value={draft.titre}
@@ -456,16 +503,18 @@ export default function DevisEditorEngine({ devisId }: Props) {
         </div>
       </header>
 
-      <details
-        className="dee-entete"
-        open={enteteOpen}
-        onToggle={(e) =>
-          setEnteteOpen((e.currentTarget as HTMLDetailsElement).open)
-        }
-      >
-        <summary>En-tête du devis</summary>
-        <div className="dee-entete-body">
-          <div className="dee-field col-2">
+      {enteteModal && (
+        <div className="dee-modal-bg" onClick={() => setEnteteModal(false)}>
+          <div
+            className="dee-modal dee-modal-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>
+              <i className="ti ti-clipboard-text" aria-hidden="true" /> En-tête
+              du devis
+            </h3>
+            <div className="dee-config-grid">
+              <div className="dee-field col-full">
             <label className="dee-field-label">Client</label>
             <div className="dee-input-row">
               <select
@@ -488,6 +537,15 @@ export default function DevisEditorEngine({ devisId }: Props) {
                 + Nouveau
               </button>
             </div>
+          </div>
+          <div className="dee-field col-full">
+            <label className="dee-field-label">Titre du devis</label>
+            <input
+              className="dee-input"
+              value={draft.titre}
+              onChange={(e) => patchDraft({ titre: e.target.value })}
+              placeholder="Ex. Rénovation appartement — 45 m²"
+            />
           </div>
           <div className="dee-field">
             <label className="dee-field-label">Date création</label>
@@ -635,13 +693,27 @@ export default function DevisEditorEngine({ devisId }: Props) {
               placeholder="Notes pour vous : devis envoyé après visite, négocier la cuisine…"
             />
           </div>
+            </div>
+            <div className="dee-modal-actions">
+              <button
+                type="button"
+                className="dee-btn dee-btn-primary"
+                onClick={() => setEnteteModal(false)}
+              >
+                Terminé
+              </button>
+            </div>
+          </div>
         </div>
-      </details>
+      )}
 
       <main className="dee-cols">
         {/* ── COLONNE GAUCHE : 15 lots (Option B : check + nom) ──── */}
         <aside className="dee-cols-left">
-          <div className="dee-cols-left-title">Lots du devis</div>
+          <div className="dee-col-head">
+            <i className="ti ti-layout-list" aria-hidden="true" />
+            <span>Lots du devis</span>
+          </div>
           <ul className="dee-lot-list">
             {LM.map((meta) => {
               const lt = totaux?.parLot.find((l) => l.lotId === meta.id);
@@ -656,10 +728,18 @@ export default function DevisEditorEngine({ devisId }: Props) {
                     className={`dee-lot-row${isOn ? " is-on" : ""}${
                       isCurrent ? " is-current" : ""
                     }`}
+                    onClick={() => onLotClick(meta.id)}
                   >
                     <label
                       className="dee-lot-check"
-                      aria-label={`Inclure ${meta.label} dans le devis`}
+                      aria-label={
+                        isOn
+                          ? `Retirer ${meta.label} du devis`
+                          : `Inclure ${meta.label} dans le devis`
+                      }
+                      // La case ne sert qu'à retirer le lot : on stoppe la
+                      // propagation pour que le clic ne ré-active pas via la ligne.
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <input
                         type="checkbox"
@@ -671,12 +751,20 @@ export default function DevisEditorEngine({ devisId }: Props) {
                     <button
                       type="button"
                       className="dee-lot-name"
-                      onClick={() => setCur(meta.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLotClick(meta.id);
+                      }}
                     >
-                      <span className="dee-lot-label">{meta.label}</span>
-                      {meta.sub && (
-                        <span className="dee-lot-sub">{meta.sub}</span>
-                      )}
+                      <span className="dee-lot-icon" aria-hidden="true">
+                        <i className={`ti ti-${meta.icon}`} />
+                      </span>
+                      <span className="dee-lot-text">
+                        <span className="dee-lot-label">{meta.label}</span>
+                        {meta.sub && (
+                          <span className="dee-lot-sub">{meta.sub}</span>
+                        )}
+                      </span>
                     </button>
                     {hasMontant && lt && (
                       <span className="dee-lot-total">
@@ -852,9 +940,27 @@ export default function DevisEditorEngine({ devisId }: Props) {
 
         {/* ── COLONNE DROITE : récap temps réel ──────────────── */}
         <aside className="dee-cols-right">
-          <h3 className="dee-recap-title">Récap client</h3>
+          <div className="dee-col-head">
+            <i className="ti ti-report-money" aria-hidden="true" />
+            <span>Récapitulatif</span>
+          </div>
           {totaux && (
             <>
+              <div className="dee-stat-cards">
+                <div className="dee-stat-card">
+                  <div className="dee-stat-label">Total HT</div>
+                  <div className="dee-stat-value">
+                    {formatEuro(totaux.totalHT)}
+                  </div>
+                </div>
+                <div className="dee-stat-card is-primary">
+                  <div className="dee-stat-label">Total TTC</div>
+                  <div className="dee-stat-value">
+                    {formatEuro(totaux.totalTTC)}
+                  </div>
+                </div>
+              </div>
+
               <dl className="dee-recap-list">
                 <dt>Sous-total HT</dt>
                 <dd>{formatEuro(totaux.subTotalHT)}</dd>
@@ -864,8 +970,6 @@ export default function DevisEditorEngine({ devisId }: Props) {
                     <dd>−{formatEuro(totaux.remiseHT)}</dd>
                   </>
                 )}
-                <dt className="strong">Total HT</dt>
-                <dd className="strong">{formatEuro(totaux.totalHT)}</dd>
                 {Object.entries(totaux.ventilationTVA)
                   .sort(([a], [b]) => Number(a) - Number(b))
                   .map(([taux, m]) => (
@@ -874,12 +978,13 @@ export default function DevisEditorEngine({ devisId }: Props) {
                       <dd>{formatEuro(m)}</dd>
                     </Fragment>
                   ))}
-                <dt className="big strong">Total TTC</dt>
-                <dd className="green-big">{formatEuro(totaux.totalTTC)}</dd>
               </dl>
 
               <hr className="dee-recap-divider" />
-              <h3 className="dee-recap-title">Récap interne (artisan)</h3>
+              <h3 className="dee-recap-subtitle">
+                <i className="ti ti-tools" aria-hidden="true" />
+                Récap interne (artisan)
+              </h3>
 
               {totaux.tauxHoraireManquant && (
                 <div className="dee-alert">

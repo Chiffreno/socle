@@ -28,6 +28,11 @@
   /* Polices — mappées sur next/font */
   --ff:   var(--font-figtree), "Figtree", sans-serif;
   --mono: var(--font-dm-mono), "DM Mono", monospace;
+  /* Police des chiffres (montants, totaux, quantités, %). Introduite pour le
+     chantier langage visuel : pour l'instant CONSOMMÉE PAR L'ÉDITEUR DE DEVIS
+     uniquement (--mono/DM Mono reste en place ailleurs). Sera étendue au reste
+     de l'app après validation de la direction. */
+  --num:  var(--font-space-grotesk), "Space Grotesk", sans-serif;
 }
 
 /* ─── Reset global ─── */
