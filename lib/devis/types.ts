@@ -215,18 +215,9 @@ export interface Devis {
   statut: DevisStatut;
   dateCreation: string; // ISO date (YYYY-MM-DD)
   dateValidite: string | null;
-  /** FK vers le Chantier parent. L'adresse de chantier provient désormais du
-   *  Chantier (cf. `chantierAdresse/CodePostal/Ville` @deprecated ci-dessous). */
+  /** FK vers le Chantier parent. L'adresse de chantier est portée par le
+   *  Chantier (le Devis ne stocke plus d'adresse). */
   chantierId: string;
-  /** @deprecated — l'adresse vient désormais du `Chantier` parent. DETTE :
-   *  conservé temporairement car l'éditeur (components/devis/*) lit encore ces
-   *  champs ; ils seront retirés du type par l'éditeur lors de sa resync, une
-   *  fois qu'il lira l'adresse depuis le Chantier. */
-  chantierAdresse: string;
-  /** @deprecated — voir `chantierAdresse`. À retirer par l'éditeur (resync). */
-  chantierCodePostal: string;
-  /** @deprecated — voir `chantierAdresse`. À retirer par l'éditeur (resync). */
-  chantierVille: string;
   /** Surface chantier (m²). Sync'd vers `engine.globalSurf` à chaque
    *  écriture par le repository. */
   globalSurf: number;

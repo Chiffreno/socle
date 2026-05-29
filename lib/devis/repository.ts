@@ -206,11 +206,6 @@ function normalizeDevis(raw: unknown): Devis {
     dateCreation: asString(r.dateCreation, todayISO()) || todayISO(),
     dateValidite: typeof r.dateValidite === "string" ? r.dateValidite : null,
     chantierId: asString(r.chantierId),
-    // @deprecated — adresse désormais portée par le Chantier parent. Conservé
-    // tant que l'éditeur n'a pas resync (cf. types.ts).
-    chantierAdresse: asString(r.chantierAdresse),
-    chantierCodePostal: asString(r.chantierCodePostal),
-    chantierVille: asString(r.chantierVille),
     globalSurf,
     tvaParDefaut,
     engine,

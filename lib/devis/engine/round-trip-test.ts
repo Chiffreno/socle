@@ -154,9 +154,6 @@ const devisBefore = {
   statut: "brouillon" as const,
   dateCreation: "2026-05-28",
   dateValidite: "2026-06-27",
-  chantierAdresse: "1 rue de Test",
-  chantierCodePostal: "75001",
-  chantierVille: "Paris",
   globalSurf: 43,
   tvaParDefaut: 10,
   engine,
@@ -274,7 +271,6 @@ assert(
 console.log("\n  [2] En-tête du devis intégralement préservé");
 for (const key of [
   "id", "numero", "titre", "statut", "dateCreation", "dateValidite",
-  "chantierAdresse", "chantierCodePostal", "chantierVille",
   "globalSurf", "tvaParDefaut", "acomptePct", "lettreIntro", "notesInternes",
   "detailMatPose", "remiseMode", "remiseValeur",
 ] as const) {

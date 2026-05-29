@@ -100,8 +100,8 @@ export default function ChantierDossierPage() {
     if (!chantier) return;
     setCreating(true);
     // Create-then-edit : on crée le devis rattaché (chantierId), puis on ouvre
-    // l'éditeur par id. Les champs adresse @deprecated restent vides : l'adresse
-    // est portée par le Chantier (l'éditeur la lit via chantiers.ofDevis).
+    // l'éditeur par id. L'adresse est portée par le Chantier (l'éditeur la lit
+    // via chantiers.ofDevis) — le Devis ne stocke plus d'adresse.
     const input: DevisInput = {
       clientId: chantier.clientId,
       clientSnapshot: buildSnapshot(client),
@@ -109,9 +109,6 @@ export default function ChantierDossierPage() {
       statut: "brouillon",
       dateCreation: todayISO(),
       dateValidite: null,
-      chantierAdresse: "",
-      chantierCodePostal: "",
-      chantierVille: "",
       chantierId: chantier.id,
       lots: [],
       acomptePct: 30,
