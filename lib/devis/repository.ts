@@ -19,6 +19,8 @@ import { normalizeEngine } from "./engine/normalize";
 import type { EngineState } from "./engine/types";
 import { allocateNumero } from "./numerotation";
 import type {
+  Chantier,
+  ChantierInput,
   Client,
   ClientInput,
   Devis,
@@ -26,6 +28,8 @@ import type {
   DevisStatut,
   Entreprise,
   EntrepriseInput,
+  Facture,
+  FactureInput,
   Lot,
   RemiseMode,
   TauxTVA,
@@ -48,18 +52,44 @@ export interface EntrepriseRepository {
 export interface DevisRepository extends CrudRepository<Devis, DevisInput> {
   getByStatut(statut: DevisStatut): Promise<Devis[]>;
   updateStatut(id: string, statut: DevisStatut): Promise<Devis>;
+  /** Jointure : tous les devis rattachés à un chantier. */
+  listByChantier(chantierId: string): Promise<Devis[]>;
+}
+
+export interface ChantierRepository extends CrudRepository<Chantier, ChantierInput> {
+  /** Jointure inverse : le chantier portant ce devis (ou null). */
+  ofDevis(devisId: string): Promise<Chantier | null>;
+}
+
+/** Modèle seul : création/lecture suffisent à poser le storage (pas d'UI). */
+export interface FactureRepository {
+  list(): Promise<Facture[]>;
+  get(id: string): Promise<Facture | null>;
+  create(data: FactureInput): Promise<Facture>;
 }
 
 export interface Repository {
   entreprise: EntrepriseRepository;
   clients: CrudRepository<Client, ClientInput>;
   devis: DevisRepository;
+  chantiers: ChantierRepository;
+  factures: FactureRepository;
 }
 
 // ─── Clés de stockage ───
 const KEY_ENTREPRISE = "socle_entreprise";
 const KEY_CLIENTS = "socle_clients";
 const KEY_DEVIS = "socle_devis";
+const KEY_DEVIS_SEQ = "socle_devis_seq";
+const KEY_CHANTIERS = "socle_chantiers";
+const KEY_FACTURES = "socle_factures";
+
+// ─── Versionnage de schéma (reset one-shot) ───
+const KEY_SCHEMA_VERSION = "socle_schema_version";
+// v2 = passage au modèle Chantier (devis.chantierId, adresse portée par le
+// Chantier). Les devis v1 étaient des données de test sans chantier : on
+// repart d'un storage devis propre (purge active, une seule fois).
+const SCHEMA_VERSION = "2";
 
 // ─── Helpers localStorage ───
 function ensureBrowser(): Storage {
@@ -71,7 +101,25 @@ function ensureBrowser(): Storage {
   return window.localStorage;
 }
 
+/**
+ * Migration de schéma one-shot, gardée par un flag de version. S'exécute une
+ * seule fois (puis court-circuit) et purge ACTIVEMENT le localStorage — pas un
+ * simple « on ne lit plus » — pour ne pas laisser d'anciens devis coincés.
+ *
+ * v1 → v2 : les devis de test (sans `chantierId`) sont supprimés ; le compteur
+ * de numérotation est remis à zéro. Accès direct au store (pas via readJSON/
+ * writeJSON) pour éviter toute récursion.
+ */
+function ensureSchemaMigration(): void {
+  const store = ensureBrowser();
+  if (store.getItem(KEY_SCHEMA_VERSION) === SCHEMA_VERSION) return;
+  store.removeItem(KEY_DEVIS);
+  store.removeItem(KEY_DEVIS_SEQ);
+  store.setItem(KEY_SCHEMA_VERSION, SCHEMA_VERSION);
+}
+
 function readJSON<T>(key: string, fallback: T): T {
+  ensureSchemaMigration();
   const store = ensureBrowser();
   try {
     const raw = store.getItem(key);
@@ -82,6 +130,7 @@ function readJSON<T>(key: string, fallback: T): T {
 }
 
 function writeJSON(key: string, value: unknown): void {
+  ensureSchemaMigration();
   ensureBrowser().setItem(key, JSON.stringify(value));
 }
 
@@ -156,6 +205,9 @@ function normalizeDevis(raw: unknown): Devis {
     statut: ((r.statut as DevisStatut) || "brouillon") as DevisStatut,
     dateCreation: asString(r.dateCreation, todayISO()) || todayISO(),
     dateValidite: typeof r.dateValidite === "string" ? r.dateValidite : null,
+    chantierId: asString(r.chantierId),
+    // @deprecated — adresse désormais portée par le Chantier parent. Conservé
+    // tant que l'éditeur n'a pas resync (cf. types.ts).
     chantierAdresse: asString(r.chantierAdresse),
     chantierCodePostal: asString(r.chantierCodePostal),
     chantierVille: asString(r.chantierVille),
@@ -293,6 +345,11 @@ const devisRepo: DevisRepository = {
       .map(normalizeDevis)
       .filter((d) => d.statut === statut);
   },
+  async listByChantier(chantierId) {
+    return readDevisRaw()
+      .map(normalizeDevis)
+      .filter((d) => d.chantierId === chantierId);
+  },
   async create(data) {
     const list = readDevisRaw().map(normalizeDevis);
     // Défauts neutres pour les 3 champs P2 si l'appelant (ancien
@@ -311,6 +368,7 @@ const devisRepo: DevisRepository = {
       });
     const base: Devis = await withTotaux({
       ...data,
+      chantierId: data.chantierId ?? "",
       globalSurf,
       tvaParDefaut,
       engine,
@@ -357,8 +415,82 @@ const devisRepo: DevisRepository = {
   },
 };
 
+// ─── Chantiers ───
+const chantiersRepo: ChantierRepository = {
+  async list() {
+    return readJSON<Chantier[]>(KEY_CHANTIERS, []);
+  },
+  async get(id) {
+    return (
+      readJSON<Chantier[]>(KEY_CHANTIERS, []).find((c) => c.id === id) ?? null
+    );
+  },
+  async create(data) {
+    const chantiers = readJSON<Chantier[]>(KEY_CHANTIERS, []);
+    const record: Chantier = {
+      ...data,
+      id: uid(),
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+    };
+    writeJSON(KEY_CHANTIERS, [...chantiers, record]);
+    return record;
+  },
+  async update(id, data) {
+    const chantiers = readJSON<Chantier[]>(KEY_CHANTIERS, []);
+    const idx = chantiers.findIndex((c) => c.id === id);
+    if (idx === -1) throw new Error(`[devis] chantier introuvable: ${id}`);
+    const record: Chantier = {
+      ...chantiers[idx],
+      ...data,
+      id,
+      updatedAt: nowISO(),
+    };
+    chantiers[idx] = record;
+    writeJSON(KEY_CHANTIERS, chantiers);
+    return record;
+  },
+  async delete(id) {
+    const chantiers = readJSON<Chantier[]>(KEY_CHANTIERS, []);
+    writeJSON(
+      KEY_CHANTIERS,
+      chantiers.filter((c) => c.id !== id)
+    );
+  },
+  async ofDevis(devisId) {
+    const devis = await devisRepo.get(devisId);
+    if (!devis || !devis.chantierId) return null;
+    return chantiersRepo.get(devis.chantierId);
+  },
+};
+
+// ─── Factures (modèle seul — create/list/get, aucune UI ni calcul) ───
+const facturesRepo: FactureRepository = {
+  async list() {
+    return readJSON<Facture[]>(KEY_FACTURES, []);
+  },
+  async get(id) {
+    return (
+      readJSON<Facture[]>(KEY_FACTURES, []).find((f) => f.id === id) ?? null
+    );
+  },
+  async create(data) {
+    const factures = readJSON<Facture[]>(KEY_FACTURES, []);
+    const record: Facture = {
+      ...data,
+      id: uid(),
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+    };
+    writeJSON(KEY_FACTURES, [...factures, record]);
+    return record;
+  },
+};
+
 export const repository: Repository = {
   entreprise: entrepriseRepo,
   clients: clientsRepo,
   devis: devisRepo,
+  chantiers: chantiersRepo,
+  factures: facturesRepo,
 };

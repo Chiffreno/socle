@@ -128,6 +128,53 @@ export interface ClientSnapshot {
   siren: string;
 }
 
+// ─── Chantier ───
+// Contenant métier : un chantier regroupe un ou plusieurs devis (et, à terme,
+// des factures). L'adresse de chantier vit ici (et non plus sur le Devis).
+export type ChantierStatut = "actif" | "clos";
+
+export interface Chantier {
+  id: string;
+  nom: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  /** FK Client : un seul client (maître d'ouvrage) par chantier. */
+  clientId: string | null;
+  dateCreation: string; // ISO date (YYYY-MM-DD)
+  dateDebut: string | null;
+  dateFin: string | null;
+  statut: ChantierStatut;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export type ChantierInput = Omit<Chantier, "id" | "createdAt" | "updatedAt">;
+
+// ─── Facture (MODÈLE SEUL — aucune UI, aucun calcul ici) ───
+// Posé maintenant pour ne pas re-migrer le storage plus tard. La logique de
+// facturation (acompte / situations / solde) viendra au temps 2.
+export type FactureType = "acompte" | "situation" | "solde";
+export type FactureStatut = "emise" | "payee";
+
+export interface Facture {
+  id: string;
+  numero: string;
+  /** FK Chantier parent. */
+  chantierId: string;
+  /** FK Devis source de la facture. */
+  devisId: string;
+  type: FactureType;
+  montantHT: number;
+  montantTVA: number;
+  montantTTC: number;
+  dateEmission: string; // ISO date (YYYY-MM-DD)
+  statut: FactureStatut;
+  createdAt: string;
+  updatedAt: string;
+}
+export type FactureInput = Omit<Facture, "id" | "createdAt" | "updatedAt">;
+
 // ─── @deprecated — modèle C1 ligne-par-ligne ───
 // Conservé en P2 pour ne pas casser DevisEditor/ApercuDevis. Sera supprimé
 // en P3 quand l'UI bascule sur le configurateur de lots ChiffReno. Les
@@ -168,8 +215,17 @@ export interface Devis {
   statut: DevisStatut;
   dateCreation: string; // ISO date (YYYY-MM-DD)
   dateValidite: string | null;
+  /** FK vers le Chantier parent. L'adresse de chantier provient désormais du
+   *  Chantier (cf. `chantierAdresse/CodePostal/Ville` @deprecated ci-dessous). */
+  chantierId: string;
+  /** @deprecated — l'adresse vient désormais du `Chantier` parent. DETTE :
+   *  conservé temporairement car l'éditeur (components/devis/*) lit encore ces
+   *  champs ; ils seront retirés du type par l'éditeur lors de sa resync, une
+   *  fois qu'il lira l'adresse depuis le Chantier. */
   chantierAdresse: string;
+  /** @deprecated — voir `chantierAdresse`. À retirer par l'éditeur (resync). */
   chantierCodePostal: string;
+  /** @deprecated — voir `chantierAdresse`. À retirer par l'éditeur (resync). */
   chantierVille: string;
   /** Surface chantier (m²). Sync'd vers `engine.globalSurf` à chaque
    *  écriture par le repository. */
@@ -225,5 +281,6 @@ export type DevisInput = Omit<
   | "globalSurf"
   | "tvaParDefaut"
   | "engine"
+  | "chantierId"
 > &
-  Partial<Pick<Devis, "globalSurf" | "tvaParDefaut" | "engine">>;
+  Partial<Pick<Devis, "globalSurf" | "tvaParDefaut" | "engine" | "chantierId">>;
