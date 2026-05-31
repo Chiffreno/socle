@@ -396,6 +396,8 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
         const nm = Math.round(m2 * 1.7) * (dbl ? 2 : 1);
         const net = m2 * peaux;
         const brut = chuted(net, chute);
+        // Bande à joint : 3 ml par m² de placo posé (ratio métier), unité ml.
+        const mlBande = Math.round(m2 * 3 * 10) / 10;
 
         const zoneItems: EngineLigne[] = [
           _row(rk, nr, `Rails ${railLbl} — ${lbl} — ${nr} ml`, "ml"),
@@ -403,7 +405,7 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
           _row("bande_acou", nr, `Bande acoustique sous rails — ${lbl} — ${nr} ml`, "ml"),
           _hrow(`ba13_${seg.type}`, brut, `${lbl} — ${peaux === 4 ? "double peau (4 faces)" : "simple peau (2 faces)"} × ${m2} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute)`),
           _row("visserie_cloison", m2, `Visserie — ${lbl}`, "m²"),
-          _row("bande_joint", net, `Bandes à joint — ${lbl}`, "m²"),
+          _row("bande_joint", mlBande, `Bandes à joint — ${lbl} — ${mlBande} ml`, "ml"),
           _row("enduit_bande", net, `Enduit de bande — ${lbl}`, "m²"),
         ];
         // Isolant : type lv/lr, épaisseur DÉRIVÉE de l'ossature.

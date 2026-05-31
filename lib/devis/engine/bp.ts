@@ -25,7 +25,8 @@ export const BP: Record<string, number> = {
   // M70→70, M90→90). lv = laine de verre, lr = laine de roche.
   lv45: 3.5, lv70: 5.5, lv90: 7.0,
   lr45: 5.0, lr70: 7.0, lr90: 8.5,
-  visserie_cloison: 0.4, bande_joint: 0.35, enduit_bande: 1.20,
+  // bande_joint en €/ml (3 ml/m² de placo) ; enduit_bande en €/m².
+  visserie_cloison: 0.4, bande_joint: 0.23, enduit_bande: 1.20,
 
   // ─── ÉLECTRICITÉ — infrastructure (nouveau modèle SOCLE, à calibrer) ───
   elec_tableau_1r: 280, elec_tableau_2r: 380, elec_tableau_3r: 480,

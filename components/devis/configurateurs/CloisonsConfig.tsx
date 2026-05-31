@@ -134,6 +134,9 @@ export default function CloisonsConfig({
     dbl: false,
     m2: 0,
   });
+  // Box dépliée tant qu'aucune ligne, repliée dès qu'il y en a (dérivé au
+  // montage) ; l'artisan peut replier/déplier manuellement ensuite.
+  const [boxOpen, setBoxOpen] = useState(() => segments.length === 0);
   const lcById = new Map(lignesClient.map((lc) => [lc.segmentId, lc]));
 
   function add() {
@@ -144,9 +147,24 @@ export default function CloisonsConfig({
 
   return (
     <div className="dee-cfg">
-      {/* ── Box de configuration ────────────────────────────── */}
-      <div className="dee-cfg-box">
-        <div className="dee-cfg-box-grid">
+      {/* ── Box de configuration (collapsable) ──────────────── */}
+      <div className={`dee-cfg-box${boxOpen ? "" : " is-collapsed"}`}>
+        <button
+          type="button"
+          className="dee-cfg-box-head"
+          onClick={() => setBoxOpen((o) => !o)}
+          aria-expanded={boxOpen}
+        >
+          <i className="ti ti-tools dee-cfg-box-head-ic" aria-hidden="true" />
+          <span className="dee-cfg-box-title">Configurer une cloison</span>
+          <i
+            className={`ti ti-chevron-${boxOpen ? "up" : "down"} dee-cfg-box-caret`}
+            aria-hidden="true"
+          />
+        </button>
+        {boxOpen && (
+          <div className="dee-cfg-box-body">
+            <div className="dee-cfg-box-grid">
           <Pills label="Type" options={TYPES} value={draft.type} onChange={(v) => setDraft((d) => ({ ...d, type: v }))} />
           <Pills label="Ossature" options={OSS} value={draft.oss} onChange={(v) => setDraft((d) => ({ ...d, oss: v }))} />
           <Pills
@@ -182,7 +200,9 @@ export default function CloisonsConfig({
           <button type="button" className="dee-cfg-add" onClick={add} disabled={draft.m2 <= 0}>
             <i className="ti ti-plus" aria-hidden="true" /> Ajouter au devis
           </button>
-        </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Liste des segments ───────────────────────────────── */}

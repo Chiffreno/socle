@@ -205,12 +205,12 @@ console.log("\n  [1] MARGE OPTION A — exemple chiffré sur lot Cloisons");
 {
   const c = byId.cloisons;
   // Détail calcul attendu :
-  //   matériaux déboursé = 422.25 € (porté de ChiffReno)
+  //   matériaux déboursé = 422.00 € (bande_joint en ml : 75 ml × 0,23)
   //   MO = 12h × 45 = 540 €
-  //   (mat + MO) = 962.25 €
-  //   × (1 + 30%) = 1 251.93 €  (round2)
-  //   margeDeboursé = 1 251.93 − 962.25 = 289.68 €
-  const expectedDeboursé = 422.25;
+  //   (mat + MO) = 962.00 €
+  //   × (1 + 30%) = 1 250.60 €  (round2)
+  //   margeDeboursé = 1 250.60 − 962.00 = 288.60 €
+  const expectedDeboursé = 422.0;
   const expectedMO = 540;
   const expectedCA = round2((expectedDeboursé + expectedMO) * 1.3);
   const expectedMarge = round2(expectedCA - expectedDeboursé - expectedMO);

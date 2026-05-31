@@ -757,14 +757,43 @@
   font-weight: 600;
 }
 
-/* Box de configuration (carte d'ajout) */
+/* Box de configuration (carte d'ajout, collapsable) */
 .dee-cfg-box {
   background: var(--white);
   border: 1px solid var(--dee-line);
   border-radius: var(--dee-r);
   box-shadow: var(--dee-shadow-card);
-  padding: 14px 16px;
+  overflow: hidden;
 }
+.dee-cfg-box-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 11px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--ff);
+  text-align: left;
+  transition: background .12s;
+}
+.dee-cfg-box-head:hover { background: var(--dee-fill-2); }
+.dee-cfg-box:not(.is-collapsed) .dee-cfg-box-head {
+  border-bottom: 1px solid var(--dee-line);
+}
+.dee-cfg-box-head-ic { color: var(--green); font-size: 16px; }
+.dee-cfg-box-title {
+  flex: 1;
+  font-family: var(--ff);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--dee-ink-2);
+}
+.dee-cfg-box-caret { font-size: 16px; color: var(--dee-ink-3); }
+.dee-cfg-box-body { padding: 14px 16px; }
 .dee-cfg-box-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
