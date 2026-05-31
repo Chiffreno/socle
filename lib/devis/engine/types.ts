@@ -97,6 +97,35 @@ export interface EngineLigne {
   tva?: TauxTVA;
 }
 
+// ─── Cloisons : modèle "segments" (o.lignes) ─────────────────────────
+export type CloisonType = "std" | "hydro" | "hd" | "feu" | "libre";
+export type CloisonOss = "m48" | "m70" | "m90";
+/** Isolant : type seul ; l'épaisseur est dérivée de l'ossature (M48→45, M70→70, M90→90). */
+export type CloisonIso = "non" | "lv" | "lr";
+
+/**
+ * Une ligne de cloison configurée par l'artisan. `cloisons.o.lignes` est un
+ * tableau de segments (remplace les 4 slots fixes std/hydro/hd/feu).
+ * Cumul : deux segments de config identique (type+oss+isolant+peaux+dbl)
+ * sont fusionnés (m² additionnés) côté UI.
+ */
+export interface CloisonSegment {
+  /** Id stable (clé React, groupId moteur, cible du cumul). */
+  id: string;
+  type: CloisonType;
+  oss: CloisonOss;
+  isolant: CloisonIso;
+  peaux: "2" | "4";
+  dbl: boolean;
+  m2: number;
+  /** Surcharge du PU client au m² (override-aware). Pour `libre` : prix unitaire. */
+  puOverride?: number;
+  /** `libre` uniquement : libellé manuel. */
+  lbl?: string;
+  /** `libre` uniquement : unité (défaut "u"). */
+  unit?: string;
+}
+
 /** État global piloté par l'éditeur, lu par le moteur. */
 export interface EngineState {
   globalSurf: number;

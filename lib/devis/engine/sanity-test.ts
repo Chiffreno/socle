@@ -72,11 +72,9 @@ state.lots.cloisons.on = true;
 state.lots.cloisons.m = 30;
 state.lots.cloisons.tempsMoHeures = 12;
 Object.assign(state.lots.cloisons.o, {
-  std_on: true,
-  std_m2: 25,
-  std_oss: "m48",
-  std_peaux: "2",
-  std_acou: "non",
+  lignes: [
+    { id: "seg_std", type: "std", oss: "m48", isolant: "non", peaux: "2", dbl: false, m2: 25 },
+  ],
   chute: 5,
 });
 
@@ -344,11 +342,9 @@ console.log("\n  [6] REMISE GLOBALE — modes pourcent / euros / cap");
   stateE.lots.cloisons.m = 30;
   stateE.lots.cloisons.tempsMoHeures = 12;
   Object.assign(stateE.lots.cloisons.o, {
-    std_on: true,
-    std_m2: 25,
-    std_oss: "m48",
-    std_peaux: "2",
-    std_acou: "non",
+    lignes: [
+      { id: "seg_std", type: "std", oss: "m48", isolant: "non", peaux: "2", dbl: false, m2: 25 },
+    ],
     chute: 5,
   });
   const TE = calcEngineTotaux(stateE, TAUX_HORAIRE);
@@ -365,11 +361,9 @@ console.log("\n  [6] REMISE GLOBALE — modes pourcent / euros / cap");
   });
   stateCap.lots.cloisons.on = true;
   Object.assign(stateCap.lots.cloisons.o, {
-    std_on: true,
-    std_m2: 25,
-    std_oss: "m48",
-    std_peaux: "2",
-    std_acou: "non",
+    lignes: [
+      { id: "seg_std", type: "std", oss: "m48", isolant: "non", peaux: "2", dbl: false, m2: 25 },
+    ],
     chute: 5,
   });
   const TCap = calcEngineTotaux(stateCap, 0);
@@ -387,11 +381,9 @@ console.log("\n  [6] REMISE GLOBALE — modes pourcent / euros / cap");
   });
   stateCap2.lots.cloisons.on = true;
   Object.assign(stateCap2.lots.cloisons.o, {
-    std_on: true,
-    std_m2: 25,
-    std_oss: "m48",
-    std_peaux: "2",
-    std_acou: "non",
+    lignes: [
+      { id: "seg_std", type: "std", oss: "m48", isolant: "non", peaux: "2", dbl: false, m2: 25 },
+    ],
     chute: 5,
   });
   const TCap2 = calcEngineTotaux(stateCap2, 0);

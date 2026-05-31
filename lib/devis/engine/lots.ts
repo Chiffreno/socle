@@ -75,11 +75,7 @@ export const QP: Partial<Record<LotId, Record<Qualite, Record<string, unknown>>>
     mid: { epa: "120", iso: "gr32", membrane: true, parement: "ba13_std" },
     prm: { epa: "120", iso: "steico", membrane: true, parement: "ba13_hydro" },
   },
-  cloisons: {
-    std: { std_on: true, std_m2: 30, std_oss: "m48", std_peaux: "2", std_acou: "non", hydro_on: false, hydro_m2: 0, hydro_oss: "m48", hydro_peaux: "2", hydro_acou: "non", hd_on: false, hd_m2: 0, hd_oss: "m48", hd_peaux: "2", hd_acou: "non", feu_on: false, feu_m2: 0, feu_oss: "m48", feu_peaux: "2", feu_acou: "non", chute: 5 },
-    mid: { std_on: true, std_m2: 40, std_oss: "m48", std_peaux: "2", std_acou: "non", hydro_on: true, hydro_m2: 15, hydro_oss: "m48", hydro_peaux: "2", hydro_acou: "lv45", hd_on: false, hd_m2: 0, hd_oss: "m48", hd_peaux: "2", hd_acou: "non", feu_on: false, feu_m2: 0, feu_oss: "m48", feu_peaux: "2", feu_acou: "non", chute: 7 },
-    prm: { std_on: false, std_m2: 0, std_oss: "m70", std_peaux: "2", std_acou: "lr45", hydro_on: true, hydro_m2: 20, hydro_oss: "m70", hydro_peaux: "2", hydro_acou: "lr45", hd_on: true, hd_m2: 20, hd_oss: "m70", hd_peaux: "2", hd_acou: "lr45", feu_on: false, feu_m2: 0, feu_oss: "m48", feu_peaux: "2", feu_acou: "non", chute: 10 },
-  },
+  // cloisons : plus de preset gamme — configurateur "segments" (o.lignes).
   peinture: {
     std: { z1_on: true, z1_m2: 80, z1_passes: "1", z1_fin: "mat", z1_imp: false, z2_on: false, z2_m2: 20, z2_passes: "1", z2_fin: "mat", z2_imp: false, z3_on: false, z3_m2: 0, z3_passes: "1", z3_fin: "mat", z3_imp: false, z4_on: false, z4_m2: 0, z4_passes: "1", z4_fin: "mat", z4_imp: false },
     mid: { z1_on: true, z1_m2: 100, z1_passes: "2", z1_fin: "velours", z1_imp: true, z2_on: false, z2_m2: 30, z2_passes: "1", z2_fin: "mat", z2_imp: false, z3_on: false, z3_m2: 0, z3_passes: "1", z3_fin: "mat", z3_imp: false, z4_on: false, z4_m2: 0, z4_passes: "1", z4_fin: "mat", z4_imp: false },
@@ -175,7 +171,7 @@ export function createInitialLotStates(): Record<LotId, LotState> {
     // Pas d'infrastructure à déboursé (contrairement à élec). Marge interne via coutRevientPoints.
     demolition: lotEmpty({ points: {} as Record<string, number> }),
     iti: lotEmpty({ m2: 0, epa: "120", iso: "gr32", membrane: false, parement: "ba13_std" }),
-    cloisons: lotEmpty({ std_on: false, std_m2: 0, std_oss: "m48", std_peaux: "2", std_acou: "non", std_dbl_mont: false, hydro_on: false, hydro_m2: 0, hydro_oss: "m48", hydro_peaux: "2", hydro_acou: "non", hydro_dbl_mont: false, hd_on: false, hd_m2: 0, hd_oss: "m48", hd_peaux: "2", hd_acou: "non", hd_dbl_mont: false, feu_on: false, feu_m2: 0, feu_oss: "m48", feu_peaux: "2", feu_acou: "non", feu_dbl_mont: false, chute: 0 }),
+    cloisons: lotEmpty({ lignes: [], chute: 0 }),
     // ÉLECTRICITÉ — nouvelle forme SOCLE : infrastructure + points
     elec: lotEmpty({ tableau_rangees: 0, gtl: false, consuel: false, terre: false, vmc: "non", points: {} as Record<string, number> }),
     peinture: lotEmpty({ z1_on: false, z1_m2: 0, z1_passes: "2", z1_fin: "velours", z1_imp: false, z1_treillis: false, z2_on: false, z2_m2: 0, z2_passes: "1", z2_fin: "mat", z2_imp: false, z2_treillis: false, z3_on: false, z3_m2: 0, z3_passes: "2", z3_fin: "satin", z3_imp: false, z3_treillis: false, z4_on: false, z4_m2: 0, z4_passes: "3", z4_fin: "satin", z4_imp: false, z4_treillis: false }),

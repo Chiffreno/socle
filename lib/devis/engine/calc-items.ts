@@ -12,11 +12,42 @@ import { CATALOGUE_ELEC } from "./catalogue-elec";
 import { LOTS_PRODUIT_FINI } from "./lots";
 import { findPrestation, type PointPrestation } from "./points";
 import type {
+  CloisonOss,
+  CloisonSegment,
   CustomLigne,
   EngineLigne,
   EngineState,
   LotId,
 } from "./types";
+
+// ─── Cloisons : dérivations centralisées (isolant + rail depuis l'ossature) ──
+// Épaisseur d'isolant DÉRIVÉE de l'ossature : M48→45, M70→70, M90→90.
+const OSS_EPA: Record<CloisonOss, "45" | "70" | "90"> = {
+  m48: "45",
+  m70: "70",
+  m90: "90",
+};
+// Rail par ossature (corrigé : M70→R70, plus le quirk M70→R48 d'avant).
+const RAIL: Record<CloisonOss, string> = {
+  m48: "rail_r48",
+  m70: "rail_r70",
+  m90: "rail_r90",
+};
+const CLOISON_LBL: Record<string, string> = {
+  std: "BA13 standard",
+  hydro: "BA13 hydrofuge",
+  hd: "BA13 haute dureté",
+  feu: "BA13 coupe-feu",
+};
+/** Clé BP de l'isolant : type (lv/lr) + épaisseur dérivée de l'oss. null si aucun. */
+function cloisonIsolantKey(
+  isolant: string,
+  oss: CloisonOss
+): { key: string; epa: string } | null {
+  if (isolant !== "lv" && isolant !== "lr") return null;
+  const epa = OSS_EPA[oss];
+  return { key: `${isolant}${epa}`, epa };
+}
 
 // ─── Prix ─────────────────────────────────────────────────────────────
 
@@ -318,42 +349,72 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
     }
 
     case "cloisons": {
-      const zoneSpecs = [
-        { key: "std", on: o.std_on, m2: o.std_m2, oss: o.std_oss || "m48", peaux: Number(o.std_peaux || 2), acou: o.std_acou || "non", dbl: !!o.std_dbl_mont, lbl: "BA13 standard" },
-        { key: "hydro", on: o.hydro_on, m2: o.hydro_m2, oss: o.hydro_oss || "m48", peaux: Number(o.hydro_peaux || 2), acou: o.hydro_acou || "non", dbl: !!o.hydro_dbl_mont, lbl: "BA13 hydrofuge" },
-        { key: "hd", on: o.hd_on, m2: o.hd_m2, oss: o.hd_oss || "m48", peaux: Number(o.hd_peaux || 2), acou: o.hd_acou || "non", dbl: !!o.hd_dbl_mont, lbl: "BA13 haute dureté" },
-        { key: "feu", on: o.feu_on, m2: o.feu_m2, oss: o.feu_oss || "m48", peaux: Number(o.feu_peaux || 2), acou: o.feu_acou || "non", dbl: !!o.feu_dbl_mont, lbl: "BA13 coupe-feu" },
-      ];
-      const zones = zoneSpecs.filter((z) => z.on && Number(z.m2) > 0);
-      if (zones.length === 0) return [];
+      // Modèle "segments" : on itère o.lignes (tableau de CloisonSegment),
+      // une prestation par segment. groupId = seg.id (identifiant stable).
+      const lignes = Array.isArray(o.lignes)
+        ? (o.lignes as CloisonSegment[])
+        : [];
+      if (lignes.length === 0) return [];
       const chute = Number(o.chute) || 5;
+      const tvaLot = state.lots[lotId].tva ?? state.tvaParDefaut;
       const items: EngineLigne[] = [];
-      for (const z of zones) {
-        const m2 = Number(z.m2) || 0;
-        const oss = String(z.oss);
-        const rk = oss === "m90" ? "rail_r70" : "rail_r48";
-        const mk = `mont_${oss}`;
-        const nr = Math.round(m2 * 0.8);
-        const nm = Math.round(m2 * 1.7) * (z.dbl ? 2 : 1);
-        const net = m2 * z.peaux;
-        const brut = chuted(net, chute);
-        // Lignes de la zone collectées dans un buffer puis taguées avec
-        // groupId = z.key → l'agrégation rattache consommables ↔ prestation
-        // sur cet identifiant stable (et non plus sur le texte du libellé).
-        const zoneItems: EngineLigne[] = [
-          _row(rk, nr, `Rails ${oss === "m90" ? "R70" : "R48"} — ${z.lbl} — ${nr} ml`, "ml"),
-          _row(mk, nm, `Montants ${oss.toUpperCase()}${z.dbl ? " (doublés)" : ""} — ${z.lbl} — ${nm} ml`, "ml"),
-          _row("bande_acou", nr, `Bande acoustique sous rails — ${z.lbl} — ${nr} ml`, "ml"),
-          _hrow(`ba13_${z.key}`, brut, `${z.lbl} — ${z.peaux === 4 ? "double peau (4 faces)" : "simple peau (2 faces)"} × ${m2} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute)`),
-          _row("visserie_cloison", m2, `Visserie — ${z.lbl}`, "m²"),
-          _row("bande_joint", net, `Bandes à joint — ${z.lbl}`, "m²"),
-          _row("enduit_bande", net, `Enduit de bande — ${z.lbl}`, "m²"),
-        ];
-        if (z.acou !== "non") {
-          const acouKey = String(z.acou);
-          zoneItems.push(_row(acouKey, m2, acouKey === "lv45" ? `LV acoustique 45mm — ${z.lbl}` : `LR acoustique 45mm — ${z.lbl}`, "m²"));
+
+      for (const seg of lignes) {
+        const m2 = Number(seg.m2) || 0;
+        if (m2 <= 0) continue;
+
+        // ── Ligne libre : prix ferme (puOverride = PU manuel), pas de marge.
+        if (seg.type === "libre") {
+          const pu = Number(seg.puOverride) || 0;
+          items.push({
+            key: `_seg_${seg.id}`,
+            lotId,
+            qty: m2,
+            lbl: seg.lbl || "Ligne libre",
+            unit: seg.unit || "u",
+            note: "",
+            groupId: seg.id,
+            p: pu,
+            total: m2 * pu,
+            hl: true,
+            prixEstFinal: true,
+            afficheFourniture: false,
+            tva: tvaLot,
+          });
+          continue;
         }
-        for (const it of zoneItems) it.groupId = z.key;
+
+        // ── Segment cloison configuré.
+        const oss = (seg.oss || "m48") as CloisonOss;
+        const peaux = Number(seg.peaux || 2);
+        const dbl = !!seg.dbl;
+        const lbl = CLOISON_LBL[seg.type] || "BA13";
+        const rk = RAIL[oss];
+        const mk = `mont_${oss}`;
+        const railLbl = rk.replace("rail_r", "R");
+        const nr = Math.round(m2 * 0.8);
+        const nm = Math.round(m2 * 1.7) * (dbl ? 2 : 1);
+        const net = m2 * peaux;
+        const brut = chuted(net, chute);
+
+        const zoneItems: EngineLigne[] = [
+          _row(rk, nr, `Rails ${railLbl} — ${lbl} — ${nr} ml`, "ml"),
+          _row(mk, nm, `Montants ${oss.toUpperCase()}${dbl ? " (doublés)" : ""} — ${lbl} — ${nm} ml`, "ml"),
+          _row("bande_acou", nr, `Bande acoustique sous rails — ${lbl} — ${nr} ml`, "ml"),
+          _hrow(`ba13_${seg.type}`, brut, `${lbl} — ${peaux === 4 ? "double peau (4 faces)" : "simple peau (2 faces)"} × ${m2} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute)`),
+          _row("visserie_cloison", m2, `Visserie — ${lbl}`, "m²"),
+          _row("bande_joint", net, `Bandes à joint — ${lbl}`, "m²"),
+          _row("enduit_bande", net, `Enduit de bande — ${lbl}`, "m²"),
+        ];
+        // Isolant : type lv/lr, épaisseur DÉRIVÉE de l'ossature.
+        const iso = cloisonIsolantKey(String(seg.isolant || "non"), oss);
+        if (iso) {
+          const label = seg.isolant === "lv" ? "LV" : "LR";
+          zoneItems.push(
+            _row(iso.key, m2, `${label} acoustique ${iso.epa}mm — ${lbl}`, "m²")
+          );
+        }
+        for (const it of zoneItems) it.groupId = seg.id;
         items.push(...zoneItems);
       }
       return items;

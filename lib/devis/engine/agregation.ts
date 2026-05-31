@@ -17,11 +17,18 @@
 // renvoient `null` → le rendu legacy (ligne à ligne) est conservé.
 // ============================================================
 
-import type { EngineLigne, EngineState, LotId } from "./types";
+import type {
+  CloisonSegment,
+  EngineLigne,
+  EngineState,
+  LotId,
+} from "./types";
 import { round2, type LotTotaux } from "./totals";
 
 /** Ligne synthétique présentée au client (niveau 2). */
 export interface LigneClient {
+  /** Id du segment source (cloisons) — pour cibler l'édition côté UI. */
+  segmentId?: string;
   /** Clé de la ligne hl source (ex. "ba13_std") — identité de la prestation. */
   prestationKey: string;
   /** Libellé commercial ("Fourniture et pose de …"), distinct du technique. */
@@ -53,53 +60,63 @@ function lineCA(l: EngineLigne, coefDeboursé: number): number {
 }
 
 // ════════════════════════════════════════════════════════════
-// STRATÉGIE CLOISONS
+// STRATÉGIE CLOISONS — modèle "segments"
 // ════════════════════════════════════════════════════════════
 //
-// Regroupement par `groupId` (Brique 2) : calc-items tague chaque ligne d'une
-// zone avec son `groupId` (= z.key : "std"/"hydro"/"hd"/"feu"). On rattache
-// donc consommables ↔ prestation sur cet identifiant STABLE — plus aucun
-// parsing de libellé (dette Brique 1 soldée). La table ci-dessous ne déclare
-// plus que le mapping zone → libellé commercial + clé de surface posée.
-//
-// La surface posée (quantité client) vient d'une donnée stable :
-// `state.lots.cloisons.o[<zone>_m2]` (config).
-const CLOISONS_ZONES: ReadonlyArray<{
-  groupId: string;
-  m2Key: string;
-  commercial: string;
-}> = [
-  { groupId: "std", m2Key: "std_m2", commercial: "Fourniture et pose de cloison BA13 / placostil — standard" },
-  { groupId: "hydro", m2Key: "hydro_m2", commercial: "Fourniture et pose de cloison BA13 hydrofuge / placostil" },
-  { groupId: "hd", m2Key: "hd_m2", commercial: "Fourniture et pose de cloison BA13 haute dureté / placostil" },
-  { groupId: "feu", m2Key: "feu_m2", commercial: "Fourniture et pose de cloison BA13 coupe-feu / placostil" },
-];
+// Une LigneClient par segment de `o.lignes`, dans l'ordre. Rattachement
+// consommables ↔ prestation par `groupId === seg.id` (stable, posé par
+// calc-items). Surface posée = seg.m2 (donnée config). Libellé commercial
+// dérivé du type. `puOverride` (si défini) remplace le PU client calculé
+// (override-aware) ; pour `libre`, le prix ferme du moteur fait foi.
+const CLOISON_TYPE_LABELS: Record<string, string> = {
+  std: "standard",
+  hydro: "hydrofuge",
+  hd: "haute dureté",
+  feu: "coupe-feu",
+};
 
 function agregerCloisons(state: EngineState, lt: LotTotaux): LigneClient[] {
   const { items, deboursé, caDeboursé } = lt;
   const coefDeboursé = deboursé > 0 ? caDeboursé / deboursé : 0;
   const o = state.lots[lt.lotId].o;
-  const lignes: LigneClient[] = [];
+  const segments = Array.isArray(o.lignes)
+    ? (o.lignes as CloisonSegment[])
+    : [];
+  const out: LigneClient[] = [];
 
-  for (const zone of CLOISONS_ZONES) {
-    // Rattachement par groupId stable (posé par calc-items) — plus de parsing.
-    const groupe = items.filter((l) => l.groupId === zone.groupId);
+  for (const seg of segments) {
+    const groupe = items.filter((l) => l.groupId === seg.id);
     if (groupe.length === 0) continue;
 
     const hl = groupe.find((l) => l.hl) ?? groupe[0];
-    const prixClient = round2(
+    const qty = Number(seg.m2) || hl.qty;
+    // Prix ventilé (sans override) = Σ lineCA → garantit Σ lignes = caLot
+    // tant qu'aucun puOverride n'est posé.
+    const ventile = round2(
       groupe.reduce((acc, l) => acc + lineCA(l, coefDeboursé), 0)
     );
-    // Quantité client = surface posée (donnée stable, pas le brut plaques).
-    const surfacePosee = Number(o[zone.m2Key]) || 0;
-    const qty = surfacePosee > 0 ? surfacePosee : hl.qty;
+    // Override-aware : un PU surchargé remplace le prix ventilé (sauf `libre`,
+    // dont le prix ferme est déjà porté par la ligne moteur).
+    const override =
+      seg.type !== "libre" &&
+      typeof seg.puOverride === "number" &&
+      seg.puOverride >= 0;
+    const prixClient = override ? round2(seg.puOverride! * qty) : ventile;
 
-    lignes.push({
+    const libelle =
+      seg.type === "libre"
+        ? seg.lbl || "Ligne libre"
+        : `Fourniture et pose de cloison BA13 ${
+            CLOISON_TYPE_LABELS[seg.type] ?? ""
+          }`.trim();
+
+    out.push({
+      segmentId: seg.id,
       prestationKey: hl.key,
-      libelleCommercial: zone.commercial,
+      libelleCommercial: libelle,
       libelleTechnique: hl.lbl,
       qty,
-      unit: "m²",
+      unit: seg.type === "libre" ? seg.unit || "u" : "m²",
       prixClient,
       prixUnitaireClient: qty > 0 ? round2(prixClient / qty) : 0,
       tva: hl.tva ?? state.tvaParDefaut,
@@ -107,7 +124,7 @@ function agregerCloisons(state: EngineState, lt: LotTotaux): LigneClient[] {
       detailInterne: groupe,
     });
   }
-  return lignes;
+  return out;
 }
 
 // ════════════════════════════════════════════════════════════

@@ -17,10 +17,47 @@
 // ============================================================
 
 import { createInitialEngineState, createInitialLotStates } from "./lots";
-import type { EngineState, LotId, LotState, RemiseMode } from "./types";
+import type {
+  CloisonOss,
+  CloisonSegment,
+  EngineState,
+  LotId,
+  LotState,
+  RemiseMode,
+} from "./types";
 import type { TauxTVA } from "../types";
 
 type Raw = Record<string, unknown>;
+
+// ─── Migration cloisons : anciens slots fixes (std/hydro/hd/feu) → o.lignes ──
+// Les devis sérialisés avant le modèle "segments" portent std_on/_m2/_oss/…
+// On les convertit en un segment par slot actif. Idempotent (skip si lignes
+// existe déjà), déterministe (ids seg_<type>, pas de Math.random). L'isolant
+// passe de l'ancien acou (lv45/lr45, toujours 45mm) au nouveau type lv/lr —
+// l'épaisseur sera re-dérivée de l'ossature par calc-items (M48→45 inchangé).
+const CLOISON_SLOT_TYPES = ["std", "hydro", "hd", "feu"] as const;
+function migrateCloisonsO(o: Record<string, unknown>): Record<string, unknown> {
+  if (Array.isArray(o.lignes)) return o; // déjà au modèle segments
+  const lignes: CloisonSegment[] = [];
+  for (const t of CLOISON_SLOT_TYPES) {
+    if (o[`${t}_on`] && Number(o[`${t}_m2`]) > 0) {
+      const acou = String(o[`${t}_acou`] ?? "non");
+      const isolant = acou === "lv45" ? "lv" : acou === "lr45" ? "lr" : "non";
+      lignes.push({
+        id: `seg_${t}`,
+        type: t,
+        oss: String(o[`${t}_oss`] ?? "m48") as CloisonOss,
+        isolant,
+        peaux: (String(o[`${t}_peaux`] ?? "2") === "4" ? "4" : "2") as
+          | "2"
+          | "4",
+        dbl: !!o[`${t}_dbl_mont`],
+        m2: Number(o[`${t}_m2`]) || 0,
+      });
+    }
+  }
+  return { ...o, lignes, chute: Number(o.chute) || 0 };
+}
 
 export interface EngineHeader {
   globalSurf: number;
@@ -59,6 +96,10 @@ export function normalizeEngine(
           ? [...s.custom]
           : baseLots[lid].custom,
       };
+      // Migration cloisons : anciens slots fixes → o.lignes (idempotent).
+      if (lid === "cloisons") {
+        lots[lid].o = migrateCloisonsO(lots[lid].o);
+      }
     }
   }
   return {

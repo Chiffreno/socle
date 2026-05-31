@@ -63,11 +63,9 @@ engine.lots.cloisons.on = true;
 engine.lots.cloisons.m = 30;
 engine.lots.cloisons.tempsMoHeures = 12;
 Object.assign(engine.lots.cloisons.o, {
-  std_on: true,
-  std_m2: 25,
-  std_oss: "m48",
-  std_peaux: "2",
-  std_acou: "non",
+  lignes: [
+    { id: "seg_std", type: "std", oss: "m48", isolant: "non", peaux: "2", dbl: false, m2: 25 },
+  ],
   chute: 5,
 });
 engine.lots.cloisons.custom.push({

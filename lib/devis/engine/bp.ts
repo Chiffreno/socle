@@ -17,11 +17,14 @@ export const BP: Record<string, number> = {
   iti_ba13_std: 4.5, iti_ba13_hydro: 7.0,
 
   // ─── Cloisons ───
-  rail_r48: 1.2, rail_r70: 1.5,
+  rail_r48: 1.2, rail_r70: 1.5, rail_r90: 1.8,
   mont_m48: 1.5, mont_m70: 1.9, mont_m90: 2.5,
   bande_acou: 0.50,
   ba13_std: 4.5, ba13_hydro: 7.0, ba13_hd: 9.5, ba13_feu: 9.5,
-  lv45: 3.5, lr45: 5.0,
+  // Isolant acoustique cloisons : épaisseur dérivée de l'ossature (M48→45,
+  // M70→70, M90→90). lv = laine de verre, lr = laine de roche.
+  lv45: 3.5, lv70: 5.5, lv90: 7.0,
+  lr45: 5.0, lr70: 7.0, lr90: 8.5,
   visserie_cloison: 0.4, bande_joint: 0.35, enduit_bande: 1.20,
 
   // ─── ÉLECTRICITÉ — infrastructure (nouveau modèle SOCLE, à calibrer) ───
