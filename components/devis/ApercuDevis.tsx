@@ -31,6 +31,7 @@ import { calcEngineTotaux, type LotTotaux } from "@/lib/devis/engine/totals";
 import { calcItems } from "@/lib/devis/engine/calc-items";
 import {
   agregerLignesClient,
+  calcClientTotaux,
   type LigneClient,
 } from "@/lib/devis/engine/agregation";
 import { LM } from "@/lib/devis/engine/lots";
@@ -78,6 +79,12 @@ export default function ApercuDevis({ devisId }: Props) {
     if (!devis?.engine) return null;
     return calcEngineTotaux(devis.engine, entreprise?.tauxHoraire ?? 0);
   }, [devis, entreprise]);
+  // Totaux CLIENT (override-aware) : HT = somme des lignes client pour les lots
+  // à agrégateur. Sans puOverride → identique aux totaux moteur.
+  const clientTotaux = useMemo(() => {
+    if (!devis?.engine || !totaux) return null;
+    return calcClientTotaux(devis.engine, totaux);
+  }, [devis, totaux]);
 
   if (!loaded) return <div className="ap-page">Chargement…</div>;
   if (!devis) {
@@ -91,10 +98,10 @@ export default function ApercuDevis({ devisId }: Props) {
 
   const lotsActifs = LM.filter((m) => devis.engine.lots[m.id]?.on);
 
-  const acompteTTC = totaux
-    ? Math.round(totaux.totalTTC * (devis.acomptePct / 100) * 100) / 100
+  const acompteTTC = clientTotaux
+    ? Math.round(clientTotaux.totalTTC * (devis.acomptePct / 100) * 100) / 100
     : 0;
-  const soldeTTC = totaux ? totaux.totalTTC - acompteTTC : 0;
+  const soldeTTC = clientTotaux ? clientTotaux.totalTTC - acompteTTC : 0;
 
   return (
     <div className="ap-page">
@@ -252,6 +259,7 @@ export default function ApercuDevis({ devisId }: Props) {
                   items={items}
                   lignesClient={lignesClient}
                   lotTotaux={lotTotaux}
+                  lotClientHT={clientTotaux?.parLotClientHT[meta.id]}
                 />
               );
             })}
@@ -259,12 +267,12 @@ export default function ApercuDevis({ devisId }: Props) {
         )}
 
         {/* ── TOTAUX ──────────────────────────────────────────────── */}
-        {totaux && (
+        {clientTotaux && (
           <section className="ap-totaux">
             <dl>
               <dt>Sous-total HT</dt>
-              <dd>{formatEuro(totaux.subTotalHT)}</dd>
-              {totaux.remiseHT > 0 && (
+              <dd>{formatEuro(clientTotaux.subTotalHT)}</dd>
+              {clientTotaux.remiseHT > 0 && (
                 <Fragment>
                   <dt>
                     Remise
@@ -272,12 +280,12 @@ export default function ApercuDevis({ devisId }: Props) {
                       ? ` (${devis.remiseValeur} %)`
                       : ""}
                   </dt>
-                  <dd>−{formatEuro(totaux.remiseHT)}</dd>
+                  <dd>−{formatEuro(clientTotaux.remiseHT)}</dd>
                 </Fragment>
               )}
               <dt className="ap-strong">Total HT</dt>
-              <dd className="ap-strong">{formatEuro(totaux.totalHT)}</dd>
-              {Object.entries(totaux.ventilationTVA)
+              <dd className="ap-strong">{formatEuro(clientTotaux.totalHT)}</dd>
+              {Object.entries(clientTotaux.ventilationTVA)
                 .sort(([a], [b]) => Number(a) - Number(b))
                 .map(([taux, m]) => (
                   <Fragment key={taux}>
@@ -286,12 +294,12 @@ export default function ApercuDevis({ devisId }: Props) {
                   </Fragment>
                 ))}
               <dt className="ap-ttc">Total TTC</dt>
-              <dd className="ap-ttc">{formatEuro(totaux.totalTTC)}</dd>
+              <dd className="ap-ttc">{formatEuro(clientTotaux.totalTTC)}</dd>
             </dl>
           </section>
         )}
 
-        {totaux && totaux.totalTTC > 0 && (
+        {clientTotaux && clientTotaux.totalTTC > 0 && (
           <section className="ap-acompte">
             <h3 className="ap-h3">Modalités de règlement</h3>
             <p>
@@ -328,12 +336,15 @@ function LotTable({
   items,
   lignesClient,
   lotTotaux,
+  lotClientHT,
 }: {
   label: string;
   items: EngineLigne[];
   /** Brique 1 : lignes client agrégées (cloisons). null → rendu legacy. */
   lignesClient: LigneClient[] | null;
   lotTotaux: LotTotaux | undefined;
+  /** HT client du lot (override-aware) ; fallback caLot si absent. */
+  lotClientHT: number | undefined;
 }) {
   const coefDeboursé =
     lotTotaux && lotTotaux.deboursé > 0
@@ -352,7 +363,9 @@ function LotTable({
       <div className="ap-lot-head">
         <h3 className="ap-lot-title">{label}</h3>
         <span className="ap-lot-sub">
-          {lotTotaux ? formatEuro(lotTotaux.caLot) + " HT" : ""}
+          {lotTotaux
+            ? formatEuro(lotClientHT ?? lotTotaux.caLot) + " HT"
+            : ""}
         </span>
       </div>
       {isEmpty ? null : (

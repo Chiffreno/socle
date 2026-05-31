@@ -733,35 +733,10 @@
 }
 .dee-empty strong { color: var(--black); font-weight: 600; }
 
-/* ── Configurateur cloisons (Brique 2) ──────────────────────────── */
-.dee-cfg {
-  background: var(--white);
-  border: 1px solid var(--dee-line);
-  border-radius: var(--dee-r);
-  box-shadow: var(--dee-shadow-card);
-  padding: 16px;
-  margin-bottom: 16px;
-}
-/* Gamme = preset de démarrage */
-.dee-cfg-gamme {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-bottom: 14px;
-  margin-bottom: 14px;
-  border-bottom: 1px solid var(--dee-line);
-}
-.dee-cfg-gamme-label {
-  font-family: var(--ff);
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--dee-ink-3);
-  margin-right: 4px;
-}
-/* Pills d'option (gamme, ossature, peaux, isolant) */
+/* ── Configurateur cloisons (Brique 2 — modèle segments) ────────── */
+.dee-cfg { display: flex; flex-direction: column; gap: 12px; }
+
+/* Pills d'option partagées (type, ossature, isolant, peaux) */
 .dee-cfg-pill {
   padding: 5px 12px;
   background: var(--white);
@@ -782,91 +757,51 @@
   font-weight: 600;
 }
 
-/* Blocs de zone activables */
-.dee-cfg-zones { display: flex; flex-direction: column; gap: 10px; }
-.dee-cfg-zone {
-  border: 1px solid var(--dee-line);
-  border-radius: var(--dee-r-sm);
-  overflow: hidden;
-  transition: border-color .12s, box-shadow .12s;
-}
-.dee-cfg-zone.is-on {
-  border-color: var(--green-b);
-  box-shadow: var(--dee-shadow-sm);
-}
-.dee-cfg-zone-head {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  width: 100%;
-  padding: 11px 14px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  font-family: var(--ff);
-}
-.dee-cfg-zone.is-on .dee-cfg-zone-head { background: var(--dee-fill); }
-.dee-cfg-zone-head:hover { background: var(--dee-fill-2); }
-.dee-cfg-zone-name {
-  flex: 1;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--dee-ink-2);
-}
-.dee-cfg-zone.is-on .dee-cfg-zone-name { color: var(--black); font-weight: 600; }
-.dee-cfg-zone-sum {
-  font-family: var(--num);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--green);
-}
-/* Switch on/off de la zone */
-.dee-cfg-switch {
-  position: relative;
-  flex-shrink: 0;
-  width: 34px;
-  height: 19px;
-  border-radius: 999px;
-  background: var(--gray2);
-  transition: background .15s ease;
-}
-.dee-cfg-switch.is-on { background: var(--green); }
-.dee-cfg-switch-knob {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
+/* Box de configuration (carte d'ajout) */
+.dee-cfg-box {
   background: var(--white);
-  transition: transform .15s ease;
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r);
+  box-shadow: var(--dee-shadow-card);
+  padding: 14px 16px;
 }
-.dee-cfg-switch.is-on .dee-cfg-switch-knob { transform: translateX(15px); }
-
-/* Corps de zone (réglages) */
-.dee-cfg-zone-body {
-  padding: 12px 14px 14px;
-  border-top: 1px dashed var(--dee-line);
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
+.dee-cfg-box-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
 }
-.dee-cfg-field { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dee-cfg-field { display: flex; flex-direction: column; gap: 6px; }
 .dee-cfg-flabel {
-  flex: 0 0 96px;
   font-family: var(--ff);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: .08em;
   color: var(--dee-ink-3);
 }
+.dee-cfg-hint {
+  font-style: normal;
+  font-family: var(--num);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--green);
+  margin-left: 6px;
+}
 .dee-cfg-pills { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+
+.dee-cfg-box-action {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--dee-line);
+}
 .dee-cfg-surf { display: inline-flex; align-items: center; gap: 6px; }
 .dee-cfg-surf input {
-  width: 76px;
-  padding: 6px 9px;
+  width: 84px;
+  padding: 7px 9px;
   background: var(--white);
   border: 1px solid var(--dee-line);
   border-radius: var(--dee-r-sm);
@@ -883,6 +818,26 @@
   box-shadow: 0 0 0 3px var(--green-light);
 }
 .dee-cfg-unit { font-family: var(--num); font-size: 12px; color: var(--dee-ink-3); }
+.dee-cfg-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 8px 16px;
+  background: var(--green);
+  border: 1px solid var(--green);
+  border-radius: var(--dee-r-sm);
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+  cursor: pointer;
+  box-shadow: var(--dee-shadow-sm);
+  transition: background .12s, border-color .12s;
+}
+.dee-cfg-add:hover:not(:disabled) { background: var(--green-dark); border-color: var(--green-dark); }
+.dee-cfg-add:disabled { background: var(--dee-line); border-color: var(--dee-line); color: var(--dee-ink-3); cursor: not-allowed; box-shadow: none; }
+.dee-cfg-add .ti { font-size: 16px; }
 
 /* Checkbox "montants doublés" */
 .dee-cfg-check {
@@ -904,6 +859,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   transition: border-color .12s, background .12s;
 }
 .dee-cfg-check:hover .dee-cfg-check-box { border-color: var(--green); }
@@ -922,6 +878,173 @@
   transition: opacity .12s ease;
 }
 .dee-cfg-check input:checked + .dee-cfg-check-box::after { opacity: 1; }
+
+/* Liste des segments ajoutés */
+.dee-cfg-empty {
+  padding: 22px 16px;
+  text-align: center;
+  font-family: var(--ff);
+  font-size: 12px;
+  color: var(--dee-ink-3);
+  background: var(--white);
+  border: 1px dashed var(--dee-line-2);
+  border-radius: var(--dee-r);
+}
+.dee-cfg-seglist {
+  background: var(--white);
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r);
+  box-shadow: var(--dee-shadow-card);
+  overflow: hidden;
+}
+.dee-seg { border-top: 1px solid var(--dee-line); }
+.dee-seg:first-child { border-top: none; }
+.dee-seg-row {
+  display: grid;
+  grid-template-columns: 16px 1fr 90px 104px 84px 26px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  list-style: none;
+  cursor: pointer;
+  transition: background .12s;
+}
+.dee-seg-row::-webkit-details-marker { display: none; }
+.dee-seg-row:hover { background: var(--dee-fill-2); }
+.dee-seg[open] .dee-seg-row { background: var(--dee-fill); }
+.dee-seg.is-libre .dee-seg-row {
+  grid-template-columns: 18px 1fr 90px 104px 84px 26px;
+  cursor: default;
+}
+.dee-seg-caret { display: inline-flex; color: var(--dee-ink-3); }
+.dee-seg-caret .ti { font-size: 16px; transition: transform .15s ease; }
+.dee-seg[open] .dee-seg-caret .ti { transform: rotate(90deg); color: var(--green); }
+.dee-seg-libre-ic { color: var(--dee-ink-3); font-size: 15px; }
+.dee-seg-main { min-width: 0; display: flex; flex-direction: column; }
+.dee-seg-lbl {
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dee-seg-sub {
+  font-family: var(--ff);
+  font-size: 11px;
+  color: var(--dee-ink-3);
+  margin-top: 1px;
+}
+.dee-seg-libre-lbl {
+  width: 100%;
+  padding: 6px 9px;
+  background: var(--white);
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r-sm);
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--black);
+}
+.dee-seg-libre-lbl:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--green-light); }
+/* Champs qté / PU dans la ligne */
+.dee-seg-qty, .dee-seg-pu {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.dee-seg-qty input, .dee-seg-pu input {
+  width: 52px;
+  padding: 5px 7px;
+  background: var(--white);
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r-sm);
+  font-family: var(--num);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--black);
+  text-align: right;
+  transition: border-color .12s, box-shadow .12s;
+}
+.dee-seg-pu input { width: 60px; }
+.dee-seg-qty input:focus, .dee-seg-pu input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-light);
+}
+.dee-seg-u { font-family: var(--num); font-style: normal; font-size: 11px; color: var(--dee-ink-3); }
+.dee-seg-total {
+  font-family: var(--num);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  text-align: right;
+  white-space: nowrap;
+}
+.dee-seg-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--dee-r-sm);
+  color: var(--dee-ink-3);
+  cursor: pointer;
+  transition: color .12s, background .12s;
+}
+.dee-seg-del:hover { color: var(--red); background: var(--red-bg); }
+.dee-seg-del .ti { font-size: 16px; }
+/* Détail interne déplié */
+.dee-seg-detail {
+  background: var(--dee-fill-2);
+  border-top: 1px dashed var(--dee-line-2);
+  padding: 4px 16px 12px 40px;
+}
+.dee-seg-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 0 7px;
+  font-family: var(--ff);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--dee-ink-3);
+}
+.dee-seg-detail-head .ti { font-size: 14px; }
+
+/* Pied : ligne libre + chute lot */
+.dee-cfg-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.dee-cfg-libre-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  background: var(--white);
+  border: 1px dashed var(--dee-line-2);
+  border-radius: var(--dee-r-sm);
+  font-family: var(--ff);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dee-ink-2);
+  cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.dee-cfg-libre-btn:hover { border-color: var(--green-b); color: var(--green-dark); background: var(--dee-fill); }
+.dee-cfg-libre-btn .ti { font-size: 15px; }
+.dee-cfg-chute { display: inline-flex; align-items: center; gap: 8px; }
+.dee-cfg-chute .dee-cfg-flabel { margin: 0; }
 
 /* Réglage au niveau lot (chute) */
 .dee-cfg-lot {

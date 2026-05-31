@@ -20,16 +20,19 @@ import Link from "next/link";
 import { repository } from "@/lib/devis/repository";
 import { calcEngineTotaux } from "@/lib/devis/engine/totals";
 import { calcItems } from "@/lib/devis/engine/calc-items";
-import { agregerLignesClient } from "@/lib/devis/engine/agregation";
+import {
+  agregerLignesClient,
+  calcClientTotaux,
+} from "@/lib/devis/engine/agregation";
 import {
   LM,
   LOTS_AVEC_GAMME,
   LOTS_NO_SURF,
-  QP,
   createInitialEngineState,
 } from "@/lib/devis/engine/lots";
 import CloisonsConfig from "./configurateurs/CloisonsConfig";
 import type {
+  CloisonSegment,
   EngineState,
   LotId,
   LotState,
@@ -322,42 +325,69 @@ export default function DevisEditorEngine({ devisId }: Props) {
     if (checked) setCur(lid);
   }
 
-  // ── Configurateur cloisons (Brique 2) ───────────────────────────
-  // Merge un patch dans cloisons.o (écriture temps réel → prestations + récap).
-  function patchCloisonsO(patch: Record<string, unknown>) {
-    const o = draft.engine?.lots?.cloisons?.o ?? {};
-    patchLot("cloisons", { o: { ...o, ...patch } });
+  // ── Configurateur cloisons (Brique 2) — modèle segments (o.lignes) ──
+  function cloisonO(): Record<string, unknown> {
+    return draft.engine?.lots?.cloisons?.o ?? {};
   }
-  // Gamme = preset de démarrage AVEC garde-fou : si le lot est déjà configuré
-  // (une zone active avec surface), on confirme avant d'écraser les réglages
-  // manuels — jamais de ré-écrasement silencieux.
-  function applyGammeCloisons(qNew: Qualite) {
-    const preset = QP.cloisons?.[qNew];
-    if (!preset) return;
-    const o = draft.engine?.lots?.cloisons?.o ?? {};
-    const hasConfig = ["std", "hydro", "hd", "feu"].some(
-      (z) => o[`${z}_on`] && Number(o[`${z}_m2`]) > 0
+  function cloisonLignes(): CloisonSegment[] {
+    const l = cloisonO().lignes;
+    return Array.isArray(l) ? (l as CloisonSegment[]) : [];
+  }
+  function setCloisonLignes(lignes: CloisonSegment[]) {
+    patchLot("cloisons", { o: { ...cloisonO(), lignes } });
+  }
+  function makeSegId(): string {
+    return "seg_" + Math.random().toString(36).slice(2, 10);
+  }
+  // Ajout AVEC cumul : config identique (type+oss+isolant+peaux+dbl) → m² additionnés.
+  function addCloisonSegment(cfg: Omit<CloisonSegment, "id">) {
+    const lignes = cloisonLignes();
+    const idx = lignes.findIndex(
+      (s) =>
+        s.type === cfg.type &&
+        s.oss === cfg.oss &&
+        s.isolant === cfg.isolant &&
+        s.peaux === cfg.peaux &&
+        !!s.dbl === !!cfg.dbl
     );
-    if (
-      hasConfig &&
-      !window.confirm(
-        "Remplacer la configuration actuelle des cloisons par le préset sélectionné ? Vos réglages manuels seront écrasés."
-      )
-    ) {
-      return;
+    if (idx >= 0) {
+      const next = lignes.slice();
+      next[idx] = {
+        ...next[idx],
+        m2: (Number(next[idx].m2) || 0) + (Number(cfg.m2) || 0),
+      };
+      setCloisonLignes(next);
+    } else {
+      setCloisonLignes([...lignes, { ...cfg, id: makeSegId() }]);
     }
-    patchLot("cloisons", {
-      q: qNew,
-      o: {
-        ...o,
-        ...preset,
-        // QP ne touche pas dbl_mont → reset pour un preset propre.
-        std_dbl_mont: false,
-        hydro_dbl_mont: false,
-        hd_dbl_mont: false,
-        feu_dbl_mont: false,
+  }
+  function addCloisonLibre() {
+    setCloisonLignes([
+      ...cloisonLignes(),
+      {
+        id: makeSegId(),
+        type: "libre",
+        oss: "m48",
+        isolant: "non",
+        peaux: "2",
+        dbl: false,
+        m2: 1,
+        lbl: "",
+        unit: "u",
+        puOverride: 0,
       },
-    });
+    ]);
+  }
+  function updateCloisonSegment(id: string, patch: Partial<CloisonSegment>) {
+    setCloisonLignes(
+      cloisonLignes().map((s) => (s.id === id ? { ...s, ...patch } : s))
+    );
+  }
+  function removeCloisonSegment(id: string) {
+    setCloisonLignes(cloisonLignes().filter((s) => s.id !== id));
+  }
+  function setCloisonChute(n: number) {
+    patchLot("cloisons", { o: { ...cloisonO(), chute: n } });
   }
 
   // ── Totaux temps réel (engine + tauxHoraire) ────────────────────
@@ -384,6 +414,29 @@ export default function DevisEditorEngine({ devisId }: Props) {
     draft.remiseMode,
     draft.remiseValeur,
     entreprise,
+  ]);
+
+  // Totaux CLIENT (override-aware) : HT d'un lot à agrégateur = somme des
+  // lignes client. Sans puOverride → identique aux totaux moteur.
+  const clientTotaux = useMemo(() => {
+    if (!draft.engine || !totaux) return null;
+    return calcClientTotaux(
+      {
+        ...draft.engine,
+        globalSurf: draft.globalSurf ?? 0,
+        tvaParDefaut: draft.tvaParDefaut ?? 10,
+        remiseMode: draft.remiseMode,
+        remiseValeur: draft.remiseValeur,
+      },
+      totaux
+    );
+  }, [
+    draft.engine,
+    draft.globalSurf,
+    draft.tvaParDefaut,
+    draft.remiseMode,
+    draft.remiseValeur,
+    totaux,
   ]);
 
   // Items du lot courant (pour la table debug)
@@ -794,9 +847,10 @@ export default function DevisEditorEngine({ devisId }: Props) {
               const lt = totaux?.parLot.find((l) => l.lotId === meta.id);
               const isOn = lt?.active ?? false;
               const isCurrent = cur === meta.id;
-              // Vert "récompense" : sous-total affiché UNIQUEMENT quand
-              // caLot > 0. Un lot coché mais vide reste neutre.
-              const hasMontant = isOn && !!lt && lt.caLot > 0;
+              // HT client du lot (override-aware) ; vert affiché si > 0.
+              const lotHT =
+                clientTotaux?.parLotClientHT[meta.id] ?? lt?.caLot ?? 0;
+              const hasMontant = isOn && lotHT > 0;
               return (
                 <li key={meta.id}>
                   <div
@@ -841,9 +895,9 @@ export default function DevisEditorEngine({ devisId }: Props) {
                         )}
                       </span>
                     </button>
-                    {hasMontant && lt && (
+                    {hasMontant && (
                       <span className="dee-lot-total">
-                        {formatEuro(lt.caLot)}
+                        {formatEuro(lotHT)}
                       </span>
                     )}
                   </div>
@@ -854,7 +908,7 @@ export default function DevisEditorEngine({ devisId }: Props) {
           <div className="dee-lot-foot">
             <div className="dee-lot-foot-label">Total devis TTC</div>
             <div className="dee-lot-foot-amount">
-              {formatEuro(totaux?.totalTTC ?? 0)}
+              {formatEuro(clientTotaux?.totalTTC ?? 0)}
             </div>
           </div>
         </aside>
@@ -963,17 +1017,24 @@ export default function DevisEditorEngine({ devisId }: Props) {
             )}
           </div>
 
-          {curLot?.on && cur === "cloisons" && (
+          {!curLot?.on ? (
+            <div className="dee-empty">
+              <strong>Lot non inclus dans le devis.</strong>
+              <br />
+              Cochez la case dans la colonne gauche pour l&apos;inclure.
+            </div>
+          ) : cur === "cloisons" ? (
             <CloisonsConfig
-              o={curLot.o}
-              q={curLot.q}
-              defaultSurf={(curLot.surf ?? draft.globalSurf) || 0}
-              onChange={patchCloisonsO}
-              onApplyGamme={applyGammeCloisons}
+              segments={cloisonLignes()}
+              lignesClient={curLignesClient ?? []}
+              chute={Number(curLot.o.chute) || 0}
+              onAdd={addCloisonSegment}
+              onAddLibre={addCloisonLibre}
+              onUpdate={updateCloisonSegment}
+              onRemove={removeCloisonSegment}
+              onChute={setCloisonChute}
             />
-          )}
-
-          {curLot?.on ? (
+          ) : (
             <section className="dee-engine-items">
               {curLignesClient !== null ? (
                 // ── Rendu AGRÉGÉ (lot pilote) : 1 ligne client par prestation,
@@ -1089,12 +1150,6 @@ export default function DevisEditorEngine({ devisId }: Props) {
                 </>
               )}
             </section>
-          ) : (
-            <div className="dee-empty">
-              <strong>Lot non inclus dans le devis.</strong>
-              <br />
-              Cochez la case dans la colonne gauche pour l&apos;inclure.
-            </div>
           )}
         </section>
 
@@ -1104,33 +1159,33 @@ export default function DevisEditorEngine({ devisId }: Props) {
             <i className="ti ti-report-money" aria-hidden="true" />
             <span>Récapitulatif</span>
           </div>
-          {totaux && (
+          {totaux && clientTotaux && (
             <>
               <div className="dee-stat-cards">
                 <div className="dee-stat-card">
                   <div className="dee-stat-label">Total HT</div>
                   <div className="dee-stat-value">
-                    {formatEuro(totaux.totalHT)}
+                    {formatEuro(clientTotaux.totalHT)}
                   </div>
                 </div>
                 <div className="dee-stat-card is-primary">
                   <div className="dee-stat-label">Total TTC</div>
                   <div className="dee-stat-value">
-                    {formatEuro(totaux.totalTTC)}
+                    {formatEuro(clientTotaux.totalTTC)}
                   </div>
                 </div>
               </div>
 
               <dl className="dee-recap-list">
                 <dt>Sous-total HT</dt>
-                <dd>{formatEuro(totaux.subTotalHT)}</dd>
-                {totaux.remiseHT > 0 && (
+                <dd>{formatEuro(clientTotaux.subTotalHT)}</dd>
+                {clientTotaux.remiseHT > 0 && (
                   <>
                     <dt>Remise</dt>
-                    <dd>−{formatEuro(totaux.remiseHT)}</dd>
+                    <dd>−{formatEuro(clientTotaux.remiseHT)}</dd>
                   </>
                 )}
-                {Object.entries(totaux.ventilationTVA)
+                {Object.entries(clientTotaux.ventilationTVA)
                   .sort(([a], [b]) => Number(a) - Number(b))
                   .map(([taux, m]) => (
                     <Fragment key={taux}>

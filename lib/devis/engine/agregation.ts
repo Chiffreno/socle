@@ -22,8 +22,9 @@ import type {
   EngineLigne,
   EngineState,
   LotId,
+  RemiseMode,
 } from "./types";
-import { round2, type LotTotaux } from "./totals";
+import { round2, type DevisTotaux, type LotTotaux } from "./totals";
 
 /** Ligne synthétique présentée au client (niveau 2). */
 export interface LigneClient {
@@ -147,4 +148,137 @@ export function agregerLignesClient(
 ): LigneClient[] | null {
   const strat = STRATEGIES[lt.lotId];
   return strat ? strat(state, lt) : null;
+}
+
+/** Ce lot a-t-il une stratégie d'agrégation (lignes client) ? */
+export function hasAggregateur(lotId: LotId): boolean {
+  return lotId in STRATEGIES;
+}
+
+// ════════════════════════════════════════════════════════════
+// TOTAUX CLIENT (override-aware)
+// ════════════════════════════════════════════════════════════
+//
+// Le HT d'un lot à agrégateur = somme des lignes client (donc override-aware).
+// Tant qu'aucun puOverride n'existe nulle part, on renvoie tels quels les
+// totaux globaux du moteur (Σ lignes = caLot) → zéro drift d'arrondi.
+
+export interface ClientTotaux {
+  parLotClientHT: Partial<Record<LotId, number>>;
+  subTotalHT: number;
+  remiseHT: number;
+  totalHT: number;
+  ventilationTVA: Record<number, number>;
+  totalTVA: number;
+  totalTTC: number;
+  hasOverride: boolean;
+}
+
+// Réplique de la remise du moteur (privée dans totals.ts).
+function remiseAmountClient(
+  subTotalHT: number,
+  mode: RemiseMode,
+  valeur: number
+): number {
+  if (subTotalHT <= 0) return 0;
+  if (mode === "pourcent")
+    return Math.min(subTotalHT, subTotalHT * ((valeur || 0) / 100));
+  if (mode === "euros") return Math.min(subTotalHT, Math.max(0, valeur || 0));
+  return 0;
+}
+
+/** "Unités client" d'un lot : (montant HT, taux TVA). */
+function lotClientUnits(
+  state: EngineState,
+  lt: LotTotaux
+): Array<{ amountHT: number; tva: number }> {
+  const lignes = agregerLignesClient(state, lt);
+  if (lignes) return lignes.map((lc) => ({ amountHT: lc.prixClient, tva: lc.tva }));
+  // Lot sans agrégateur : reproduit la ventilation par ligne du moteur.
+  const coef = lt.deboursé > 0 ? lt.caDeboursé / lt.deboursé : 0;
+  const units = lt.items.map((it) => ({
+    amountHT: it.prixEstFinal ? it.total : it.total * coef,
+    tva: (it.tva ?? state.tvaParDefaut) as number,
+  }));
+  if (lt.deboursé === 0 && lt.caDeboursé > 0) {
+    units.push({ amountHT: lt.caDeboursé, tva: state.tvaParDefaut });
+  }
+  return units;
+}
+
+function anyOverride(state: EngineState): boolean {
+  for (const lid of Object.keys(state.lots) as LotId[]) {
+    if (!hasAggregateur(lid)) continue;
+    const o = state.lots[lid].o;
+    const segs = Array.isArray(o.lignes) ? (o.lignes as CloisonSegment[]) : [];
+    if (
+      segs.some(
+        (s) =>
+          s.type !== "libre" &&
+          typeof s.puOverride === "number" &&
+          s.puOverride >= 0
+      )
+    )
+      return true;
+  }
+  return false;
+}
+
+export function calcClientTotaux(
+  state: EngineState,
+  engineTotaux: DevisTotaux
+): ClientTotaux {
+  const active = engineTotaux.parLot.filter((l) => l.active);
+  const parLotClientHT: Partial<Record<LotId, number>> = {};
+  for (const lt of active) {
+    const units = lotClientUnits(state, lt);
+    parLotClientHT[lt.lotId] = round2(
+      units.reduce((a, u) => a + u.amountHT, 0)
+    );
+  }
+
+  // Sans override : totaux globaux du moteur = vérité (pas de recalcul).
+  if (!anyOverride(state)) {
+    return {
+      parLotClientHT,
+      subTotalHT: engineTotaux.subTotalHT,
+      remiseHT: engineTotaux.remiseHT,
+      totalHT: engineTotaux.totalHT,
+      ventilationTVA: engineTotaux.ventilationTVA,
+      totalTVA: engineTotaux.totalTVA,
+      totalTTC: engineTotaux.totalTTC,
+      hasOverride: false,
+    };
+  }
+
+  // Avec override : on recompose tout depuis les unités client.
+  const allUnits = active.flatMap((lt) => lotClientUnits(state, lt));
+  const subTotalHT = round2(allUnits.reduce((a, u) => a + u.amountHT, 0));
+  const remiseHT = round2(
+    remiseAmountClient(subTotalHT, state.remiseMode, state.remiseValeur)
+  );
+  const totalHT = round2(subTotalHT - remiseHT);
+  const ratio = subTotalHT > 0 ? totalHT / subTotalHT : 1;
+  const acc: Record<number, number> = {};
+  for (const u of allUnits) {
+    acc[u.tva] = (acc[u.tva] || 0) + u.amountHT * ratio * (u.tva / 100);
+  }
+  const ventilationTVA: Record<number, number> = {};
+  let totalTVA = 0;
+  for (const [taux, m] of Object.entries(acc)) {
+    const r = round2(m);
+    ventilationTVA[Number(taux)] = r;
+    totalTVA += r;
+  }
+  totalTVA = round2(totalTVA);
+  return {
+    parLotClientHT,
+    subTotalHT,
+    remiseHT,
+    totalHT,
+    ventilationTVA,
+    totalTVA,
+    totalTTC: round2(totalHT + totalTVA),
+    hasOverride: true,
+  };
 }
