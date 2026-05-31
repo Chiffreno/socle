@@ -25,8 +25,10 @@ import {
   LM,
   LOTS_AVEC_GAMME,
   LOTS_NO_SURF,
+  QP,
   createInitialEngineState,
 } from "@/lib/devis/engine/lots";
+import CloisonsConfig from "./configurateurs/CloisonsConfig";
 import type {
   EngineState,
   LotId,
@@ -318,6 +320,44 @@ export default function DevisEditorEngine({ devisId }: Props) {
   function onLotCheck(lid: LotId, checked: boolean) {
     patchLot(lid, { on: checked });
     if (checked) setCur(lid);
+  }
+
+  // ── Configurateur cloisons (Brique 2) ───────────────────────────
+  // Merge un patch dans cloisons.o (écriture temps réel → prestations + récap).
+  function patchCloisonsO(patch: Record<string, unknown>) {
+    const o = draft.engine?.lots?.cloisons?.o ?? {};
+    patchLot("cloisons", { o: { ...o, ...patch } });
+  }
+  // Gamme = preset de démarrage AVEC garde-fou : si le lot est déjà configuré
+  // (une zone active avec surface), on confirme avant d'écraser les réglages
+  // manuels — jamais de ré-écrasement silencieux.
+  function applyGammeCloisons(qNew: Qualite) {
+    const preset = QP.cloisons?.[qNew];
+    if (!preset) return;
+    const o = draft.engine?.lots?.cloisons?.o ?? {};
+    const hasConfig = ["std", "hydro", "hd", "feu"].some(
+      (z) => o[`${z}_on`] && Number(o[`${z}_m2`]) > 0
+    );
+    if (
+      hasConfig &&
+      !window.confirm(
+        "Remplacer la configuration actuelle des cloisons par le préset sélectionné ? Vos réglages manuels seront écrasés."
+      )
+    ) {
+      return;
+    }
+    patchLot("cloisons", {
+      q: qNew,
+      o: {
+        ...o,
+        ...preset,
+        // QP ne touche pas dbl_mont → reset pour un preset propre.
+        std_dbl_mont: false,
+        hydro_dbl_mont: false,
+        hd_dbl_mont: false,
+        feu_dbl_mont: false,
+      },
+    });
   }
 
   // ── Totaux temps réel (engine + tauxHoraire) ────────────────────
@@ -898,7 +938,7 @@ export default function DevisEditorEngine({ devisId }: Props) {
                     </span>
                   )}
                 </div>
-                {LOTS_AVEC_GAMME.has(cur) && (
+                {LOTS_AVEC_GAMME.has(cur) && cur !== "cloisons" && (
                   <div className="dee-quality-inline">
                     <span className="dee-quality-inline-label">Gamme</span>
                     {(["std", "mid", "prm"] as Qualite[]).map((q) => (
@@ -922,6 +962,16 @@ export default function DevisEditorEngine({ devisId }: Props) {
               </>
             )}
           </div>
+
+          {curLot?.on && cur === "cloisons" && (
+            <CloisonsConfig
+              o={curLot.o}
+              q={curLot.q}
+              defaultSurf={(curLot.surf ?? draft.globalSurf) || 0}
+              onChange={patchCloisonsO}
+              onApplyGamme={applyGammeCloisons}
+            />
+          )}
 
           {curLot?.on ? (
             <section className="dee-engine-items">
