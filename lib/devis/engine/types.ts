@@ -71,6 +71,11 @@ export interface EngineLigne {
   lbl: string;
   unit: Unite | string;
   note: string;
+  /** Identifiant du groupe de prestation au sein du lot (ex. zone cloisons
+   *  "std"/"hydro"/"hd"/"feu"). Posé par calc-items, consommé par l'agrégation
+   *  (rattachement consommables → prestation) à la place du parsing de libellé.
+   *  Optionnel : les lots sans agrégation ne le posent pas. */
+  groupId?: string;
   /** Prix unitaire SOURCE : matériau déboursé OU prix client final selon prixEstFinal. */
   p: number;
   /** qty × p (avant marge/MO/remise). */

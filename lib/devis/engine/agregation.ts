@@ -56,28 +56,23 @@ function lineCA(l: EngineLigne, coefDeboursé: number): number {
 // STRATÉGIE CLOISONS
 // ════════════════════════════════════════════════════════════
 //
-// ⚠️ DETTE CONSCIENTE (Brique 1) — POINT UNIQUE de couplage au libellé.
-// Le moteur n'expose AUCUN identifiant de groupe par ligne : pour rattacher
-// un consommable (rails, montants, visserie…) à sa zone/prestation, on
-// s'appuie sur le suffixe de zone que calc-items appose au libellé de CHAQUE
-// ligne de la zone (`… — BA13 standard`). C'est fragile (couplé au texte de
-// calc-items). À RETIRER en Brique 2 : quand on touchera au moteur pour les
-// configurateurs, on posera un vrai `groupId`/`prestationKey` sur EngineLigne
-// et on remplacera ce `lbl.includes(...)` par un test sur ce champ.
-// → Toute la logique de parsing est concentrée ICI (table + filtre), nulle
-//   part ailleurs, pour un retrait trivial.
+// Regroupement par `groupId` (Brique 2) : calc-items tague chaque ligne d'une
+// zone avec son `groupId` (= z.key : "std"/"hydro"/"hd"/"feu"). On rattache
+// donc consommables ↔ prestation sur cet identifiant STABLE — plus aucun
+// parsing de libellé (dette Brique 1 soldée). La table ci-dessous ne déclare
+// plus que le mapping zone → libellé commercial + clé de surface posée.
 //
-// La surface posée (quantité client), elle, vient d'une donnée STABLE :
-// `state.lots.cloisons.o[<zone>_m2]` (config), pas du libellé.
+// La surface posée (quantité client) vient d'une donnée stable :
+// `state.lots.cloisons.o[<zone>_m2]` (config).
 const CLOISONS_ZONES: ReadonlyArray<{
-  lblMatch: string;
+  groupId: string;
   m2Key: string;
   commercial: string;
 }> = [
-  { lblMatch: "BA13 standard", m2Key: "std_m2", commercial: "Fourniture et pose de cloison BA13 / placostil — standard" },
-  { lblMatch: "BA13 hydrofuge", m2Key: "hydro_m2", commercial: "Fourniture et pose de cloison BA13 hydrofuge / placostil" },
-  { lblMatch: "BA13 haute dureté", m2Key: "hd_m2", commercial: "Fourniture et pose de cloison BA13 haute dureté / placostil" },
-  { lblMatch: "BA13 coupe-feu", m2Key: "feu_m2", commercial: "Fourniture et pose de cloison BA13 coupe-feu / placostil" },
+  { groupId: "std", m2Key: "std_m2", commercial: "Fourniture et pose de cloison BA13 / placostil — standard" },
+  { groupId: "hydro", m2Key: "hydro_m2", commercial: "Fourniture et pose de cloison BA13 hydrofuge / placostil" },
+  { groupId: "hd", m2Key: "hd_m2", commercial: "Fourniture et pose de cloison BA13 haute dureté / placostil" },
+  { groupId: "feu", m2Key: "feu_m2", commercial: "Fourniture et pose de cloison BA13 coupe-feu / placostil" },
 ];
 
 function agregerCloisons(state: EngineState, lt: LotTotaux): LigneClient[] {
@@ -87,8 +82,8 @@ function agregerCloisons(state: EngineState, lt: LotTotaux): LigneClient[] {
   const lignes: LigneClient[] = [];
 
   for (const zone of CLOISONS_ZONES) {
-    // DETTE : regroupement par suffixe de libellé (cf. bloc ci-dessus).
-    const groupe = items.filter((l) => l.lbl.includes(zone.lblMatch));
+    // Rattachement par groupId stable (posé par calc-items) — plus de parsing.
+    const groupe = items.filter((l) => l.groupId === zone.groupId);
     if (groupe.length === 0) continue;
 
     const hl = groupe.find((l) => l.hl) ?? groupe[0];

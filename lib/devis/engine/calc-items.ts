@@ -337,17 +337,24 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
         const nm = Math.round(m2 * 1.7) * (z.dbl ? 2 : 1);
         const net = m2 * z.peaux;
         const brut = chuted(net, chute);
-        items.push(_row(rk, nr, `Rails ${oss === "m90" ? "R70" : "R48"} — ${z.lbl} — ${nr} ml`, "ml"));
-        items.push(_row(mk, nm, `Montants ${oss.toUpperCase()}${z.dbl ? " (doublés)" : ""} — ${z.lbl} — ${nm} ml`, "ml"));
-        items.push(_row("bande_acou", nr, `Bande acoustique sous rails — ${z.lbl} — ${nr} ml`, "ml"));
-        items.push(_hrow(`ba13_${z.key}`, brut, `${z.lbl} — ${z.peaux === 4 ? "double peau (4 faces)" : "simple peau (2 faces)"} × ${m2} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute)`));
-        items.push(_row("visserie_cloison", m2, `Visserie — ${z.lbl}`, "m²"));
-        items.push(_row("bande_joint", net, `Bandes à joint — ${z.lbl}`, "m²"));
-        items.push(_row("enduit_bande", net, `Enduit de bande — ${z.lbl}`, "m²"));
+        // Lignes de la zone collectées dans un buffer puis taguées avec
+        // groupId = z.key → l'agrégation rattache consommables ↔ prestation
+        // sur cet identifiant stable (et non plus sur le texte du libellé).
+        const zoneItems: EngineLigne[] = [
+          _row(rk, nr, `Rails ${oss === "m90" ? "R70" : "R48"} — ${z.lbl} — ${nr} ml`, "ml"),
+          _row(mk, nm, `Montants ${oss.toUpperCase()}${z.dbl ? " (doublés)" : ""} — ${z.lbl} — ${nm} ml`, "ml"),
+          _row("bande_acou", nr, `Bande acoustique sous rails — ${z.lbl} — ${nr} ml`, "ml"),
+          _hrow(`ba13_${z.key}`, brut, `${z.lbl} — ${z.peaux === 4 ? "double peau (4 faces)" : "simple peau (2 faces)"} × ${m2} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute)`),
+          _row("visserie_cloison", m2, `Visserie — ${z.lbl}`, "m²"),
+          _row("bande_joint", net, `Bandes à joint — ${z.lbl}`, "m²"),
+          _row("enduit_bande", net, `Enduit de bande — ${z.lbl}`, "m²"),
+        ];
         if (z.acou !== "non") {
           const acouKey = String(z.acou);
-          items.push(_row(acouKey, m2, acouKey === "lv45" ? `LV acoustique 45mm — ${z.lbl}` : `LR acoustique 45mm — ${z.lbl}`, "m²"));
+          zoneItems.push(_row(acouKey, m2, acouKey === "lv45" ? `LV acoustique 45mm — ${z.lbl}` : `LR acoustique 45mm — ${z.lbl}`, "m²"));
         }
+        for (const it of zoneItems) it.groupId = z.key;
+        items.push(...zoneItems);
       }
       return items;
     }
