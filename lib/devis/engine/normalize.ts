@@ -22,6 +22,7 @@ import type {
   CloisonSegment,
   EngineState,
   LotId,
+  LotLibre,
   LotState,
   RemiseMode,
 } from "./types";
@@ -117,5 +118,7 @@ export function normalizeEngine(
       typeof r.remiseValeur === "number" ? r.remiseValeur : header.remiseValeur,
     globalCoeff: typeof r.globalCoeff === "number" ? r.globalCoeff : 0,
     lots,
+    // Additif : devis antérieurs sans lotsLibres → [] (aucun impact calcul).
+    lotsLibres: Array.isArray(r.lotsLibres) ? (r.lotsLibres as LotLibre[]) : [],
   };
 }

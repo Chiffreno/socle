@@ -203,5 +203,6 @@ export function createInitialEngineState(opts?: {
     remiseValeur: opts?.remiseValeur ?? 0,
     globalCoeff: opts?.globalCoeff ?? 0,
     lots: createInitialLotStates(),
+    lotsLibres: [],
   };
 }

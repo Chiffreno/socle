@@ -120,10 +120,30 @@ export interface CloisonSegment {
   m2: number;
   /** Surcharge du PU client au m² (override-aware). Pour `libre` : prix unitaire. */
   puOverride?: number;
+  /** Renommage commercial : prend le pas sur le libellé généré si défini. */
+  libelleOverride?: string;
   /** `libre` uniquement : libellé manuel. */
   lbl?: string;
   /** `libre` uniquement : unité (défaut "u"). */
   unit?: string;
+}
+
+// ─── Lot libre : lot titré par l'artisan, sans configurateur ─────────
+/** Une ligne d'un lot libre : prix de vente ferme (qty × pu, aucune marge). */
+export interface LigneLibre {
+  id: string;
+  lbl: string;
+  qty: number;
+  unit: string;
+  pu: number;
+  /** Renommage commercial (cohérence avec les autres lignes). */
+  libelleOverride?: string;
+}
+/** Lot ajouté manuellement (titre libre + lignes libres). Pas de moteur. */
+export interface LotLibre {
+  id: string;
+  titre: string;
+  lignes: LigneLibre[];
 }
 
 /** État global piloté par l'éditeur, lu par le moteur. */
@@ -135,4 +155,7 @@ export interface EngineState {
   /** Ajustement global % sur tous les prix BP (ChiffReno). */
   globalCoeff: number;
   lots: Record<LotId, LotState>;
+  /** Lots libres (titre + lignes manuelles, prix ferme). Additif : n'impacte
+   *  pas le calcul des 15 lots moteur. Défaut []. */
+  lotsLibres: LotLibre[];
 }

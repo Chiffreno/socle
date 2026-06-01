@@ -22,6 +22,7 @@ import type {
   EngineLigne,
   EngineState,
   LotId,
+  LotLibre,
   RemiseMode,
 } from "./types";
 import { round2, type DevisTotaux, type LotTotaux } from "./totals";
@@ -104,12 +105,14 @@ function agregerCloisons(state: EngineState, lt: LotTotaux): LigneClient[] {
       seg.puOverride >= 0;
     const prixClient = override ? round2(seg.puOverride! * qty) : ventile;
 
-    const libelle =
+    // libelleOverride (renommage commercial) prend le pas sur le généré.
+    const genere =
       seg.type === "libre"
         ? seg.lbl || "Ligne libre"
         : `Fourniture et pose de cloison BA13 ${
             CLOISON_TYPE_LABELS[seg.type] ?? ""
           }`.trim();
+    const libelle = seg.libelleOverride?.trim() || genere;
 
     out.push({
       segmentId: seg.id,
@@ -155,6 +158,31 @@ export function hasAggregateur(lotId: LotId): boolean {
   return lotId in STRATEGIES;
 }
 
+/** Lignes client d'un lot libre (prix de vente ferme, qty × pu). */
+export function lignesLotLibre(
+  lot: LotLibre,
+  tvaParDefaut: number
+): LigneClient[] {
+  return lot.lignes.map((l) => {
+    const qty = Number(l.qty) || 0;
+    const pu = Number(l.pu) || 0;
+    const genere = l.lbl || "Ligne libre";
+    return {
+      segmentId: l.id,
+      prestationKey: "_libre",
+      libelleCommercial: l.libelleOverride?.trim() || genere,
+      libelleTechnique: genere,
+      qty,
+      unit: l.unit || "u",
+      prixClient: round2(qty * pu),
+      prixUnitaireClient: pu,
+      tva: tvaParDefaut,
+      afficheFourniture: false,
+      detailInterne: [],
+    };
+  });
+}
+
 // ════════════════════════════════════════════════════════════
 // TOTAUX CLIENT (override-aware)
 // ════════════════════════════════════════════════════════════
@@ -164,7 +192,8 @@ export function hasAggregateur(lotId: LotId): boolean {
 // totaux globaux du moteur (Σ lignes = caLot) → zéro drift d'arrondi.
 
 export interface ClientTotaux {
-  parLotClientHT: Partial<Record<LotId, number>>;
+  /** HT client par lot — clé = LotId OU id de lot libre. */
+  parLotClientHT: Record<string, number>;
   subTotalHT: number;
   remiseHT: number;
   totalHT: number;
@@ -229,16 +258,26 @@ export function calcClientTotaux(
   engineTotaux: DevisTotaux
 ): ClientTotaux {
   const active = engineTotaux.parLot.filter((l) => l.active);
-  const parLotClientHT: Partial<Record<LotId, number>> = {};
+  const parLotClientHT: Record<string, number> = {};
   for (const lt of active) {
     const units = lotClientUnits(state, lt);
     parLotClientHT[lt.lotId] = round2(
       units.reduce((a, u) => a + u.amountHT, 0)
     );
   }
+  // Lots libres (prix ferme) : HT par lot libre.
+  const lotsLibres = state.lotsLibres ?? [];
+  for (const lot of lotsLibres) {
+    const lignes = lignesLotLibre(lot, state.tvaParDefaut);
+    parLotClientHT[lot.id] = round2(
+      lignes.reduce((a, l) => a + l.prixClient, 0)
+    );
+  }
+  const hasLibre = lotsLibres.some((l) => l.lignes.length > 0);
 
-  // Sans override : totaux globaux du moteur = vérité (pas de recalcul).
-  if (!anyOverride(state)) {
+  // Sans override NI lot libre : totaux globaux du moteur = vérité (pas de
+  // recalcul) → garantit 0 drift (les chiffres validés ne bougent pas).
+  if (!anyOverride(state) && !hasLibre) {
     return {
       parLotClientHT,
       subTotalHT: engineTotaux.subTotalHT,
@@ -251,8 +290,16 @@ export function calcClientTotaux(
     };
   }
 
-  // Avec override : on recompose tout depuis les unités client.
-  const allUnits = active.flatMap((lt) => lotClientUnits(state, lt));
+  // Avec override et/ou lot libre : on recompose depuis les unités client.
+  const allUnits = [
+    ...active.flatMap((lt) => lotClientUnits(state, lt)),
+    ...lotsLibres.flatMap((lot) =>
+      lignesLotLibre(lot, state.tvaParDefaut).map((l) => ({
+        amountHT: l.prixClient,
+        tva: l.tva,
+      }))
+    ),
+  ];
   const subTotalHT = round2(allUnits.reduce((a, u) => a + u.amountHT, 0));
   const remiseHT = round2(
     remiseAmountClient(subTotalHT, state.remiseMode, state.remiseValeur)
