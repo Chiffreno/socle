@@ -37,6 +37,9 @@ export interface LigneClient {
   libelleCommercial: string;
   /** Libellé technique du moteur (ligne hl) — traçabilité interne. */
   libelleTechnique: string;
+  /** Description client générée depuis la config (phrase non technique).
+   *  Vide pour les lignes sans config (libre / lot libre). Affichage seul. */
+  description: string;
   /** Quantité commerciale (surface posée) + unité. */
   qty: number;
   unit: string;
@@ -76,6 +79,30 @@ const CLOISON_TYPE_LABELS: Record<string, string> = {
   hd: "haute dureté",
   feu: "coupe-feu",
 };
+const CLOISON_EPA: Record<string, string> = { m48: "45", m70: "70", m90: "90" };
+const CLOISON_PLAQUE: Record<string, string> = {
+  std: "plaque BA13 standard",
+  hydro: "plaque BA13 hydrofuge (pièces humides)",
+  hd: "plaque BA13 haute dureté",
+  feu: "plaque BA13 coupe-feu",
+};
+
+/**
+ * Description client (phrase non technique) dérivée de la config du segment.
+ * Affichage seul — n'impacte aucun calcul. Vide pour les segments `libre`.
+ */
+export function descriptionCloison(seg: CloisonSegment): string {
+  if (seg.type === "libre") return "";
+  const oss = String(seg.oss || "m48").toUpperCase();
+  const renf = seg.dbl ? " renforcée" : "";
+  const plaque = CLOISON_PLAQUE[seg.type] ?? "plaque BA13";
+  const dbl = seg.peaux === "4" ? " en double épaisseur" : "";
+  const iso =
+    seg.isolant === "lv" || seg.isolant === "lr"
+      ? `, isolation ${seg.isolant === "lv" ? "laine de verre" : "laine de roche"} ${CLOISON_EPA[seg.oss] ?? ""}mm`
+      : "";
+  return `Cloison sur ossature métallique ${oss}${renf}, ${plaque}${dbl}${iso}, finition prête à peindre.`;
+}
 
 function agregerCloisons(state: EngineState, lt: LotTotaux): LigneClient[] {
   const { items, deboursé, caDeboursé } = lt;
@@ -119,6 +146,7 @@ function agregerCloisons(state: EngineState, lt: LotTotaux): LigneClient[] {
       prestationKey: hl.key,
       libelleCommercial: libelle,
       libelleTechnique: hl.lbl,
+      description: descriptionCloison(seg),
       qty,
       unit: seg.type === "libre" ? seg.unit || "u" : "m²",
       prixClient,
@@ -172,6 +200,7 @@ export function lignesLotLibre(
       prestationKey: "_libre",
       libelleCommercial: l.libelleOverride?.trim() || genere,
       libelleTechnique: genere,
+      description: "",
       qty,
       unit: l.unit || "u",
       prixClient: round2(qty * pu),

@@ -30,7 +30,8 @@ import {
   LOTS_NO_SURF,
   createInitialEngineState,
 } from "@/lib/devis/engine/lots";
-import CloisonsConfig from "./configurateurs/CloisonsConfig";
+import CloisonsConfigBox from "./configurateurs/CloisonsConfigBox";
+import CloisonsLignes from "./configurateurs/CloisonsLignes";
 import type {
   CloisonSegment,
   EngineState,
@@ -188,6 +189,13 @@ export default function DevisEditorEngine({ devisId }: Props) {
   const [clientModal, setClientModal] = useState(false);
   const [clientForm, setClientForm] = useState<ClientInput>(emptyClientForm());
 
+  // Vue globale : refs des sections de lot (scroll-vers-ancre) + sections
+  // repliées (collapse par lot).
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    () => new Set()
+  );
+
   const draftRef = useRef(draft);
   draftRef.current = draft;
   const idRef = useRef(id);
@@ -237,6 +245,22 @@ export default function DevisEditorEngine({ devisId }: Props) {
     const i = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(i);
   }, []);
+
+  // Scroll vers la section du lot courant quand `cur` change (ancres gauche).
+  useEffect(() => {
+    if (!loaded) return;
+    const el = sectionRefs.current[cur];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [cur, loaded]);
+
+  function toggleSection(id: string) {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   // Auto-clear toast
   useEffect(() => {
@@ -486,6 +510,35 @@ export default function DevisEditorEngine({ devisId }: Props) {
     draft.remiseValeur,
     totaux,
     cur,
+  ]);
+
+  // Engine synchronisé (header → engine) pour agréger les lignes par lot dans
+  // la vue devis globale. Lignes client par lot actif (cloisons → segments ;
+  // autres → null = legacy ligne-à-ligne).
+  const sections = useMemo(() => {
+    if (!draft.engine || !totaux) return [];
+    const synced: EngineState = {
+      ...draft.engine,
+      globalSurf: draft.globalSurf ?? 0,
+      tvaParDefaut: draft.tvaParDefaut ?? 10,
+      remiseMode: draft.remiseMode,
+      remiseValeur: draft.remiseValeur,
+    };
+    return LM.filter((m) => draft.engine!.lots[m.id].on).map((meta) => {
+      const lt = totaux.parLot.find((l) => l.lotId === meta.id)!;
+      return {
+        meta,
+        lignes: agregerLignesClient(synced, lt),
+        items: lt.items,
+      };
+    });
+  }, [
+    draft.engine,
+    draft.globalSurf,
+    draft.tvaParDefaut,
+    draft.remiseMode,
+    draft.remiseValeur,
+    totaux,
   ]);
 
   function saveStatusText(): string {
@@ -1017,140 +1070,115 @@ export default function DevisEditorEngine({ devisId }: Props) {
             )}
           </div>
 
-          {!curLot?.on ? (
-            <div className="dee-empty">
-              <strong>Lot non inclus dans le devis.</strong>
-              <br />
-              Cochez la case dans la colonne gauche pour l&apos;inclure.
-            </div>
-          ) : cur === "cloisons" ? (
-            <CloisonsConfig
-              segments={cloisonLignes()}
-              lignesClient={curLignesClient ?? []}
+          {/* Box de config du lot courant (cloisons → box d'ajout). */}
+          {curLot?.on && cur === "cloisons" && (
+            <CloisonsConfigBox
               chute={Number(curLot.o.chute) || 0}
               onAdd={addCloisonSegment}
-              onAddLibre={addCloisonLibre}
-              onUpdate={updateCloisonSegment}
-              onRemove={removeCloisonSegment}
               onChute={setCloisonChute}
+              defaultOpen={cloisonLignes().length === 0}
             />
-          ) : (
-            <section className="dee-engine-items">
-              {curLignesClient !== null ? (
-                // ── Rendu AGRÉGÉ (lot pilote) : 1 ligne client par prestation,
-                //    avec disclosure dépliant le détail interne (EngineLigne
-                //    brutes) — visible artisan uniquement, jamais le client.
-                <>
-                  <div className="dee-engine-items-head">
-                    <span>Prestations du lot</span>
-                    <span className="dee-engine-items-head-count">
-                      {curLignesClient.length} prestation
-                      {curLignesClient.length > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  {curLignesClient.length === 0 ? (
-                    <div className="dee-engine-items-empty">
-                      Aucune prestation pour l&apos;instant — configurez le lot
-                      (configurateur détaillé à venir).
-                    </div>
-                  ) : (
-                    <div className="dee-cli-list">
-                      {curLignesClient.map((lc, i) => (
-                        <details className="dee-cli" key={i}>
-                          <summary className="dee-cli-row">
-                            <span className="dee-cli-caret" aria-hidden="true">
-                              <i className="ti ti-chevron-right" />
-                            </span>
-                            <span className="dee-cli-lbl">
-                              {lc.libelleCommercial}
-                            </span>
-                            <span className="dee-cli-qty">
-                              {lc.qty} {lc.unit}
-                            </span>
-                            <span className="dee-cli-pu">
-                              {formatEuro(lc.prixUnitaireClient)}
-                            </span>
-                            <span className="dee-cli-total">
-                              {formatEuro(lc.prixClient)}
-                            </span>
-                          </summary>
-                          <div className="dee-cli-detail">
-                            <div className="dee-cli-detail-head">
-                              <i className="ti ti-list-details" aria-hidden="true" />
-                              Détail interne — {lc.detailInterne.length} ligne
-                              {lc.detailInterne.length > 1 ? "s" : ""} (liste de
-                              courses, non visible client)
-                            </div>
-                            <table className="dee-cli-detail-table">
-                              <tbody>
-                                {lc.detailInterne.map((it, j) => (
-                                  <tr key={j}>
-                                    <td className="lbl">
-                                      {it.lbl}
-                                      {it.note && <small>{it.note}</small>}
-                                    </td>
-                                    <td className="num">
-                                      {it.qty} {it.unit}
-                                    </td>
-                                    <td className="num">{formatEuro(it.p)}</td>
-                                    <td className="num">
-                                      {formatEuro(it.total)}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </details>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                // ── Rendu LEGACY (lots non pilotes) : ligne à ligne brute.
-                <>
-                  <div className="dee-engine-items-head">
-                    <span>Lignes du devis pour ce lot</span>
-                    <span className="dee-engine-items-head-count">
-                      {curItems.length} ligne{curItems.length > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  {curItems.length === 0 ? (
-                    <div className="dee-engine-items-empty">
-                      Aucune ligne pour l&apos;instant — le configurateur
-                      détaillé du lot arrive en P4.
-                    </div>
-                  ) : (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th style={{ width: "55%" }}>Libellé</th>
-                          <th>Quantité</th>
-                          <th>P.U.</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {curItems.map((it, i) => (
-                          <tr key={i}>
-                            <td className="lbl">
-                              {it.lbl}
-                              {it.note && <small>{it.note}</small>}
-                            </td>
-                            <td className="num">
-                              {it.qty} {it.unit}
-                            </td>
-                            <td className="num">{formatEuro(it.p)}</td>
-                            <td className="num">{formatEuro(it.total)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </>
-              )}
-            </section>
           )}
+          {curLot?.on && cur !== "cloisons" && (
+            <div className="dee-cfgzone-soon">
+              Configurateur « {lotMeta.label} » à venir — ajoutez des lignes
+              libres dans sa section ci-dessous.
+            </div>
+          )}
+          {!curLot?.on && (
+            <div className="dee-cfgzone-off">
+              <strong>{lotMeta.label}</strong> n&apos;est pas inclus. Cochez-le
+              dans la colonne gauche pour l&apos;ajouter au devis.
+            </div>
+          )}
+
+          {/* ── BAS-CENTRE : devis complet, toutes les sections de lot ── */}
+          <div className="dee-devis">
+            {sections.length === 0 ? (
+              <div className="dee-empty">
+                <strong>Devis vide.</strong>
+                <br />
+                Cochez un lot dans la colonne gauche pour commencer.
+              </div>
+            ) : (
+              sections.map(({ meta, lignes, items }) => {
+                const collapsed = collapsedSections.has(meta.id);
+                const isCurrent = cur === meta.id;
+                const lotHT = clientTotaux?.parLotClientHT[meta.id] ?? 0;
+                return (
+                  <section
+                    key={meta.id}
+                    ref={(el) => {
+                      sectionRefs.current[meta.id] = el;
+                    }}
+                    className={`dee-sec${isCurrent ? " is-current" : ""}${
+                      collapsed ? " is-collapsed" : ""
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className="dee-sec-head"
+                      onClick={() => toggleSection(meta.id)}
+                    >
+                      <i
+                        className="ti ti-chevron-right dee-sec-caret"
+                        aria-hidden="true"
+                      />
+                      <span className="dee-sec-icon">
+                        <i className={`ti ti-${meta.icon}`} aria-hidden="true" />
+                      </span>
+                      <span className="dee-sec-name">{meta.label}</span>
+                      <span className="dee-sec-total">{formatEuro(lotHT)}</span>
+                    </button>
+                    {!collapsed &&
+                      (meta.id === "cloisons" && lignes ? (
+                        lignes.length === 0 ? (
+                          <div className="dee-sec-empty">
+                            Aucune ligne — configurez une cloison ci-dessus.
+                          </div>
+                        ) : (
+                          <CloisonsLignes
+                            segments={cloisonLignes()}
+                            lignesClient={lignes}
+                            onUpdate={updateCloisonSegment}
+                            onRemove={removeCloisonSegment}
+                            onAddLibre={addCloisonLibre}
+                          />
+                        )
+                      ) : items.length > 0 ? (
+                        // Lots sans agrégateur : lignes moteur (lecture seule),
+                        // détail interne retiré → description si dispo.
+                        <div className="dee-lines">
+                          {items.map((it, i) => (
+                            <div className="dee-line is-readonly" key={i}>
+                              <div className="dee-line-main">
+                                <span className="dee-line-title">{it.lbl}</span>
+                                {it.note && (
+                                  <span className="dee-line-desc">{it.note}</span>
+                                )}
+                              </div>
+                              <span className="dee-line-qtytxt">
+                                {it.qty} {it.unit}
+                              </span>
+                              <span className="dee-line-putxt">
+                                {formatEuro(it.p)}
+                              </span>
+                              <span className="dee-line-total">
+                                {formatEuro(it.total)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="dee-sec-empty">
+                          Aucune ligne pour ce lot.
+                        </div>
+                      ))}
+                  </section>
+                );
+              })
+            )}
+          </div>
         </section>
 
         {/* ── COLONNE DROITE : récap temps réel ──────────────── */}

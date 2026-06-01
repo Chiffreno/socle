@@ -455,11 +455,137 @@
 }
 
 /* ── Colonne centrale : config du lot courant ───────────────────── */
+/* Vue globale : zone config (haut, fixe) + devis complet (bas, scrollable). */
 .dee-cols-center {
-  padding: 20px 28px 80px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 54px);
   background: var(--gray-bg);
   overflow-x: hidden;
 }
+.dee-cols-center > .dee-config-head-inline,
+.dee-cols-center > .dee-cfg-box,
+.dee-cols-center > .dee-cfgzone-soon,
+.dee-cols-center > .dee-cfgzone-off {
+  flex-shrink: 0;
+  margin: 0 28px;
+}
+.dee-cols-center > .dee-config-head-inline { margin-top: 18px; }
+.dee-cols-center > .dee-cfg-box { margin-top: 4px; }
+/* Devis complet : conteneur scrollable. */
+.dee-devis {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 28px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dee-cfgzone-soon, .dee-cfgzone-off {
+  padding: 12px 14px;
+  margin-top: 4px;
+  background: var(--white);
+  border: 1px dashed var(--dee-line-2);
+  border-radius: var(--dee-r-sm);
+  font-family: var(--ff);
+  font-size: 12px;
+  color: var(--dee-ink-3);
+}
+.dee-cfgzone-off strong { color: var(--dee-ink-2); }
+
+/* ── Section de lot (devis complet) ─────────────────────────────── */
+.dee-sec {
+  background: var(--white);
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r);
+  box-shadow: var(--dee-shadow-card);
+  overflow: hidden;
+  scroll-margin-top: 8px;
+}
+.dee-sec.is-current { border-color: var(--green); box-shadow: 0 0 0 1px var(--green), var(--dee-shadow-card); }
+.dee-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--ff);
+  text-align: left;
+  transition: background .12s;
+}
+.dee-sec-head:hover { background: var(--dee-fill-2); }
+.dee-sec.is-current .dee-sec-head { background: var(--green-light); }
+.dee-sec-caret { font-size: 16px; color: var(--dee-ink-3); transition: transform .15s ease; }
+.dee-sec:not(.is-collapsed) .dee-sec-caret { transform: rotate(90deg); color: var(--green); }
+.dee-sec-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: var(--dee-r-sm);
+  background: var(--dee-fill); color: var(--dee-ink-2); flex-shrink: 0;
+}
+.dee-sec.is-current .dee-sec-icon { background: var(--green); color: var(--white); }
+.dee-sec-icon .ti { font-size: 15px; }
+.dee-sec-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--black); }
+.dee-sec-total { font-family: var(--num); font-size: 14px; font-weight: 600; color: var(--green); }
+.dee-sec-empty {
+  padding: 16px; text-align: center; font-family: var(--ff);
+  font-size: 12px; color: var(--dee-ink-3);
+  border-top: 1px solid var(--dee-line);
+}
+
+/* ── Lignes de devis (éditables / lecture) ──────────────────────── */
+.dee-lines { display: flex; flex-direction: column; border-top: 1px solid var(--dee-line); }
+.dee-line {
+  display: grid;
+  grid-template-columns: 1fr 92px 104px 86px 26px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-top: 1px solid var(--dee-line);
+}
+.dee-line:first-child { border-top: none; }
+.dee-line.is-readonly { grid-template-columns: 1fr 92px 90px 86px; }
+.dee-line-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dee-line-title { font-family: var(--ff); font-size: 13px; font-weight: 500; color: var(--black); }
+.dee-line-desc { font-family: var(--ff); font-size: 11.5px; color: var(--dee-ink-3); line-height: 1.35; }
+.dee-line-title-input {
+  width: 100%; padding: 6px 9px;
+  background: var(--white); border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r-sm); font-family: var(--ff); font-size: 13px; color: var(--black);
+}
+.dee-line-title-input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--green-light); }
+.dee-line-qty, .dee-line-pu { display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
+.dee-line-qty input, .dee-line-pu input {
+  width: 54px; padding: 5px 7px;
+  background: var(--white); border: 1px solid var(--dee-line); border-radius: var(--dee-r-sm);
+  font-family: var(--num); font-size: 12px; font-weight: 500; color: var(--black); text-align: right;
+  transition: border-color .12s, box-shadow .12s;
+}
+.dee-line-pu input { width: 62px; }
+.dee-line-qty input:focus, .dee-line-pu input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--green-light); }
+.dee-line-u { font-family: var(--num); font-style: normal; font-size: 11px; color: var(--dee-ink-3); }
+.dee-line-qtytxt, .dee-line-putxt { font-family: var(--num); font-size: 12px; color: var(--dee-ink-2); text-align: right; white-space: nowrap; }
+.dee-line-total { font-family: var(--num); font-size: 13px; font-weight: 600; color: var(--green); text-align: right; white-space: nowrap; }
+.dee-line-del {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; padding: 0; background: transparent; border: none;
+  border-radius: var(--dee-r-sm); color: var(--dee-ink-3); cursor: pointer;
+  transition: color .12s, background .12s;
+}
+.dee-line-del:hover { color: var(--red); background: var(--red-bg); }
+.dee-line-del .ti { font-size: 16px; }
+.dee-line-addlibre {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  margin: 4px 16px 12px;
+  padding: 6px 12px; background: var(--white);
+  border: 1px dashed var(--dee-line-2); border-radius: var(--dee-r-sm);
+  font-family: var(--ff); font-size: 12px; font-weight: 600; color: var(--dee-ink-2); cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.dee-line-addlibre:hover { border-color: var(--green-b); color: var(--green-dark); background: var(--dee-fill); }
+.dee-line-addlibre .ti { font-size: 15px; }
 
 /* En-tête compact : nom du lot + réglages inline. */
 .dee-config-head-inline {
@@ -765,24 +891,22 @@
   box-shadow: var(--dee-shadow-card);
   overflow: hidden;
 }
+/* En-tête VERT (chevron blanc) — état soigné. */
 .dee-cfg-box-head {
   display: flex;
   align-items: center;
   gap: 9px;
   width: 100%;
   padding: 11px 16px;
-  background: transparent;
+  background: var(--green);
   border: none;
   cursor: pointer;
   font-family: var(--ff);
   text-align: left;
   transition: background .12s;
 }
-.dee-cfg-box-head:hover { background: var(--dee-fill-2); }
-.dee-cfg-box:not(.is-collapsed) .dee-cfg-box-head {
-  border-bottom: 1px solid var(--dee-line);
-}
-.dee-cfg-box-head-ic { color: var(--green); font-size: 16px; }
+.dee-cfg-box-head:hover { background: var(--green-dark); }
+.dee-cfg-box-head-ic { color: var(--white); font-size: 16px; }
 .dee-cfg-box-title {
   flex: 1;
   font-family: var(--ff);
@@ -790,9 +914,9 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .08em;
-  color: var(--dee-ink-2);
+  color: var(--white);
 }
-.dee-cfg-box-caret { font-size: 16px; color: var(--dee-ink-3); }
+.dee-cfg-box-caret { font-size: 16px; color: var(--white); }
 .dee-cfg-box-body { padding: 14px 16px; }
 .dee-cfg-box-grid {
   display: grid;

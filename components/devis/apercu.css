@@ -225,6 +225,8 @@
   font-size: 11px;
   line-height: 1.35;
 }
+/* Description client (phrase dérivée de la config) — un peu plus lisible. */
+.ap-lot-items td.lbl small.ap-desc { color: var(--gray4); }
 .ap-lot-items th.qty,
 .ap-lot-items td.qty,
 .ap-lot-items th.pu,

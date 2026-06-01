@@ -386,6 +386,9 @@ function LotTable({
                   <tr key={i}>
                     <td className="lbl">
                       {lc.libelleCommercial}
+                      {lc.description && (
+                        <small className="ap-desc">{lc.description}</small>
+                      )}
                       {lc.afficheFourniture &&
                         lc.dontFourniture !== undefined && (
                           <small>
