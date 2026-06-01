@@ -195,6 +195,7 @@ export default function DevisEditorEngine({ devisId }: Props) {
   // Vue globale : refs des sections de lot (scroll-vers-ancre) + sections
   // repliées (collapse par lot).
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const devisScrollRef = useRef<HTMLDivElement | null>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     () => new Set()
   );
@@ -250,10 +251,18 @@ export default function DevisEditorEngine({ devisId }: Props) {
   }, []);
 
   // Scroll vers la section du lot courant quand `cur` change (ancres gauche).
+  // On scrolle UNIQUEMENT le conteneur interne `.dee-devis` (pas scrollIntoView
+  // qui remonterait jusqu'à la fenêtre et ferait sortir la zone config du haut).
   useEffect(() => {
     if (!loaded) return;
+    const container = devisScrollRef.current;
     const el = sectionRefs.current[cur];
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!container || !el) return;
+    const top =
+      el.getBoundingClientRect().top -
+      container.getBoundingClientRect().top +
+      container.scrollTop;
+    container.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
   }, [cur, loaded]);
 
   function toggleSection(id: string) {
@@ -971,6 +980,11 @@ export default function DevisEditorEngine({ devisId }: Props) {
 
         {/* ── COLONNE CENTRE : header inline compact + lignes du devis ── */}
         <section className="dee-cols-center">
+          {/* ── ZONE CONFIGURATEUR (atelier) — panneau teinté, distinct ── */}
+          <div className="dee-cfgzone">
+          <div className="dee-cfgzone-eyebrow">
+            <i className="ti ti-tools" aria-hidden="true" /> Configurer
+          </div>
           <div className="dee-config-head-inline">
             <h2 className="dee-config-name">{lotMeta.label}</h2>
 
@@ -1094,9 +1108,11 @@ export default function DevisEditorEngine({ devisId }: Props) {
               dans la colonne gauche pour l&apos;ajouter au devis.
             </div>
           )}
+          </div>
 
-          {/* ── BAS-CENTRE : devis complet, toutes les sections de lot ── */}
-          <div className="dee-devis">
+          {/* ── ZONE DEVIS (résultat) — sobre/neutre, ce que verra le client ── */}
+          <div className="dee-devis" ref={devisScrollRef}>
+            <div className="dee-devis-eyebrow">Le devis</div>
             {sections.length === 0 ? (
               <div className="dee-empty">
                 <strong>Devis vide.</strong>

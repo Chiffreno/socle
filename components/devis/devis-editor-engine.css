@@ -26,6 +26,7 @@
   --dee-ink-2:      #4a4a4a;   /* secondaire dense */
   --dee-fill:       #f5f6f7;   /* fond léger zones / cards stat */
   --dee-fill-2:     #fafbfc;
+  --dee-cfg-bg:     #eef8f2;   /* teinte verte légère — zone configurateur */
 
   min-height: 100vh;
   background: var(--gray-bg);
@@ -248,14 +249,24 @@
 .dee-cols {
   display: grid;
   grid-template-columns: 272px 1fr 344px;
-  min-height: calc(100vh - 54px);
+  /* Desktop : grille clampée au viewport → la FENÊTRE ne scrolle pas
+     (la chrome topbar + zone config restent fixes). Chaque colonne défile
+     chez elle. */
+  height: calc(100vh - 54px);
+  overflow: hidden;
 }
+/* Colonnes gauche/droite scrollables en interne si plus hautes que le viewport. */
+.dee-cols-left { overflow-y: auto; }
+.dee-cols-right { overflow-y: auto; }
 @media (max-width: 1200px) {
   .dee-cols { grid-template-columns: 232px 1fr 308px; }
 }
 @media (max-width: 980px) {
-  .dee-cols { grid-template-columns: 1fr; }
-  .dee-cols-left, .dee-cols-right { border-right: none; border-left: none; border-bottom: 1px solid var(--dee-line); }
+  /* Mobile : 1 colonne, on rend la page scrollable normalement (pas de clamp). */
+  .dee-cols { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  .dee-cols-left, .dee-cols-right { overflow-y: visible; border-right: none; border-left: none; border-bottom: 1px solid var(--dee-line); }
+  .dee-cols-center { max-height: none; }
+  .dee-devis { overflow-y: visible; }
 }
 
 /* En-tête de colonne partagé (eyebrow + icône) — gauche & droite. */
@@ -463,15 +474,28 @@
   background: var(--gray-bg);
   overflow-x: hidden;
 }
-.dee-cols-center > .dee-config-head-inline,
-.dee-cols-center > .dee-cfg-box,
-.dee-cols-center > .dee-cfgzone-soon,
-.dee-cols-center > .dee-cfgzone-off {
+/* ZONE CONFIGURATEUR (atelier) : panneau teinté vert, séparé du devis. */
+.dee-cfgzone {
   flex-shrink: 0;
-  margin: 0 28px;
+  background: var(--dee-cfg-bg);
+  border-bottom: 2px solid var(--green-b);
+  padding: 12px 28px 16px;
 }
-.dee-cols-center > .dee-config-head-inline { margin-top: 18px; }
-.dee-cols-center > .dee-cfg-box { margin-top: 4px; }
+.dee-cfgzone-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--ff);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--green-dark);
+  margin-bottom: 8px;
+}
+.dee-cfgzone-eyebrow .ti { font-size: 14px; }
+.dee-cfgzone .dee-config-head-inline { margin: 0; }
+.dee-cfgzone .dee-cfg-box { margin-top: 10px; }
 /* Devis complet : conteneur scrollable. */
 .dee-devis {
   flex: 1;
@@ -482,6 +506,18 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+/* ZONE DEVIS (résultat) : eyebrow sobre, neutre — préfigure le doc client. */
+.dee-devis-eyebrow {
+  flex-shrink: 0;
+  font-family: var(--ff);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--dee-ink-3);
+  padding: 2px 2px 2px;
+  margin-bottom: -2px;
 }
 .dee-cfgzone-soon, .dee-cfgzone-off {
   padding: 12px 14px;
