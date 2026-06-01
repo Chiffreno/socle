@@ -68,6 +68,9 @@ interface Props {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────
+// Garde-fou NaN : toute valeur non finie (lot vide, division par 0…) → 0.
+const safe = (n?: number): number =>
+  typeof n === "number" && Number.isFinite(n) ? n : 0;
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const isoPlusDays = (baseISO: string, n: number) => {
   const d = new Date(baseISO);
@@ -1101,10 +1104,12 @@ export default function DevisEditorEngine({ devisId }: Props) {
                 Cochez un lot dans la colonne gauche pour commencer.
               </div>
             ) : (
-              sections.map(({ meta, lignes, items }) => {
+              sections.map(({ meta, lignes }, idx) => {
                 const collapsed = collapsedSections.has(meta.id);
                 const isCurrent = cur === meta.id;
-                const lotHT = clientTotaux?.parLotClientHT[meta.id] ?? 0;
+                const lt = totaux?.parLot.find((l) => l.lotId === meta.id);
+                const lotHT = safe(clientTotaux?.parLotClientHT[meta.id]);
+                const marge = safe(lt?.margeDeboursé);
                 return (
                   <section
                     key={meta.id}
@@ -1124,54 +1129,43 @@ export default function DevisEditorEngine({ devisId }: Props) {
                         className="ti ti-chevron-right dee-sec-caret"
                         aria-hidden="true"
                       />
+                      <span className="dee-sec-num">{idx + 1}.0</span>
                       <span className="dee-sec-icon">
                         <i className={`ti ti-${meta.icon}`} aria-hidden="true" />
                       </span>
                       <span className="dee-sec-name">{meta.label}</span>
-                      <span className="dee-sec-total">{formatEuro(lotHT)}</span>
+                      <span className="dee-sec-fig">
+                        <span className="dee-sec-fig-row">
+                          <span className="dee-sec-fig-lbl">
+                            Total de la prestation
+                          </span>
+                          <span className="dee-sec-fig-val">
+                            {formatEuro(lotHT)}
+                          </span>
+                        </span>
+                        <span className="dee-sec-fig-row is-marge">
+                          <span className="dee-sec-fig-lbl">Marge</span>
+                          <span className="dee-sec-fig-val">
+                            {formatEuro(marge)}
+                          </span>
+                        </span>
+                      </span>
                     </button>
                     {!collapsed &&
-                      (meta.id === "cloisons" && lignes ? (
-                        lignes.length === 0 ? (
-                          <div className="dee-sec-empty">
-                            Aucune ligne — configurez une cloison ci-dessus.
-                          </div>
-                        ) : (
-                          <CloisonsLignes
-                            segments={cloisonLignes()}
-                            lignesClient={lignes}
-                            onUpdate={updateCloisonSegment}
-                            onRemove={removeCloisonSegment}
-                            onAddLibre={addCloisonLibre}
-                          />
-                        )
-                      ) : items.length > 0 ? (
-                        // Lots sans agrégateur : lignes moteur (lecture seule),
-                        // détail interne retiré → description si dispo.
-                        <div className="dee-lines">
-                          {items.map((it, i) => (
-                            <div className="dee-line is-readonly" key={i}>
-                              <div className="dee-line-main">
-                                <span className="dee-line-title">{it.lbl}</span>
-                                {it.note && (
-                                  <span className="dee-line-desc">{it.note}</span>
-                                )}
-                              </div>
-                              <span className="dee-line-qtytxt">
-                                {it.qty} {it.unit}
-                              </span>
-                              <span className="dee-line-putxt">
-                                {formatEuro(it.p)}
-                              </span>
-                              <span className="dee-line-total">
-                                {formatEuro(it.total)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                      (meta.id === "cloisons" && lignes && lignes.length > 0 ? (
+                        <CloisonsLignes
+                          lotIndex={idx + 1}
+                          segments={cloisonLignes()}
+                          lignesClient={lignes}
+                          onUpdate={updateCloisonSegment}
+                          onRemove={removeCloisonSegment}
+                          onAddLibre={addCloisonLibre}
+                        />
                       ) : (
+                        // Pas de modèle segments / lot vide → état vide propre.
+                        // Aucun rendu legacy (détail matière) dans la vue globale.
                         <div className="dee-sec-empty">
-                          Aucune ligne pour ce lot.
+                          Configurez ce lot pour ajouter des prestations.
                         </div>
                       ))}
                   </section>

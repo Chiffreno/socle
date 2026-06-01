@@ -493,7 +493,7 @@
 }
 .dee-cfgzone-off strong { color: var(--dee-ink-2); }
 
-/* ── Section de lot (devis complet) ─────────────────────────────── */
+/* ── Section de lot (style Héméa : en-tête aéré + cartes-prestation) ── */
 .dee-sec {
   background: var(--white);
   border: 1px solid var(--dee-line);
@@ -506,9 +506,9 @@
 .dee-sec-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 11px 16px;
+  padding: 16px 20px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -518,22 +518,115 @@
 }
 .dee-sec-head:hover { background: var(--dee-fill-2); }
 .dee-sec.is-current .dee-sec-head { background: var(--green-light); }
-.dee-sec-caret { font-size: 16px; color: var(--dee-ink-3); transition: transform .15s ease; }
+.dee-sec-caret { font-size: 16px; color: var(--dee-ink-3); transition: transform .15s ease; flex-shrink: 0; }
 .dee-sec:not(.is-collapsed) .dee-sec-caret { transform: rotate(90deg); color: var(--green); }
+.dee-sec-num {
+  font-family: var(--num); font-size: 13px; font-weight: 500;
+  color: var(--dee-ink-3); flex-shrink: 0; min-width: 26px;
+}
 .dee-sec-icon {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: var(--dee-r-sm);
+  width: 30px; height: 30px; border-radius: var(--dee-r-sm);
   background: var(--dee-fill); color: var(--dee-ink-2); flex-shrink: 0;
 }
 .dee-sec.is-current .dee-sec-icon { background: var(--green); color: var(--white); }
-.dee-sec-icon .ti { font-size: 15px; }
-.dee-sec-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--black); }
-.dee-sec-total { font-family: var(--num); font-size: 14px; font-weight: 600; color: var(--green); }
+.dee-sec-icon .ti { font-size: 16px; }
+.dee-sec-name { flex: 1; font-size: 17px; font-weight: 600; color: var(--black); letter-spacing: -0.01em; }
+/* Bloc chiffré à droite : Total (gras) + Marge (gris, plus petit). */
+.dee-sec-fig { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.dee-sec-fig-row { display: flex; align-items: baseline; gap: 10px; }
+.dee-sec-fig-lbl { font-family: var(--ff); font-size: 11px; color: var(--dee-ink-3); }
+.dee-sec-fig-val { font-family: var(--num); font-size: 16px; font-weight: 600; color: var(--black); min-width: 92px; text-align: right; }
+.dee-sec-fig-row.is-marge .dee-sec-fig-lbl { font-size: 10px; }
+.dee-sec-fig-row.is-marge .dee-sec-fig-val { font-size: 12px; font-weight: 500; color: var(--green); }
 .dee-sec-empty {
-  padding: 16px; text-align: center; font-family: var(--ff);
-  font-size: 12px; color: var(--dee-ink-3);
+  padding: 22px 18px; text-align: center; font-family: var(--ff);
+  font-size: 12.5px; color: var(--dee-ink-3);
   border-top: 1px solid var(--dee-line);
 }
+
+/* ── Cartes-prestation (sous l'en-tête de lot) ──────────────────── */
+.dee-pcs {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 14px 16px 16px;
+  background: var(--gray-bg);
+  border-top: 1px solid var(--dee-line);
+}
+.dee-pc {
+  background: var(--white);
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r);
+  box-shadow: var(--dee-shadow-sm);
+  overflow: hidden;
+  transition: box-shadow .12s, border-color .12s;
+}
+.dee-pc.is-editing { border-color: var(--green-b); box-shadow: 0 0 0 3px var(--green-light); }
+/* Eyebrow catégorie — fond orange pâle (façon Héméa). */
+.dee-pc-eyebrow {
+  padding: 5px 14px;
+  background: var(--orange-bg);
+  color: var(--orange);
+  font-family: var(--ff);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.dee-pc-body { padding: 12px 14px 13px; }
+.dee-pc-head { display: flex; align-items: flex-start; gap: 10px; }
+.dee-pc-num {
+  font-family: var(--num); font-size: 12px; font-weight: 500;
+  color: var(--dee-ink-3); flex-shrink: 0; padding-top: 1px;
+}
+.dee-pc-title { flex: 1; font-family: var(--ff); font-size: 15px; font-weight: 500; color: var(--black); line-height: 1.3; }
+.dee-pc-title-input {
+  flex: 1; padding: 6px 9px;
+  background: var(--white); border: 1px solid var(--dee-line); border-radius: var(--dee-r-sm);
+  font-family: var(--ff); font-size: 15px; color: var(--black);
+}
+.dee-pc-title-input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--green-light); }
+.dee-pc-actions { display: inline-flex; gap: 2px; flex-shrink: 0; }
+.dee-pc-act {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0; background: transparent; border: none;
+  border-radius: var(--dee-r-sm); color: var(--dee-ink-3); cursor: pointer;
+  transition: color .12s, background .12s;
+}
+.dee-pc-act:hover { background: var(--dee-fill); color: var(--dee-ink-2); }
+.dee-pc-act.is-on { background: var(--green-light); color: var(--green-dark); }
+.dee-pc-act.is-del:hover { color: var(--red); background: var(--red-bg); }
+.dee-pc-act .ti { font-size: 16px; }
+.dee-pc-desc {
+  margin: 5px 0 0 30px;
+  font-family: var(--ff); font-size: 12.5px; color: var(--dee-ink-2); line-height: 1.4;
+}
+/* Édition inline (crayon) : qté + PU. */
+.dee-pc-edit { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0 0 30px; }
+.dee-pc-edit-f {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--ff); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--dee-ink-3);
+}
+.dee-pc-edit-f input {
+  width: 72px; padding: 6px 8px;
+  background: var(--white); border: 1px solid var(--dee-line); border-radius: var(--dee-r-sm);
+  font-family: var(--num); font-size: 13px; font-weight: 500; color: var(--black); text-align: right;
+  text-transform: none;
+}
+.dee-pc-edit-f input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--green-light); }
+.dee-pc-edit-u { font-family: var(--num); font-size: 11px; color: var(--dee-ink-3); text-transform: none; }
+/* Pied de carte : méta gauche (TVA, qté, PU) + total droite. */
+.dee-pc-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 11px 0 0 30px;
+}
+.dee-pc-meta { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 12px; font-family: var(--ff); font-size: 12px; color: var(--dee-ink-3); }
+.dee-pc-tva {
+  padding: 2px 8px; background: var(--dee-fill); border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r-sm); font-family: var(--ff); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--dee-ink-2);
+}
+.dee-pc-q { font-family: var(--num); color: var(--dee-ink-2); }
+.dee-pc-pu { font-family: var(--ff); }
+.dee-pc-total { font-family: var(--num); font-size: 16px; font-weight: 600; color: var(--green); white-space: nowrap; }
 
 /* ── Lignes de devis (éditables / lecture) ──────────────────────── */
 .dee-lines { display: flex; flex-direction: column; border-top: 1px solid var(--dee-line); }
