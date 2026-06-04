@@ -155,9 +155,63 @@
 .taux-tool .btn-inject:active { transform: scale(0.98); }
 .taux-tool .btn-inject i { font-size: 16px; }
 
+/* ── COMPARAISON MARCHÉ ── */
+.taux-tool .cm-card {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 0;
+  padding: 28px;
+  margin-top: 16px;
+}
+
+.taux-tool .cm-selects { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
+.taux-tool .cm-field { display: flex; flex-direction: column; gap: 6px; }
+.taux-tool .cm-field-label { font-size: 12px; font-weight: 500; color: var(--black); letter-spacing: -0.01em; }
+.taux-tool .cm-select,
+.taux-tool .cm-heures-input {
+  width: 100%; padding: 11px 12px; border: 1px solid var(--gray2); border-radius: 0;
+  font-family: var(--ff); font-size: 14px; font-weight: 500; color: var(--black);
+  background: var(--white); outline: none; transition: border-color .15s;
+  -webkit-appearance: none; appearance: none;
+}
+.taux-tool .cm-select { cursor: pointer; }
+.taux-tool .cm-select:focus,
+.taux-tool .cm-heures-input:focus { border-color: var(--black); }
+.taux-tool .cm-heures-input { font-family: var(--mono); text-align: right; }
+.taux-tool .cm-field-heures .cm-heures-input { width: 120px; }
+
+/* Prix jour marché */
+.taux-tool .cm-market { display: flex; border-top: 1px solid var(--gray2); border-bottom: 1px solid var(--gray2); }
+.taux-tool .cm-market-item { flex: 1; padding: 14px 0; text-align: center; }
+.taux-tool .cm-market-item + .cm-market-item { border-left: 1px solid var(--gray2); }
+.taux-tool .cm-market-label { display: block; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 6px; }
+.taux-tool .cm-market-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 500; color: var(--black); letter-spacing: -0.02em; }
+
+/* Taux jour artisan — seul élément vert */
+.taux-tool .cm-artisan { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--gray2); }
+.taux-tool .cm-artisan-label { font-size: 13px; font-weight: 500; color: var(--black); }
+.taux-tool .cm-artisan-val { font-family: var(--mono); font-size: 1.6rem; font-weight: 500; color: var(--green); letter-spacing: -0.03em; line-height: 1; }
+
+/* Échelle visuelle */
+.taux-tool .cm-scale { margin-top: 22px; }
+.taux-tool .cm-scale-bar { position: relative; height: 6px; background: var(--gray2); border-radius: 0; }
+.taux-tool .cm-scale-marker { position: absolute; top: -5px; width: 2px; height: 16px; background: var(--black); transform: translateX(-1px); }
+.taux-tool .cm-scale-labels { display: flex; justify-content: space-between; margin-top: 8px; }
+.taux-tool .cm-scale-end { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--gray3); }
+
+/* Message de positionnement */
+.taux-tool .cm-message { margin-top: 18px; font-size: 14px; font-weight: 500; color: var(--black); letter-spacing: -0.01em; }
+
+/* Mention de prudence */
+.taux-tool .cm-disclaimer { margin-top: 16px; font-family: var(--mono); font-size: 10px; line-height: 1.6; color: var(--gray3); letter-spacing: 0; }
+
 /* ── RESPONSIVE ── */
 @media (max-width: 1100px) { .taux-tool .sim-grid { grid-template-columns: 1fr 340px; } }
 @media (max-width: 900px) {
   .taux-tool .sim-grid { grid-template-columns: 1fr; }
   .taux-tool .result-col { position: static; }
+}
+@media (max-width: 480px) {
+  .taux-tool .cm-card { padding: 20px; }
+  .taux-tool .cm-market-val { font-size: 1rem; }
 }

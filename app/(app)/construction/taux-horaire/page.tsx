@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import ComparaisonMarche from "@/components/taux-horaire/ComparaisonMarche";
 import "./taux-horaire.css";
 
 type Statut = "micro" | "eurl" | "sasu";
@@ -537,6 +538,8 @@ export default function TauxHorairePage() {
               Utiliser dans le calculateur de rentabilité
             </button>
           </div>
+
+          <ComparaisonMarche tauxHoraire={tauxReco} />
         </div>
       </div>
     </div>
