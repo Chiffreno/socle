@@ -28,11 +28,27 @@
   /* Polices — mappées sur next/font */
   --ff:   var(--font-figtree), "Figtree", sans-serif;
   --mono: var(--font-dm-mono), "DM Mono", monospace;
-  /* Police des chiffres (montants, totaux, quantités, %). Introduite pour le
-     chantier langage visuel : pour l'instant CONSOMMÉE PAR L'ÉDITEUR DE DEVIS
-     uniquement (--mono/DM Mono reste en place ailleurs). Sera étendue au reste
-     de l'app après validation de la direction. */
+  /* Police des chiffres (montants, totaux, quantités, %, N°, dates). Space
+     Grotesk tabulaire. DÉFAUT CANONIQUE pour TOUS les chiffres de l'app
+     (langage visuel mai 2026). --mono/DM Mono subsiste sur les eyebrows et
+     labels mono ; il est progressivement remplacé sur les chiffres. */
   --num:  var(--font-space-grotesk), "Space Grotesk", sans-serif;
+
+  /* ── Langage visuel (mai 2026) — canon promu depuis le module devis ──
+     Source unique. Les anciens noms scopés (--dee-* du devis, --r/--shadow de
+     chantiers/matériaux) sont des ALIAS temporaires pointant ici (cf. DESIGN.md
+     « Dette »). Valeurs reprises à l'identique du devis. */
+  --radius:      8px;   /* cards, blocs surélevés */
+  --radius-sm:   6px;   /* inputs, pills, boutons */
+  --shadow-sm:   0 1px 2px rgba(16, 24, 40, .05), 0 1px 1px rgba(16, 24, 40, .04);
+  --shadow-card: 0 1px 3px rgba(16, 24, 40, .06), 0 6px 16px rgba(16, 24, 40, .06);
+  --gray-line:   #e0e0e0;   /* bordures (plus contrastées que --gray2 #e8e8e8) */
+  --gray-line-2: #d2d2d2;   /* bordures marquées */
+  --ink-3:       #8a8a8a;   /* texte tertiaire lisible (vs --gray3 #a3a3a3) */
+  --ink-2:       #4a4a4a;   /* texte secondaire dense (vs --gray4 #525252) */
+  --fill:        #f5f6f7;   /* fond léger zones / cards stat */
+  --fill-2:      #fafbfc;
+  --tint-green:  #eef8f2;   /* zone teintée verte (ex. configurateur) */
 }
 
 /* ─── Reset global ─── */
@@ -51,10 +67,12 @@ body {
 
 a { color: inherit; }
 
-/* Inputs : focus = border noir uniquement, zéro radius */
+/* Inputs : focus = border noir uniquement. Radius mesuré par défaut
+   (langage visuel mai 2026) — les surfaces qui doivent rester carrées posent
+   explicitement border-radius: 0. */
 input, select, textarea, button {
   font-family: inherit;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
@@ -291,13 +309,6 @@ input:focus, select:focus, textarea:focus {
   border-bottom: 1px solid var(--gray2);
 }
 .sidebar-logo .logo-dot { background: var(--green); }
-
-/* ─── FULLSCREEN (outils pleine largeur, ex: chiffrage) ─── */
-.fullscreen-shell {
-  padding-top: 52px;
-  height: 100vh;
-  overflow: hidden;
-}
 
 @media (max-width: 860px) {
   .sidebar { transform: translateX(-100%); }
