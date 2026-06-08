@@ -2,15 +2,14 @@
 
 import { useMemo, useState } from "react";
 import ComparaisonMarche from "@/components/taux-horaire/ComparaisonMarche";
+import {
+  computeComparaison,
+  REGIMES,
+  REGIME_INFO,
+  type Assiette,
+  type Regime,
+} from "@/lib/taux-horaire";
 import "./taux-horaire.css";
-
-type Statut = "micro" | "eurl" | "sasu";
-
-const CHARGES_SOCIALES: Record<Statut, number> = {
-  micro: 0.22,
-  eurl: 0.45,
-  sasu: 0.82,
-};
 
 type NfItem = {
   days: number;
@@ -81,12 +80,27 @@ const CHARGE_ROWS: { key: keyof Charges; name: string; step: number }[] = [
   { key: "divers", name: "Téléphone, logiciels, divers", step: 10 },
 ];
 
+/** Libellé FR de la base d'assiette des cotisations, pour le détail. */
+const ASSIETTE_LABEL: Record<Assiette, string> = {
+  ca: "sur le chiffre d'affaires",
+  benefice: "sur le bénéfice",
+  salaire: "sur le salaire",
+};
+
+/** Libellés courts pour les onglets. */
+const REGIME_TAB_LABELS: Record<Regime, string> = {
+  micro: "Micro",
+  ei_reel: "EI réel",
+  eurl: "EURL",
+  sasu: "SASU",
+};
+
 const fmt = (v: number) => Math.round(v).toLocaleString("fr-FR");
 
 export default function TauxHorairePage() {
-  const [statut, setStatut] = useState<Statut>("sasu");
   const [salaire, setSalaire] = useState<number>(2500);
   const [conges, setConges] = useState<number>(5);
+  const [joursSemaine, setJoursSemaine] = useState<number>(5);
   const [nfItems, setNfItems] = useState<NfItem[]>(INITIAL_NF);
   const [charges, setCharges] = useState<Charges>({
     vehicule: 600,
@@ -95,7 +109,12 @@ export default function TauxHorairePage() {
     compta: 100,
     divers: 80,
   });
+  const [acre, setAcre] = useState<boolean>(false);
+  // Onglet régime actif — point d'entrée neutre (micro), pas une recommandation.
+  const [regimeActif, setRegimeActif] = useState<Regime>("micro");
   const [detailOpen, setDetailOpen] = useState<boolean>(false);
+  const [nfOpen, setNfOpen] = useState<boolean>(false);
+  const [chargesOpen, setChargesOpen] = useState<boolean>(false);
 
   const nfDays = useMemo(
     () => nfItems.reduce((s, it) => s + (it.active ? it.days : 0), 0),
@@ -112,209 +131,154 @@ export default function TauxHorairePage() {
     [charges]
   );
 
-  const result = useMemo(() => {
-    const taux = CHARGES_SOCIALES[statut];
-    const salaireBrut =
-      statut === "micro" ? salaire / (1 - taux) : salaire * (1 + taux);
-    const coutMensuel = salaireBrut + chargesTotal;
-    const coutAnnuel = coutMensuel * 12;
-    const joursOuvres = (52 - conges) * 5;
-    const joursNFAn = nfDays * 12;
-    const joursFact = Math.max(joursOuvres - joursNFAn, 1);
-    const heuresFact = joursFact * 7;
-    const tauxMin = coutAnnuel / heuresFact;
-    const tauxReco = tauxMin * 1.2;
-    const tauxTech = tauxMin * 1.4;
-    const jFMois = Math.round((joursFact / 12) * 10) / 10;
-    const cotisations = Math.round(
-      statut === "micro" ? salaireBrut - salaire : salaire * taux
-    );
-    return {
-      taux,
-      salaireBrut,
-      coutMensuel,
-      coutAnnuel,
-      joursOuvres,
-      joursNFAn,
-      joursFact,
-      heuresFact,
-      tauxMin,
-      tauxReco,
-      tauxTech,
-      jFMois,
-      cotisations,
-    };
-  }, [statut, salaire, conges, nfDays, chargesTotal]);
+  // SOURCE UNIQUE : tout le calcul vient de lib/taux-horaire.
+  const comparaison = useMemo(
+    () =>
+      computeComparaison({
+        salaire,
+        chargesFixes: chargesTotal,
+        conges,
+        nfDays,
+        joursSemaine,
+        acre,
+      }),
+    [salaire, chargesTotal, conges, nfDays, joursSemaine, acre]
+  );
 
-  const {
-    taux,
-    coutMensuel,
-    joursOuvres,
-    joursNFAn,
-    joursFact,
-    heuresFact,
-    tauxMin,
-    tauxReco,
-    tauxTech,
-    jFMois,
-    cotisations,
-  } = result;
-
+  // Données communes (indépendantes du régime) pour l'alerte et le détail.
+  const joursOuvres = (52 - conges) * joursSemaine;
+  const joursNFAn = nfDays * 12;
+  const joursFact = Math.max(joursOuvres - joursNFAn, 1);
+  const jFMois = Math.round((joursFact / 12) * 10) / 10;
   const hoursAlertVisible = joursFact < 130;
-  const tauxAlertVisible = tauxMin > 80;
 
-  const toggleNF = (index: number) => {
+  const res = comparaison[regimeActif];
+  const info = REGIME_INFO[regimeActif];
+
+  const toggleNF = (index: number) =>
     setNfItems((prev) =>
       prev.map((it, i) => (i === index ? { ...it, active: !it.active } : it))
     );
-  };
 
-  const handleSalaire = (raw: string) => {
-    setSalaire(parseInt(raw) || 0);
-  };
-
-  const handleConges = (raw: string) => {
-    setConges(parseInt(raw) || 0);
-  };
-
-  const handleCharge = (key: keyof Charges, raw: string) => {
+  const handleSalaire = (raw: string) => setSalaire(parseInt(raw) || 0);
+  const handleConges = (raw: string) => setConges(parseInt(raw) || 0);
+  const handleJoursSemaine = (raw: string) => setJoursSemaine(parseInt(raw) || 5);
+  const handleCharge = (key: keyof Charges, raw: string) =>
     setCharges((prev) => ({ ...prev, [key]: parseFloat(raw) || 0 }));
-  };
 
   return (
     <div className="taux-tool">
       <div className="page-header">
         <div className="page-eyebrow">Prix &amp; Marges · Étape 1</div>
-        <h1 className="page-title">Ton taux horaire viable</h1>
+        <h1 className="page-title">Ton prix jour viable</h1>
         <p className="page-sub">
-          Ce que tu dois facturer à l&apos;heure pour couvrir toutes tes charges
-          et te verser le salaire que tu veux. La base de tous tes devis.
+          Ce que tu dois facturer à la journée pour couvrir tes charges et te
+          verser le salaire que tu veux — comparé selon ton statut juridique. La
+          base de tous tes devis.
         </p>
       </div>
 
-      <div className="sim-grid">
-        <div className="inputs-col">
-          <div className="card">
-            <div className="card-title">
-              <span className="card-num">01</span>Statut juridique
+      {/* ── 1. VARIABLES — barre compacte ── */}
+      <section className="vars">
+        <div className="vars-grid">
+          <div className="var-cell">
+            <div className="var-label">
+              Salaire net visé
+              <span className="var-val">{fmt(salaire)} €/mois</span>
             </div>
-            <div className="card-sub">
-              Les cotisations sociales varient fortement selon ton statut — elles
-              déterminent une grande partie de ton taux horaire.
-            </div>
-            <div className="statut-pills">
-              <button
-                className={`pill-btn${statut === "micro" ? " active" : ""}`}
-                onClick={() => setStatut("micro")}
-              >
-                Micro-entrepreneur
-                <span className="pill-btn-sub">~22% de charges</span>
-              </button>
-              <button
-                className={`pill-btn${statut === "eurl" ? " active" : ""}`}
-                onClick={() => setStatut("eurl")}
-              >
-                EURL
-                <span className="pill-btn-sub">~45% de charges</span>
-              </button>
-              <button
-                className={`pill-btn${statut === "sasu" ? " active" : ""}`}
-                onClick={() => setStatut("sasu")}
-              >
-                SASU
-                <span className="pill-btn-sub">~82% de charges</span>
-              </button>
-            </div>
+            <input
+              type="range"
+              className="input-slider var-slider"
+              min={1000}
+              max={6000}
+              step={100}
+              value={salaire}
+              onInput={(e) => handleSalaire(e.currentTarget.value)}
+              onChange={(e) => handleSalaire(e.currentTarget.value)}
+            />
           </div>
 
-          <div className="card">
-            <div className="card-title">
-              <span className="card-num">02</span>Salaire net visé
+          <div className="var-cell">
+            <div className="var-label">
+              Congés annuels
+              <span className="var-val">
+                {conges} sem.
+              </span>
             </div>
-            <div className="card-sub">
-              Ce que tu veux réellement toucher chaque mois, après impôts. Sois
-              honnête — c&apos;est la base de tout le calcul.
-            </div>
-            <div className="field">
-              <div className="field-label">
-                Salaire net visé
-                <span className="field-label-hint">
-                  {salaire.toLocaleString("fr-FR")} €/mois
-                </span>
-              </div>
-              <div className="input-row">
-                <input
-                  type="range"
-                  className="input-slider"
-                  min={1000}
-                  max={6000}
-                  step={100}
-                  value={salaire}
-                  onInput={(e) => handleSalaire(e.currentTarget.value)}
-                  onChange={(e) => handleSalaire(e.currentTarget.value)}
-                />
-                <input
-                  type="number"
-                  className="input-num"
-                  value={salaire}
-                  min={500}
-                  max={10000}
-                  step={100}
-                  onChange={(e) => handleSalaire(e.currentTarget.value)}
-                />
-                <span className="input-suffix">€/mois</span>
-              </div>
-            </div>
+            <input
+              type="range"
+              className="input-slider var-slider"
+              min={2}
+              max={10}
+              step={1}
+              value={conges}
+              onInput={(e) => handleConges(e.currentTarget.value)}
+              onChange={(e) => handleConges(e.currentTarget.value)}
+            />
           </div>
 
-          <div className="card">
-            <div className="card-title">
-              <span className="card-num">03</span>Congés annuels
+          <div className="var-cell">
+            <div className="var-label">
+              Jours travaillés / semaine
+              <span className="var-val">{joursSemaine} j/sem</span>
             </div>
-            <div className="card-sub">
-              Les jours que tu ne travailles pas dans l&apos;année. Plus tu prends
-              de congés, moins tu as d&apos;heures pour récupérer tes charges —
-              donc ton taux monte.
-            </div>
-            <div className="field">
-              <div className="field-label">
-                Semaines de congés par an
-                <span className="field-label-hint">
-                  {conges} semaine{conges > 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="input-row">
-                <input
-                  type="range"
-                  className="input-slider"
-                  min={2}
-                  max={10}
-                  step={1}
-                  value={conges}
-                  onInput={(e) => handleConges(e.currentTarget.value)}
-                  onChange={(e) => handleConges(e.currentTarget.value)}
-                />
-                <input
-                  type="number"
-                  className="input-num"
-                  value={conges}
-                  min={1}
-                  max={12}
-                  step={1}
-                  onChange={(e) => handleConges(e.currentTarget.value)}
-                />
-                <span className="input-suffix">sem.</span>
-              </div>
-            </div>
+            <input
+              type="range"
+              className="input-slider var-slider"
+              min={4}
+              max={6}
+              step={1}
+              value={joursSemaine}
+              onInput={(e) => handleJoursSemaine(e.currentTarget.value)}
+              onChange={(e) => handleJoursSemaine(e.currentTarget.value)}
+            />
           </div>
 
-          <div className="card">
-            <div className="card-title">
-              <span className="card-num">04</span>Jours non facturables
-            </div>
-            <div className="card-sub">
-              C&apos;est la variable la plus sous-estimée par les artisans. Ces
-              jours tu travailles — mais tu ne factures pas. Coche tout ce qui
+          <button
+            className={`var-cell var-collapse${nfOpen ? " open" : ""}`}
+            onClick={() => setNfOpen((o) => !o)}
+            aria-expanded={nfOpen}
+          >
+            <span className="var-label">Jours non facturables</span>
+            <span className="var-collapse-row">
+              <span className="var-val">
+                {nfDays} j/mois
+              </span>
+              <i className="ti ti-chevron-down var-chevron" aria-hidden="true"></i>
+            </span>
+          </button>
+
+          <button
+            className={`var-cell var-collapse${chargesOpen ? " open" : ""}`}
+            onClick={() => setChargesOpen((o) => !o)}
+            aria-expanded={chargesOpen}
+          >
+            <span className="var-label">Charges fixes</span>
+            <span className="var-collapse-row">
+              <span className="var-val">{fmt(chargesTotal)} €/mois</span>
+              <i className="ti ti-chevron-down var-chevron" aria-hidden="true"></i>
+            </span>
+          </button>
+
+          <button
+            className={`var-cell acre-toggle${acre ? " active" : ""}`}
+            onClick={() => setAcre((a) => !a)}
+            aria-pressed={acre}
+          >
+            <span className="acre-check">
+              <i className="ti ti-check" aria-hidden="true"></i>
+            </span>
+            <span className="acre-info">
+              <span className="acre-name">ACRE (année 1)</span>
+              <span className="acre-desc">Cotisations réduites</span>
+            </span>
+          </button>
+        </div>
+
+        {nfOpen && (
+          <div className="var-panel">
+            <div className="var-panel-sub">
+              Ces jours, tu travailles mais tu ne factures pas. Coche ce qui
               s&apos;applique à ton activité.
             </div>
             <div className="nf-items">
@@ -336,22 +300,18 @@ export default function TauxHorairePage() {
               ))}
             </div>
             <div className="nf-total">
-              <span className="nf-total-label">
-                Jours non facturables / mois
-              </span>
+              <span className="nf-total-label">Jours non facturables / mois</span>
               <span className="nf-total-val">
                 {nfDays} jour{nfDays > 1 ? "s" : ""}
               </span>
             </div>
           </div>
+        )}
 
-          <div className="card">
-            <div className="card-title">
-              <span className="card-num">05</span>Charges fixes
-            </div>
-            <div className="card-sub">
-              Tout ce que tu paies chaque mois que tu travailles ou non. Ajuste
-              selon ta situation réelle.
+        {chargesOpen && (
+          <div className="var-panel">
+            <div className="var-panel-sub">
+              Tout ce que tu paies chaque mois, que tu travailles ou non.
             </div>
             <div className="charges-list">
               {CHARGE_ROWS.map((row) => (
@@ -376,104 +336,96 @@ export default function TauxHorairePage() {
               <span className="charges-total-val">{fmt(chargesTotal)} €</span>
             </div>
           </div>
+        )}
+      </section>
+
+      {hoursAlertVisible && (
+        <div className="hours-alert visible">
+          {`⚠ Attention : tu n'as que ${joursFact} jours facturables par an (${jFMois}/mois). C'est très bas — vérifie tes jours non facturables et tes congés.`}
+        </div>
+      )}
+
+      {/* ── 2. COMPARATEUR 4 RÉGIMES — onglets ── */}
+      <section className="regime-section">
+        <div className="regime-tabs" role="tablist">
+          {REGIMES.map((r) => (
+            <button
+              key={r}
+              role="tab"
+              aria-selected={regimeActif === r}
+              className={`regime-tab${regimeActif === r ? " active" : ""}`}
+              onClick={() => setRegimeActif(r)}
+            >
+              {REGIME_TAB_LABELS[r]}
+            </button>
+          ))}
         </div>
 
-        {/* RÉSULTAT */}
-        <div className="result-col">
-          <div className="result-card">
-            <div className="result-eyebrow">Résultat</div>
+        <div className="regime-active">
+          <div className="regime-active-head">
+            <span className="regime-active-name">{info.label}</span>
+            <span className="regime-active-assiette">
+              cotisations {ASSIETTE_LABEL[res.assiette]}
+            </span>
+          </div>
 
-            <div className={`taux-alert${tauxAlertVisible ? " visible" : ""}`}>
-              <div className="taux-alert-text">
-                {tauxAlertVisible &&
-                  `Ton taux minimum est élevé. C'est normal avec un statut ${statut.toUpperCase()} et un salaire visé de ${fmt(
-                    salaire
-                  )} €. Vérifie que tu peux te positionner à ce niveau sur ton marché local.`}
-              </div>
+          <div className="regime-active-price">
+            <span className="regime-active-num">{fmt(res.prixJourReco)}</span>
+            <span className="regime-active-unit">€/j</span>
+          </div>
+          <div className="regime-active-tagline">
+            Prix jour recommandé — marge +20 % sur le minimum viable, pour
+            absorber les imprévus.
+          </div>
+
+          <div className="regime-active-sub">
+            <div className="regime-active-sub-item">
+              <span className="regime-active-sub-label">Minimum viable</span>
+              <span className="regime-active-sub-val">
+                {fmt(res.prixJourMin)} €/j
+              </span>
             </div>
-
-            <div className="taux-grid">
-              <div className="taux-item">
-                <div className="taux-label">Taux minimum viable</div>
-                <div className="taux-val">
-                  {fmt(tauxMin)}
-                  <span className="unit"> €/h</span>
-                </div>
-                <div className="taux-desc">
-                  En dessous de ce taux, tu travailles à perte.
-                </div>
-              </div>
-              <div className="taux-item featured">
-                <div className="taux-label green">Taux recommandé</div>
-                <div className="taux-val">
-                  {fmt(tauxReco)}
-                  <span className="unit"> €/h</span>
-                </div>
-                <div className="taux-desc">
-                  +20% pour absorber les imprévus. À utiliser pour tes devis
-                  standards.
-                </div>
-              </div>
-              <div className="taux-item">
-                <div className="taux-label">
-                  Taux chantier technique / urgence
-                </div>
-                <div className="taux-val">
-                  {fmt(tauxTech)}
-                  <span className="unit"> €/h</span>
-                </div>
-                <div className="taux-desc">
-                  +40% pour les chantiers complexes, les urgences, les conditions
-                  difficiles.
-                </div>
-              </div>
+            <div className="regime-active-sub-item">
+              <span className="regime-active-sub-label">Technique / urgence</span>
+              <span className="regime-active-sub-val">
+                {fmt(res.prixJourTech)} €/j
+              </span>
             </div>
+          </div>
 
-            <div className="result-summary">
-              Avec{" "}
-              <strong>
-                {conges} semaine{conges > 1 ? "s" : ""}
-              </strong>{" "}
-              de congés et <strong>{nfDays} jours/mois</strong> non facturés, tu
-              travailles réellement{" "}
-              <strong>{jFMois} jours facturables par mois</strong> — soit{" "}
-              <strong>{fmt(heuresFact)} heures par an</strong>. Pour couvrir ton
-              salaire net de <em>{fmt(salaire)} €</em> et tes charges, tu dois
-              facturer au minimum <em>{fmt(tauxMin)} €/h</em>.
+          <div className="regime-active-desc">{info.description}</div>
+
+          {info.avertissement && (
+            <div className="regime-warn">
+              <i className="ti ti-alert-triangle" aria-hidden="true"></i>
+              {info.avertissement}
             </div>
+          )}
 
-            <div className={`hours-alert${hoursAlertVisible ? " visible" : ""}`}>
-              {hoursAlertVisible &&
-                `⚠ Attention : tu n'as que ${joursFact} jours facturables par an (${jFMois}/mois). C'est très bas — vérifies tes jours non facturables et tes congés.`}
-            </div>
+          <button
+            className={`btn-detail${detailOpen ? " open" : ""}`}
+            onClick={() => setDetailOpen((o) => !o)}
+          >
+            <i className="ti ti-chevron-down" aria-hidden="true"></i>
+            {detailOpen ? "Masquer le détail" : "Voir le détail du calcul"}
+          </button>
 
-            <button
-              className={`btn-detail${detailOpen ? " open" : ""}`}
-              onClick={() => setDetailOpen((o) => !o)}
-            >
-              <i className="ti ti-chevron-down" aria-hidden="true"></i>
-              Voir le détail du calcul
-            </button>
-
-            <div className={`detail-panel${detailOpen ? " visible" : ""}`}>
+          {detailOpen && (
+            <div className="detail-panel visible">
               <div className="detail-line">
-                <span className="detail-line-label">
-                  Salaire net mensuel visé
-                </span>
+                <span className="detail-line-label">Salaire net mensuel visé</span>
                 <span className="detail-line-val">{fmt(salaire)} €/mois</span>
               </div>
               <div className="detail-line">
                 <span className="detail-line-label">
-                  Cotisations sociales ({Math.round(taux * 100)}%)
+                  Cotisations sociales ({ASSIETTE_LABEL[res.assiette]})
                 </span>
                 <span className="detail-line-val">
-                  {fmt(cotisations)} €/mois
+                  {fmt(res.cotisationsMensuelles)} €/mois
                 </span>
               </div>
               <div className="detail-line">
-                <span className="detail-line-label">
-                  Charges fixes mensuelles
-                </span>
+                <span className="detail-line-label">Charges fixes mensuelles</span>
                 <span className="detail-line-val">{fmt(chargesTotal)} €/mois</span>
               </div>
               <div className="detail-line total">
@@ -481,67 +433,65 @@ export default function TauxHorairePage() {
                   Coût total mensuel à couvrir
                 </span>
                 <span className="detail-line-val">
-                  {fmt(Math.round(coutMensuel))} €/mois
+                  {fmt(res.coutMensuel)} €/mois
                 </span>
               </div>
-              <div className="detail-line">
-                <span className="detail-line-label">
-                  Jours ouvrés/an (hors congés)
-                </span>
-                <span className="detail-line-val">{joursOuvres} jours</span>
-              </div>
-              <div className="detail-line">
-                <span className="detail-line-label">
-                  Jours non facturables/an
-                </span>
-                <span className="detail-line-val">{joursNFAn} jours</span>
-              </div>
-              <div className="detail-line">
+              <div className="detail-line total">
                 <span className="detail-line-label">
                   Jours réellement facturables/an
                 </span>
                 <span className="detail-line-val">{joursFact} jours</span>
               </div>
-              <div className="detail-line total">
+              <div className="detail-line">
                 <span className="detail-line-label">
-                  Heures facturables/an (×7h/j)
+                  Prix jour minimum (coût / jours)
                 </span>
-                <span className="detail-line-val">{heuresFact} heures</span>
+                <span className="detail-line-val">{fmt(res.prixJourMin)} €/j</span>
               </div>
               <div className="detail-line">
                 <span className="detail-line-label">
-                  Taux minimum (coût / heures)
+                  Prix jour recommandé (×1,20)
                 </span>
-                <span className="detail-line-val">{fmt(tauxMin)} €/h</span>
+                <span className="detail-line-val">{fmt(res.prixJourReco)} €/j</span>
               </div>
               <div className="detail-line">
                 <span className="detail-line-label">
-                  Taux recommandé (×1,20)
+                  Prix jour technique (×1,40)
                 </span>
-                <span className="detail-line-val">{fmt(tauxReco)} €/h</span>
-              </div>
-              <div className="detail-line">
-                <span className="detail-line-label">Taux technique (×1,40)</span>
-                <span className="detail-line-val">{fmt(tauxTech)} €/h</span>
+                <span className="detail-line-val">{fmt(res.prixJourTech)} €/j</span>
               </div>
             </div>
+          )}
 
-            <button
-              className="btn-inject"
-              onClick={() =>
-                alert(
-                  "Taux injecté dans le calculateur de rentabilité.\n(À connecter via Supabase)"
-                )
-              }
-            >
-              <i className="ti ti-arrow-right" aria-hidden="true"></i>
-              Utiliser dans le calculateur de rentabilité
-            </button>
-          </div>
-
-          <ComparaisonMarche tauxHoraire={tauxReco} />
+          <p className="reserves">
+            Simulation indicative, pas un calcul comptable. Le taux couvre la
+            main-d&apos;œuvre seule ; la matière (fournitures) se refacture
+            séparément. Les cotisations TNS (~45 %) sont un ordre de grandeur,
+            non linéaire selon le revenu. Le calcul SASU est simplifié
+            (rémunération 100 % salaire, hors IS et dividendes).
+          </p>
         </div>
-      </div>
+
+        <div className="regime-others">
+          {REGIMES.filter((r) => r !== regimeActif).map((r) => (
+            <button
+              key={r}
+              className="regime-other"
+              onClick={() => setRegimeActif(r)}
+            >
+              <span className="regime-other-name">{REGIME_INFO[r].label}</span>
+              <span className="regime-other-num">
+                {fmt(comparaison[r].prixJourReco)} €/j
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* ── 3. COMPARATIF MÉTIER × ZONE — piloté par l'onglet actif ── */}
+      <section className="marche-section">
+        <ComparaisonMarche prixJour={res.prixJourReco} />
+      </section>
     </div>
   );
 }

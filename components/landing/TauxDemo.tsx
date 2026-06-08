@@ -17,7 +17,11 @@ export default function TauxDemo() {
   const [salaire, setSalaire] = useState<number>(2500);
   const [chargesFixes, setChargesFixes] = useState<number>(1130);
 
-  const { tauxMin, tauxReco, tauxTech } = useMemo(
+  const {
+    prixJourMin: tauxMin,
+    prixJourReco: tauxReco,
+    prixJourTech: tauxTech,
+  } = useMemo(
     () => computeTaux({ statut, salaire, chargesFixes }),
     [statut, salaire, chargesFixes]
   );
@@ -82,20 +86,20 @@ export default function TauxDemo() {
       </div>
 
       <div className="demo-results">
-        <div className="demo-results-eyebrow">Ton taux horaire</div>
+        <div className="demo-results-eyebrow">Ton prix jour</div>
         <div className="demo-results-grid">
           <div className="demo-result">
-            <div className="demo-result-num">{fmt(tauxMin)} €</div>
+            <div className="demo-result-num">{fmt(tauxMin)} €/j</div>
             <div className="demo-result-label">Minimum viable</div>
             <div className="demo-result-desc">En dessous, tu travailles à perte.</div>
           </div>
           <div className="demo-result featured">
-            <div className="demo-result-num">{fmt(tauxReco)} €</div>
+            <div className="demo-result-num">{fmt(tauxReco)} €/j</div>
             <div className="demo-result-label">Recommandé</div>
             <div className="demo-result-desc">Couvre les imprévus et le SAV.</div>
           </div>
           <div className="demo-result">
-            <div className="demo-result-num">{fmt(tauxTech)} €</div>
+            <div className="demo-result-num">{fmt(tauxTech)} €/j</div>
             <div className="demo-result-label">Technique / urgence</div>
             <div className="demo-result-desc">Chantiers complexes ou pressés.</div>
           </div>

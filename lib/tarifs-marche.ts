@@ -1,10 +1,12 @@
 /**
- * Tarifs de référence du marché BTP (taux horaires HT) par métier et zone
+ * Tarifs de référence du marché BTP (PRIX JOUR HT) par métier et zone
  * géographique, pour la brique « Comparaison marché » du module taux horaire.
  *
- * Sources : tarifs moyens constatés du marché 2025-2026. Les fourchettes
- * (basse / moyenne / haute) reflètent l'écart expérience/spécialisation/demande ;
- * les coefficients de zone modulent le prix selon la région.
+ * Sources : tarifs moyens constatés du marché 2025-2026. Les valeurs sont
+ * stockées en PRIX JOUR (taux horaire de référence × 7 h, base journée figée à
+ * la source). Les fourchettes (basse / moyenne / haute) reflètent l'écart
+ * expérience/spécialisation/demande ; les coefficients de zone modulent le prix
+ * selon la région.
  *
  * Ces données sont indicatives — voir la mention de prudence affichée sous la
  * comparaison dans l'interface.
@@ -32,22 +34,22 @@ export type Zone =
   | "province"
   | "rurale";
 
-/** Taux horaires HT de référence par métier (€/h). */
-type TauxMetier = { basse: number; moyenne: number; haute: number };
+/** Prix JOUR HT de référence par métier (€/j), base 7 h figée à la source. */
+type TarifMetier = { basse: number; moyenne: number; haute: number };
 
-export const TARIFS_METIERS: Record<Metier, TauxMetier> = {
-  macon: { basse: 35, moyenne: 55, haute: 70 },
-  plombier: { basse: 40, moyenne: 55, haute: 70 },
-  electricien: { basse: 35, moyenne: 50, haute: 65 },
-  menuisier: { basse: 40, moyenne: 50, haute: 60 },
-  peintre: { basse: 30, moyenne: 40, haute: 50 },
-  carreleur: { basse: 35, moyenne: 45, haute: 55 },
-  plaquiste: { basse: 35, moyenne: 42, haute: 50 },
-  couvreur: { basse: 40, moyenne: 55, haute: 65 },
-  facadier: { basse: 35, moyenne: 45, haute: 50 },
-  charpentier: { basse: 40, moyenne: 50, haute: 60 },
-  chauffagiste: { basse: 45, moyenne: 57, haute: 70 },
-  multiservices: { basse: 30, moyenne: 40, haute: 50 },
+export const TARIFS_METIERS: Record<Metier, TarifMetier> = {
+  macon: { basse: 245, moyenne: 385, haute: 490 },
+  plombier: { basse: 280, moyenne: 385, haute: 490 },
+  electricien: { basse: 245, moyenne: 350, haute: 455 },
+  menuisier: { basse: 280, moyenne: 350, haute: 420 },
+  peintre: { basse: 210, moyenne: 280, haute: 350 },
+  carreleur: { basse: 245, moyenne: 315, haute: 385 },
+  plaquiste: { basse: 245, moyenne: 294, haute: 350 },
+  couvreur: { basse: 280, moyenne: 385, haute: 455 },
+  facadier: { basse: 245, moyenne: 315, haute: 350 },
+  charpentier: { basse: 280, moyenne: 350, haute: 420 },
+  chauffagiste: { basse: 315, moyenne: 399, haute: 490 },
+  multiservices: { basse: 210, moyenne: 280, haute: 350 },
 };
 
 /** Coefficient multiplicateur du prix selon la zone géographique. */
@@ -97,20 +99,15 @@ export type FourchetteJour = {
 
 /**
  * Prix jour de référence du marché pour un métier + zone donnés.
- * Formule : taux horaire × coefficient de zone × heures facturables,
- * arrondi à l'euro.
+ * Formule : prix jour métier × coefficient de zone, arrondi à l'euro.
  */
-export function getFourchetteJour(
-  metier: Metier,
-  zone: Zone,
-  heuresFacturables = 7
-): FourchetteJour {
-  const taux = TARIFS_METIERS[metier];
+export function getFourchetteJour(metier: Metier, zone: Zone): FourchetteJour {
+  const tarif = TARIFS_METIERS[metier];
   const coef = COEFS_ZONES[zone];
-  const toJour = (h: number) => Math.round(h * coef * heuresFacturables);
+  const toJour = (j: number) => Math.round(j * coef);
   return {
-    basseJour: toJour(taux.basse),
-    moyenneJour: toJour(taux.moyenne),
-    hauteJour: toJour(taux.haute),
+    basseJour: toJour(tarif.basse),
+    moyenneJour: toJour(tarif.moyenne),
+    hauteJour: toJour(tarif.haute),
   };
 }

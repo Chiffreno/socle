@@ -39,31 +39,28 @@ function getPositionnement(
 }
 
 type Props = {
-  /** Taux horaire (€/h) déjà calculé par la page — non recalculé ici. */
-  tauxHoraire: number;
+  /** Prix jour (€/j) déjà calculé par la page — non recalculé ici. */
+  prixJour: number;
 };
 
-export default function ComparaisonMarche({ tauxHoraire }: Props) {
+export default function ComparaisonMarche({ prixJour }: Props) {
   const [metier, setMetier] = useState<Metier>("macon");
   const [zone, setZone] = useState<Zone>("province");
-  const [heures, setHeures] = useState<number>(7);
 
   const fourchette = useMemo(
-    () => getFourchetteJour(metier, zone, heures),
-    [metier, zone, heures]
+    () => getFourchetteJour(metier, zone),
+    [metier, zone]
   );
-
-  const tauxJour = tauxHoraire * heures;
 
   const pos = useMemo(
     () =>
       getPositionnement(
-        tauxJour,
+        prixJour,
         fourchette.basseJour,
         fourchette.moyenneJour,
         fourchette.hauteJour
       ),
-    [tauxJour, fourchette]
+    [prixJour, fourchette]
   );
 
   return (
@@ -100,20 +97,6 @@ export default function ComparaisonMarche({ tauxHoraire }: Props) {
             ))}
           </select>
         </label>
-        <label className="cm-field cm-field-heures">
-          <span className="cm-field-label">Heures facturées / jour</span>
-          <input
-            type="number"
-            className="cm-heures-input"
-            value={heures}
-            min={1}
-            max={12}
-            step={0.5}
-            onChange={(e) =>
-              setHeures(Math.max(1, parseFloat(e.currentTarget.value) || 1))
-            }
-          />
-        </label>
       </div>
 
       {/* Prix jour marché */}
@@ -135,7 +118,7 @@ export default function ComparaisonMarche({ tauxHoraire }: Props) {
       {/* Taux jour de l'artisan — seul élément vert */}
       <div className="cm-artisan">
         <span className="cm-artisan-label">Ton prix jour</span>
-        <span className="cm-artisan-val">{fmt(tauxJour)} €</span>
+        <span className="cm-artisan-val">{fmt(prixJour)} €</span>
       </div>
 
       {/* Échelle visuelle */}

@@ -1,217 +1,186 @@
 /* ── PAGE HEADER ── */
-.taux-tool .page-header { margin-bottom: 40px; }
+.taux-tool .page-header { margin-bottom: 28px; }
 .taux-tool .page-eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--gray3); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
 .taux-tool .page-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gray3); }
 .taux-tool .page-title { font-family: var(--ff); font-weight: 700; font-size: clamp(1.8rem, 3vw, 2.4rem); letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 10px; }
-.taux-tool .page-sub { font-size: 15px; color: var(--gray4); line-height: 1.6; max-width: 560px; }
+.taux-tool .page-sub { font-size: 15px; color: var(--ink-2); line-height: 1.6; max-width: 620px; }
 
-/* ── GRID ── */
-.taux-tool .sim-grid {
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 24px;
-  align-items: start;
-}
+/* ── STACK (empilement vertical pleine largeur) ── */
+.taux-tool .vars,
+.taux-tool .regime-section,
+.taux-tool .marche-section { margin-bottom: 20px; }
 
-/* ── INPUTS ── */
-.taux-tool .inputs-col { display: flex; flex-direction: column; gap: 16px; }
+/* ── 1. VARIABLES — barre compacte ── */
+.taux-tool .vars { background: var(--gray-bg); border: 1px solid var(--gray-line); border-radius: var(--radius); padding: 16px; }
+.taux-tool .vars-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; align-items: stretch; }
 
-.taux-tool .card {
-  background: var(--white);
-  border: 1px solid var(--gray2);
-  border-radius: 0;
-  padding: 24px;
-}
+.taux-tool .var-cell { background: var(--white); border: 1px solid var(--gray-line); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.taux-tool .var-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 500; color: var(--black); letter-spacing: -0.01em; }
+.taux-tool .var-val { font-family: var(--num); font-size: 12px; font-weight: 600; color: var(--black); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
-.taux-tool .card-title { font-family: var(--ff); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; color: var(--black); margin-bottom: 6px; display: flex; align-items: baseline; gap: 12px; }
-.taux-tool .card-num { font-family: var(--mono); font-weight: 500; font-size: 12px; color: var(--gray3); letter-spacing: 0; flex-shrink: 0; }
-.taux-tool .card-sub { font-size: 13px; color: var(--gray4); margin-bottom: 20px; line-height: 1.55; }
+.taux-tool .var-slider { width: 100%; }
 
-/* Field */
-.taux-tool .field { margin-bottom: 18px; }
-.taux-tool .field:last-child { margin-bottom: 0; }
-.taux-tool .field-label { display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; font-weight: 500; color: var(--black); margin-bottom: 8px; letter-spacing: -0.01em; }
-.taux-tool .field-label-hint { font-weight: 400; font-family: var(--mono); font-size: 11px; color: var(--gray4); }
-.taux-tool .input-row { display: flex; gap: 10px; align-items: center; }
+/* Cellules repliables (NF / charges) */
+.taux-tool .var-collapse { cursor: pointer; text-align: left; transition: border-color .15s, box-shadow .15s; }
+.taux-tool .var-collapse:hover { border-color: var(--gray-line-2); }
+.taux-tool .var-collapse.open { border-color: var(--black); }
+.taux-tool .var-collapse-row { display: flex; align-items: center; justify-content: space-between; }
+.taux-tool .var-chevron { font-size: 15px; color: var(--ink-3); transition: transform .2s; }
+.taux-tool .var-collapse.open .var-chevron { transform: rotate(180deg); color: var(--black); }
 
-.taux-tool .input-num {
-  width: 120px; flex-shrink: 0;
-  padding: 10px 12px; border: 1px solid var(--gray2); border-radius: 0;
-  font-size: 15px; font-family: var(--mono); font-weight: 500; color: var(--black);
-  background: var(--white); outline: none; transition: border-color .15s;
-  -webkit-appearance: none; text-align: right;
-}
-.taux-tool .input-num:focus { border-color: var(--black); }
+/* ACRE toggle (inline dans la barre) */
+.taux-tool .acre-toggle { flex-direction: row; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: border-color .15s, background .15s; }
+.taux-tool .acre-toggle:hover { border-color: var(--gray-line-2); }
+.taux-tool .acre-toggle.active { border-color: var(--green); background: var(--tint-green); }
+.taux-tool .acre-check { width: 18px; height: 18px; border: 1.5px solid var(--gray-line-2); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--white); transition: all .15s; }
+.taux-tool .acre-toggle.active .acre-check { background: var(--green); border-color: var(--green); }
+.taux-tool .acre-check i { display: none; font-size: 12px; color: var(--white); }
+.taux-tool .acre-toggle.active .acre-check i { display: block; }
+.taux-tool .acre-info { display: flex; flex-direction: column; gap: 1px; }
+.taux-tool .acre-name { font-size: 13px; font-weight: 500; color: var(--black); }
+.taux-tool .acre-desc { font-size: 11px; color: var(--ink-3); line-height: 1.3; }
 
-.taux-tool .input-slider {
-  flex: 1; -webkit-appearance: none; appearance: none;
-  height: 4px; background: var(--gray2); border-radius: 0; outline: none; cursor: pointer;
-}
-.taux-tool .input-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2px solid var(--white); }
-.taux-tool .input-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2px solid var(--white); }
+/* Panneaux dépliés (NF / charges) */
+.taux-tool .var-panel { margin-top: 10px; background: var(--white); border: 1px solid var(--gray-line); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); padding: 16px; }
+.taux-tool .var-panel-sub { font-size: 12px; color: var(--ink-2); line-height: 1.5; margin-bottom: 12px; }
 
-.taux-tool .input-suffix { font-family: var(--mono); font-size: 12px; color: var(--gray3); flex-shrink: 0; }
+/* Sliders (partagés) */
+.taux-tool .input-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; background: var(--gray-line); border-radius: var(--radius-sm); outline: none; cursor: pointer; }
+.taux-tool .input-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2px solid var(--white); box-shadow: var(--shadow-sm); }
+.taux-tool .input-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2px solid var(--white); box-shadow: var(--shadow-sm); }
 
-/* Statut pills */
-.taux-tool .statut-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-.taux-tool .pill-btn {
-  padding: 9px 16px; border-radius: 0; border: 1px solid var(--gray2);
-  background: var(--white); font-family: var(--ff); font-size: 13px; font-weight: 500;
-  color: var(--gray4); cursor: pointer; transition: all .15s;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-}
-.taux-tool .pill-btn:hover { border-color: var(--gray3); color: var(--black); }
-.taux-tool .pill-btn.active { background: var(--white); border-color: var(--green); color: var(--green); }
-.taux-tool .pill-btn-sub { font-size: 10px; font-family: var(--mono); font-weight: 400; color: var(--gray3); letter-spacing: .04em; }
-.taux-tool .pill-btn.active .pill-btn-sub { color: var(--green); }
-
-/* Jours NF */
+/* Jours NF (liste) */
 .taux-tool .nf-items { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.taux-tool .nf-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 14px; border-radius: 0; border: 1px solid var(--gray2);
-  background: var(--white); cursor: pointer; transition: all .15s; user-select: none;
-}
-.taux-tool .nf-item:hover { border-color: var(--gray3); }
-.taux-tool .nf-item.active { background: var(--white); border-color: var(--green); }
-.taux-tool .nf-check { width: 18px; height: 18px; border: 1.5px solid var(--gray2); border-radius: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--white); transition: all .15s; }
+.taux-tool .nf-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--gray-line); background: var(--white); cursor: pointer; transition: all .15s; user-select: none; }
+.taux-tool .nf-item:hover { border-color: var(--gray-line-2); }
+.taux-tool .nf-item.active { border-color: var(--green); background: var(--tint-green); }
+.taux-tool .nf-check { width: 18px; height: 18px; border: 1.5px solid var(--gray-line-2); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--white); transition: all .15s; }
 .taux-tool .nf-item.active .nf-check { background: var(--green); border-color: var(--green); }
 .taux-tool .nf-check i { display: none; font-size: 12px; color: var(--white); }
 .taux-tool .nf-item.active .nf-check i { display: block; }
 .taux-tool .nf-info { flex: 1; }
 .taux-tool .nf-name { font-size: 13px; font-weight: 500; color: var(--black); margin-bottom: 1px; }
-.taux-tool .nf-desc { font-size: 11px; color: var(--gray3); line-height: 1.4; }
-.taux-tool .nf-item.active .nf-name { color: var(--black); }
-.taux-tool .nf-days { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--gray3); flex-shrink: 0; }
+.taux-tool .nf-desc { font-size: 11px; color: var(--ink-3); line-height: 1.4; }
+.taux-tool .nf-days { font-family: var(--num); font-size: 11px; font-weight: 600; color: var(--ink-3); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .taux-tool .nf-item.active .nf-days { color: var(--green); }
+.taux-tool .nf-total { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 14px; background: var(--fill); border-radius: var(--radius-sm); font-size: 13px; }
+.taux-tool .nf-total-label { color: var(--ink-2); font-weight: 500; }
+.taux-tool .nf-total-val { font-family: var(--num); font-weight: 600; color: var(--black); font-variant-numeric: tabular-nums; }
 
-.taux-tool .nf-total { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 14px; background: var(--gray-bg); border-radius: 0; font-size: 13px; }
-.taux-tool .nf-total-label { color: var(--gray4); font-weight: 500; }
-.taux-tool .nf-total-val { font-family: var(--mono); font-weight: 500; color: var(--black); }
-
-/* Charges fixes */
+/* Charges fixes (liste) */
 .taux-tool .charges-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .taux-tool .charge-row { display: flex; align-items: center; gap: 10px; }
-.taux-tool .charge-name { font-size: 13px; color: var(--gray4); flex: 1; }
-.taux-tool .charge-input { width: 100px; padding: 7px 10px; border: 1px solid var(--gray2); border-radius: 0; font-size: 13px; font-family: var(--mono); font-weight: 500; color: var(--black); background: var(--white); outline: none; text-align: right; transition: border-color .15s; }
-.taux-tool .charge-input:focus { border-color: var(--black); }
-.taux-tool .charge-unit { font-family: var(--mono); font-size: 11px; color: var(--gray3); width: 20px; }
-.taux-tool .charges-total { display: flex; justify-content: space-between; padding: 10px 14px; background: var(--gray-bg); border-radius: 0; font-size: 13px; }
-.taux-tool .charges-total-label { color: var(--gray4); font-weight: 500; }
-.taux-tool .charges-total-val { font-family: var(--mono); font-weight: 500; color: var(--black); }
+.taux-tool .charge-name { font-size: 13px; color: var(--ink-2); flex: 1; }
+.taux-tool .charge-input { width: 100px; padding: 7px 10px; border: 1px solid var(--gray-line); border-radius: var(--radius-sm); font-size: 13px; font-family: var(--num); font-weight: 600; color: var(--black); background: var(--white); outline: none; text-align: right; transition: border-color .15s, box-shadow .15s; font-variant-numeric: tabular-nums; }
+.taux-tool .charge-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-light); }
+.taux-tool .charge-unit { font-family: var(--num); font-size: 11px; color: var(--ink-3); width: 20px; }
+.taux-tool .charges-total { display: flex; justify-content: space-between; padding: 10px 14px; background: var(--fill); border-radius: var(--radius-sm); font-size: 13px; }
+.taux-tool .charges-total-label { color: var(--ink-2); font-weight: 500; }
+.taux-tool .charges-total-val { font-family: var(--num); font-weight: 600; color: var(--black); font-variant-numeric: tabular-nums; }
 
-/* ── RÉSULTAT ── */
-.taux-tool .result-col { position: sticky; top: 72px; }
+/* Alerte jours facturables bas */
+.taux-tool .hours-alert { margin-bottom: 20px; padding: 12px 14px; background: var(--red-bg); border: 1px solid var(--red-b); border-radius: var(--radius-sm); font-size: 12px; color: var(--red); line-height: 1.5; }
 
-.taux-tool .result-card {
-  background: var(--white);
-  border: 1px solid var(--black);
-  border-radius: 0;
-  padding: 28px;
-  color: var(--black);
-}
+/* ── 2. COMPARATEUR — onglets ── */
+.taux-tool .regime-section { border: 1px solid var(--gray-line); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow-card); overflow: hidden; }
 
-.taux-tool .result-eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
-.taux-tool .result-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gray3); }
+.taux-tool .regime-tabs { display: flex; border-bottom: 1px solid var(--gray-line); overflow-x: auto; }
+.taux-tool .regime-tab { flex: 1; min-width: 92px; padding: 14px 12px; background: var(--white); border: none; border-radius: 0; border-bottom: 2px solid transparent; font-family: var(--ff); font-size: 14px; font-weight: 500; color: var(--ink-3); cursor: pointer; transition: all .15s; white-space: nowrap; }
+.taux-tool .regime-tab + .regime-tab { border-left: 1px solid var(--gray-line); }
+.taux-tool .regime-tab:hover { color: var(--black); background: var(--gray-bg); }
+.taux-tool .regime-tab.active { color: var(--green); font-weight: 600; border-bottom-color: var(--green); background: var(--tint-green); }
 
-.taux-tool .taux-grid { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--gray2); margin-bottom: 20px; }
-.taux-tool .taux-item { padding: 18px 0; border-bottom: 1px solid var(--gray2); background: transparent; }
-.taux-tool .taux-item.featured { background: transparent; }
-.taux-tool .taux-label { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-.taux-tool .taux-label.green { color: var(--green); }
-.taux-tool .taux-val { font-family: var(--mono); font-size: 2.2rem; font-weight: 500; letter-spacing: -0.03em; line-height: 1; color: var(--black); }
-.taux-tool .taux-val .unit { font-size: .55em; color: var(--gray3); margin-left: 3px; }
-.taux-tool .taux-item.featured .taux-val { color: var(--green); }
-.taux-tool .taux-desc { font-size: 12px; color: var(--gray4); margin-top: 6px; line-height: 1.5; }
+/* Régime actif affiché en grand */
+.taux-tool .regime-active { padding: 28px; }
+.taux-tool .regime-active-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.taux-tool .regime-active-name { font-family: var(--ff); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; color: var(--black); }
+.taux-tool .regime-active-assiette { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--ink-3); text-transform: lowercase; }
 
-.taux-tool .taux-alert { background: var(--orange-bg); border: 1px solid var(--orange-b); border-radius: 0; padding: 12px 14px; margin-bottom: 16px; display: none; }
-.taux-tool .taux-alert.visible { display: block; }
-.taux-tool .taux-alert-text { font-size: 12px; color: var(--orange); line-height: 1.5; }
+.taux-tool .regime-active-price { display: flex; align-items: baseline; gap: 8px; }
+.taux-tool .regime-active-num { font-family: var(--num); font-weight: 600; font-size: clamp(3rem, 8vw, 4.4rem); line-height: 1; letter-spacing: -0.04em; color: var(--green); font-variant-numeric: tabular-nums; }
+.taux-tool .regime-active-unit { font-family: var(--num); font-size: 1.3rem; font-weight: 500; color: var(--ink-3); }
+.taux-tool .regime-active-tagline { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin-top: 10px; max-width: 520px; }
 
-.taux-tool .result-summary { background: var(--gray-bg); border-radius: 0; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: var(--gray4); line-height: 1.65; }
-.taux-tool .result-summary strong { color: var(--black); font-weight: 500; }
-.taux-tool .result-summary em { font-style: normal; color: var(--green); font-family: var(--mono); }
+.taux-tool .regime-active-sub { display: flex; gap: 0; border-top: 1px solid var(--gray-line); margin-top: 22px; }
+.taux-tool .regime-active-sub-item { flex: 1; padding: 16px 0; }
+.taux-tool .regime-active-sub-item + .regime-active-sub-item { border-left: 1px solid var(--gray-line); padding-left: 18px; }
+.taux-tool .regime-active-sub-label { display: block; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 6px; }
+.taux-tool .regime-active-sub-val { font-family: var(--num); font-size: 1.3rem; font-weight: 600; color: var(--black); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
-.taux-tool .btn-detail { width: 100%; padding: 11px; background: var(--white); border: 1px solid var(--gray2); border-radius: 0; font-family: var(--ff); font-size: 13px; font-weight: 500; color: var(--gray4); cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 7px; }
-.taux-tool .btn-detail:hover { background: var(--gray-bg); color: var(--black); border-color: var(--gray3); }
+.taux-tool .regime-active-desc { margin-top: 20px; font-size: 13px; color: var(--ink-2); line-height: 1.6; }
+
+.taux-tool .regime-warn { display: flex; gap: 7px; align-items: flex-start; margin-top: 16px; padding: 11px 13px; background: var(--orange-bg); border: 1px solid var(--orange-b); border-radius: var(--radius-sm); font-size: 12px; color: var(--orange); line-height: 1.5; }
+.taux-tool .regime-warn i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+.taux-tool .btn-detail { width: 100%; margin-top: 18px; padding: 11px; background: var(--white); border: 1px solid var(--gray-line); border-radius: var(--radius-sm); font-family: var(--ff); font-size: 13px; font-weight: 500; color: var(--ink-2); cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 7px; }
+.taux-tool .btn-detail:hover { background: var(--gray-bg); color: var(--black); border-color: var(--gray-line-2); }
 .taux-tool .btn-detail i { font-size: 15px; transition: transform .2s; }
 .taux-tool .btn-detail.open i { transform: rotate(180deg); }
 
-.taux-tool .detail-panel { display: none; margin-top: 14px; }
-.taux-tool .detail-panel.visible { display: block; }
-.taux-tool .detail-line { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--gray2); font-size: 12px; }
+.taux-tool .detail-panel { margin-top: 14px; }
+.taux-tool .detail-line { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--gray-line); font-size: 12px; }
 .taux-tool .detail-line:last-child { border-bottom: none; }
-.taux-tool .detail-line-label { color: var(--gray4); }
-.taux-tool .detail-line-val { font-family: var(--mono); font-weight: 500; color: var(--black); }
+.taux-tool .detail-line-label { color: var(--ink-2); }
+.taux-tool .detail-line-val { font-family: var(--num); font-weight: 600; color: var(--black); font-variant-numeric: tabular-nums; }
 .taux-tool .detail-line.total { padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--black); border-bottom: none; }
 .taux-tool .detail-line.total .detail-line-label { color: var(--black); font-weight: 500; }
 .taux-tool .detail-line.total .detail-line-val { color: var(--black); font-size: 13px; }
 
-.taux-tool .hours-alert { margin-top: 14px; padding: 12px 14px; background: var(--red-bg); border: 1px solid var(--red-b); border-radius: 0; font-size: 12px; color: var(--red); line-height: 1.5; display: none; }
-.taux-tool .hours-alert.visible { display: block; }
+.taux-tool .reserves { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--gray-line); font-family: var(--mono); font-size: 10px; line-height: 1.6; color: var(--gray3); letter-spacing: 0; }
 
-.taux-tool .btn-inject { width: 100%; padding: 13px; margin-top: 14px; background: var(--green); color: var(--white); border: none; border-radius: 0; font-family: var(--ff); font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.taux-tool .btn-inject:hover { background: var(--green-dark); }
-.taux-tool .btn-inject:active { transform: scale(0.98); }
-.taux-tool .btn-inject i { font-size: 16px; }
+/* Rappel des 3 autres régimes */
+.taux-tool .regime-others { display: flex; gap: 0; border-top: 1px solid var(--gray-line); }
+.taux-tool .regime-other { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--white); border: none; border-radius: 0; cursor: pointer; transition: background .15s; text-align: left; }
+.taux-tool .regime-other + .regime-other { border-left: 1px solid var(--gray-line); }
+.taux-tool .regime-other:hover { background: var(--fill); }
+.taux-tool .regime-other-name { font-size: 12px; font-weight: 500; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.taux-tool .regime-other-num { font-family: var(--num); font-size: 14px; font-weight: 600; color: var(--black); font-variant-numeric: tabular-nums; }
 
-/* ── COMPARAISON MARCHÉ ── */
-.taux-tool .cm-card {
-  background: var(--white);
-  border: 1px solid var(--gray2);
-  border-radius: 0;
-  padding: 28px;
-  margin-top: 16px;
-}
+/* ── 3. COMPARAISON MARCHÉ ── */
+.taux-tool .cm-card { background: var(--white); border: 1px solid var(--gray-line); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 28px; }
 
-.taux-tool .cm-selects { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
+.taux-tool .cm-card .result-eyebrow,
+.taux-tool .result-eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+.taux-tool .result-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gray3); }
+
+.taux-tool .cm-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
 .taux-tool .cm-field { display: flex; flex-direction: column; gap: 6px; }
 .taux-tool .cm-field-label { font-size: 12px; font-weight: 500; color: var(--black); letter-spacing: -0.01em; }
-.taux-tool .cm-select,
-.taux-tool .cm-heures-input {
-  width: 100%; padding: 11px 12px; border: 1px solid var(--gray2); border-radius: 0;
-  font-family: var(--ff); font-size: 14px; font-weight: 500; color: var(--black);
-  background: var(--white); outline: none; transition: border-color .15s;
-  -webkit-appearance: none; appearance: none;
-}
-.taux-tool .cm-select { cursor: pointer; }
-.taux-tool .cm-select:focus,
-.taux-tool .cm-heures-input:focus { border-color: var(--black); }
-.taux-tool .cm-heures-input { font-family: var(--mono); text-align: right; }
-.taux-tool .cm-field-heures .cm-heures-input { width: 120px; }
+.taux-tool .cm-select { width: 100%; padding: 11px 12px; border: 1px solid var(--gray-line); border-radius: var(--radius-sm); font-family: var(--ff); font-size: 14px; font-weight: 500; color: var(--black); background: var(--white); outline: none; transition: border-color .15s, box-shadow .15s; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.taux-tool .cm-select:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-light); }
 
-/* Prix jour marché */
-.taux-tool .cm-market { display: flex; border-top: 1px solid var(--gray2); border-bottom: 1px solid var(--gray2); }
-.taux-tool .cm-market-item { flex: 1; padding: 14px 0; text-align: center; }
-.taux-tool .cm-market-item + .cm-market-item { border-left: 1px solid var(--gray2); }
+.taux-tool .cm-market { display: flex; border: 1px solid var(--gray-line); border-radius: var(--radius-sm); overflow: hidden; }
+.taux-tool .cm-market-item { flex: 1; padding: 14px 0; text-align: center; background: var(--fill-2); }
+.taux-tool .cm-market-item + .cm-market-item { border-left: 1px solid var(--gray-line); }
 .taux-tool .cm-market-label { display: block; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 6px; }
-.taux-tool .cm-market-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 500; color: var(--black); letter-spacing: -0.02em; }
+.taux-tool .cm-market-val { font-family: var(--num); font-size: 1.1rem; font-weight: 600; color: var(--black); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
-/* Taux jour artisan — seul élément vert */
-.taux-tool .cm-artisan { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--gray2); }
+.taux-tool .cm-artisan { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--gray-line); margin-top: 4px; }
 .taux-tool .cm-artisan-label { font-size: 13px; font-weight: 500; color: var(--black); }
-.taux-tool .cm-artisan-val { font-family: var(--mono); font-size: 1.6rem; font-weight: 500; color: var(--green); letter-spacing: -0.03em; line-height: 1; }
+.taux-tool .cm-artisan-val { font-family: var(--num); font-size: 1.6rem; font-weight: 600; color: var(--black); letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
 
-/* Échelle visuelle */
 .taux-tool .cm-scale { margin-top: 22px; }
-.taux-tool .cm-scale-bar { position: relative; height: 6px; background: var(--gray2); border-radius: 0; }
+.taux-tool .cm-scale-bar { position: relative; height: 6px; background: var(--gray-line); border-radius: var(--radius-sm); }
 .taux-tool .cm-scale-marker { position: absolute; top: -5px; width: 2px; height: 16px; background: var(--black); transform: translateX(-1px); }
 .taux-tool .cm-scale-labels { display: flex; justify-content: space-between; margin-top: 8px; }
-.taux-tool .cm-scale-end { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--gray3); }
+.taux-tool .cm-scale-end { font-family: var(--num); font-size: 11px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
-/* Message de positionnement */
 .taux-tool .cm-message { margin-top: 18px; font-size: 14px; font-weight: 500; color: var(--black); letter-spacing: -0.01em; }
-
-/* Mention de prudence */
 .taux-tool .cm-disclaimer { margin-top: 16px; font-family: var(--mono); font-size: 10px; line-height: 1.6; color: var(--gray3); letter-spacing: 0; }
 
 /* ── RESPONSIVE ── */
-@media (max-width: 1100px) { .taux-tool .sim-grid { grid-template-columns: 1fr 340px; } }
 @media (max-width: 900px) {
-  .taux-tool .sim-grid { grid-template-columns: 1fr; }
-  .taux-tool .result-col { position: static; }
+  .taux-tool .regime-active { padding: 22px 18px; }
+  .taux-tool .regime-others { flex-direction: column; }
+  .taux-tool .regime-other + .regime-other { border-left: none; border-top: 1px solid var(--gray-line); }
+  .taux-tool .regime-other { flex-direction: row; align-items: baseline; justify-content: space-between; }
 }
-@media (max-width: 480px) {
+@media (max-width: 560px) {
+  .taux-tool .vars-grid { grid-template-columns: 1fr 1fr; }
   .taux-tool .cm-card { padding: 20px; }
-  .taux-tool .cm-market-val { font-size: 1rem; }
+  .taux-tool .regime-active-sub { flex-direction: column; }
+  .taux-tool .regime-active-sub-item + .regime-active-sub-item { border-left: none; border-top: 1px solid var(--gray-line); padding-left: 0; }
+}
+@media (max-width: 380px) {
+  .taux-tool .vars-grid { grid-template-columns: 1fr; }
 }
