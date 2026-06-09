@@ -101,7 +101,7 @@
 .taux-tool .regime-active-unit { font-family: var(--num); font-size: 1.3rem; font-weight: 500; color: var(--ink-3); }
 .taux-tool .regime-active-tagline { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin-top: 10px; max-width: 520px; }
 
-.taux-tool .regime-active-sub { display: flex; gap: 0; border-top: 1px solid var(--gray-line); margin-top: 22px; }
+.taux-tool .regime-active-sub { display: flex; gap: 0; background: var(--fill); border: 1px solid var(--gray-line); border-radius: var(--radius-sm); margin-top: 22px; padding: 0 18px; }
 .taux-tool .regime-active-sub-item { flex: 1; padding: 16px 0; }
 .taux-tool .regime-active-sub-item + .regime-active-sub-item { border-left: 1px solid var(--gray-line); padding-left: 18px; }
 .taux-tool .regime-active-sub-label { display: block; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--gray3); margin-bottom: 6px; }
@@ -117,7 +117,7 @@
 .taux-tool .btn-detail i { font-size: 15px; transition: transform .2s; }
 .taux-tool .btn-detail.open i { transform: rotate(180deg); }
 
-.taux-tool .detail-panel { margin-top: 14px; }
+.taux-tool .detail-panel { margin-top: 14px; background: var(--fill); border: 1px solid var(--gray-line); border-radius: var(--radius-sm); padding: 6px 16px 10px; }
 .taux-tool .detail-line { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--gray-line); font-size: 12px; }
 .taux-tool .detail-line:last-child { border-bottom: none; }
 .taux-tool .detail-line-label { color: var(--ink-2); }
@@ -129,10 +129,10 @@
 .taux-tool .reserves { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--gray-line); font-family: var(--mono); font-size: 10px; line-height: 1.6; color: var(--gray3); letter-spacing: 0; }
 
 /* Rappel des 3 autres régimes */
-.taux-tool .regime-others { display: flex; gap: 0; border-top: 1px solid var(--gray-line); }
-.taux-tool .regime-other { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--white); border: none; border-radius: 0; cursor: pointer; transition: background .15s; text-align: left; }
+.taux-tool .regime-others { display: flex; gap: 0; border-top: 1px solid var(--gray-line); background: var(--fill-2); }
+.taux-tool .regime-other { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: transparent; border: none; border-radius: 0; cursor: pointer; transition: background .15s; text-align: left; }
 .taux-tool .regime-other + .regime-other { border-left: 1px solid var(--gray-line); }
-.taux-tool .regime-other:hover { background: var(--fill); }
+.taux-tool .regime-other:hover { background: var(--white); }
 .taux-tool .regime-other-name { font-size: 12px; font-weight: 500; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .taux-tool .regime-other-num { font-family: var(--num); font-size: 14px; font-weight: 600; color: var(--black); font-variant-numeric: tabular-nums; }
 
