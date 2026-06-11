@@ -60,6 +60,72 @@ function migrateCloisonsO(o: Record<string, unknown>): Record<string, unknown> {
   return { ...o, lignes, chute: Number(o.chute) || 0 };
 }
 
+// ─── Migration faux-plafond : ancienne config unique → modèle segments ──
+// Les devis antérieurs au modèle "segments" portaient une config unique
+// (plaque/peaux/isolant/avec_isolant/joints/entraxe/chute) SANS surface dans
+// `o` (le faux-plafond lisait la surface globale). On ne peut donc pas
+// reconstruire un segment dimensionné : on repart sur des lignes vides, en
+// PRÉSERVANT les réglages niveau lot (entraxe, bandes, chute). Idempotent.
+function migrateFauxPlafondO(
+  o: Record<string, unknown>
+): Record<string, unknown> {
+  if (Array.isArray(o.lignes)) return o; // déjà au modèle segments
+  return {
+    lignes: [],
+    entraxe: typeof o.entraxe === "string" ? o.entraxe : "0.60",
+    bandes: !!(o.bandes ?? o.joints),
+    chute: Number(o.chute) || 0,
+  };
+}
+
+// ─── Migration ITI : ancienne config unique → modèle segments ───────
+// Idem faux-plafond : l'ancien ITI (epa/iso/membrane/parement/m2) lisait une
+// surface unique. On repart sur lignes vides en préservant la chute (s'il y en
+// avait). Idempotent.
+function migrateItiO(o: Record<string, unknown>): Record<string, unknown> {
+  if (Array.isArray(o.lignes)) return o;
+  return { lignes: [], chute: Number(o.chute) || 0 };
+}
+
+// ─── Migration peinture : ancien modèle zones (z1..z4) → o.lignes ────
+// L'ancien peinture lisait des zones nommées (z1_on/z1_m2/z1_passes/…). Pas de
+// reconstruction dimensionnée fidèle : on repart sur des lignes vides (idem
+// faux-plafond/ITI). Idempotent (skip si o.lignes déjà un tableau).
+function migratePeintureO(o: Record<string, unknown>): Record<string, unknown> {
+  if (Array.isArray(o.lignes)) return o;
+  return { lignes: [] };
+}
+
+// ─── Migration gammes (suppression du concept, juin 2026) ───────────
+// 1. Le champ legacy `q` ("std"|"mid"|"prm") est purgé de chaque lot (il
+//    n'existe plus dans LotState ; les barèmes sont mono-prix).
+// 2. Les overrides cp plombs sur clés gammées sont remappés : `X_std` → `X`
+//    (les valeurs std sont devenues le prix unique) ; `X_mid`/`X_prm`
+//    tombent (clés disparues → prix unique du barème).
+const PLOMBS_EX_GAMME = [
+  "wc_complet",
+  "wc_suspendu_cuvette",
+  "plaque_declenchement",
+  "receveur_90",
+  "mitigeur_douche",
+  "mitigeur_cuisine",
+  "mitigeur_lavabo",
+  "baignoire",
+  "mitigeur_bain",
+] as const;
+function migrateCpPlombs(cp: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(cp)) {
+    const m = k.match(/^(.*)_(std|mid|prm)$/);
+    if (m && (PLOMBS_EX_GAMME as readonly string[]).includes(m[1])) {
+      if (m[2] === "std") out[m[1]] = v; // std → prix unique
+      continue; // mid/prm : override orphelin, tombe
+    }
+    out[k] = v;
+  }
+  return out;
+}
+
 export interface EngineHeader {
   globalSurf: number;
   tvaParDefaut: TauxTVA;
@@ -96,11 +162,34 @@ export function normalizeEngine(
         custom: Array.isArray(s.custom)
           ? [...s.custom]
           : baseLots[lid].custom,
+        // Additif : devis antérieurs sans lignesLibres → [] (aucun impact calcul).
+        lignesLibres: Array.isArray(s.lignesLibres)
+          ? [...s.lignesLibres]
+          : baseLots[lid].lignesLibres,
       };
       // Migration cloisons : anciens slots fixes → o.lignes (idempotent).
       if (lid === "cloisons") {
         lots[lid].o = migrateCloisonsO(lots[lid].o);
       }
+      // Migration faux-plafond : ancienne config unique → modèle segments.
+      if (lid === "fauxplafond") {
+        lots[lid].o = migrateFauxPlafondO(lots[lid].o);
+      }
+      // Migration ITI : ancienne config unique → modèle segments.
+      if (lid === "iti") {
+        lots[lid].o = migrateItiO(lots[lid].o);
+      }
+      // Migration peinture : ancien modèle zones → modèle segments.
+      if (lid === "peinture") {
+        lots[lid].o = migratePeintureO(lots[lid].o);
+      }
+      // Migration plombs : remap des overrides cp gammés (X_std → X).
+      if (lid === "plombs") {
+        lots[lid].cp = migrateCpPlombs(lots[lid].cp);
+      }
+      // Purge du champ legacy `q` (gammes supprimées) — le spread `...s`
+      // l'aurait recopié en propriété fantôme.
+      delete (lots[lid] as unknown as Raw).q;
     }
   }
   return {

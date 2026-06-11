@@ -7,7 +7,7 @@
 // détaillé par lot (ça vient en P4) : ici on rend :
 //   - Colonne gauche : 15 lots cliquables (clic = active+sélectionne).
 //   - Colonne centre : réglages communs du lot courant (surface/marge/MO/
-//     coutRevientPoints/TVA/gamme) + placeholder P4 + <details> debug
+//     coutRevientPoints/TVA) + placeholder P4 + <details> debug
 //     listant les lignes auto-générées par calcItems.
 //   - Colonne droite : récap temps réel via calcEngineTotaux (client +
 //     interne artisan). 1ʳᵉ alerte tauxHoraireManquant câblée ici.
@@ -15,29 +15,44 @@
 // Sauvegarde auto + création différée comme C1 (hérité du workflow).
 // ============================================================
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+} from "react";
 import Link from "next/link";
 import { repository } from "@/lib/devis/repository";
 import { calcEngineTotaux } from "@/lib/devis/engine/totals";
-import { calcItems } from "@/lib/devis/engine/calc-items";
 import {
   agregerLignesClient,
   calcClientTotaux,
+  hasAggregateur,
 } from "@/lib/devis/engine/agregation";
 import {
   LM,
-  LOTS_AVEC_GAMME,
   LOTS_NO_SURF,
   createInitialEngineState,
 } from "@/lib/devis/engine/lots";
 import CloisonsConfigBox from "./configurateurs/CloisonsConfigBox";
-import CloisonsLignes from "./configurateurs/CloisonsLignes";
+import FauxPlafondConfigBox from "./configurateurs/FauxPlafondConfigBox";
+import ItiConfigBox from "./configurateurs/ItiConfigBox";
+import PeintureConfigBox from "./configurateurs/PeintureConfigBox";
+import ElecConfigBox from "./configurateurs/ElecConfigBox";
+import SegmentCards from "./configurateurs/SegmentCards";
+import PointsLignesView from "./configurateurs/PointsLignesView";
+import LignesLibres from "./configurateurs/LignesLibres";
+import LotReglages from "./configurateurs/LotReglages";
+import type { SegmentConfigBoxProps } from "./configurateurs/segment-config";
 import type {
-  CloisonSegment,
   EngineState,
+  LigneLibre,
   LotId,
+  LotLibre,
   LotState,
-  Qualite,
+  SegmentBase,
 } from "@/lib/devis/engine/types";
 import { formatEuro } from "@/lib/devis/format";
 import { STATUT_LABEL } from "@/lib/devis/devis-status";
@@ -52,7 +67,6 @@ import type {
   DevisInput,
   DevisStatut,
   Entreprise,
-  RemiseMode,
   TauxTVA,
 } from "@/lib/devis/types";
 import "./devis-editor-engine.css";
@@ -60,6 +74,18 @@ import "./devis-editor-engine.css";
 // Lots à points (où coutRevientPoints fait sens — démolition 100% prix
 // ferme + élec hybride avec catalogue de 31 prestations).
 const LOTS_AVEC_POINTS = new Set<LotId>(["demolition", "elec"]);
+
+// Lots à modèle "segments" (patron cloisons) : registre lot → box de config.
+// L'éditeur les branche génériquement (config zone + section devis), sans code
+// en dur par lot. Ajouter un lot = une entrée ici.
+const SEGMENT_LOTS: Partial<
+  Record<LotId, { ConfigBox: ComponentType<SegmentConfigBoxProps> }>
+> = {
+  cloisons: { ConfigBox: CloisonsConfigBox },
+  fauxplafond: { ConfigBox: FauxPlafondConfigBox },
+  iti: { ConfigBox: ItiConfigBox },
+  peinture: { ConfigBox: PeintureConfigBox },
+};
 
 type SaveStatus = "idle" | "saving" | "saved" | "dirty";
 
@@ -77,12 +103,6 @@ const isoPlusDays = (baseISO: string, n: number) => {
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
 };
-const formatDateFr = (iso: string | null | undefined): string => {
-  if (!iso) return "—";
-  const [y, m, d] = iso.split("-");
-  return y && m && d ? `${d}/${m}/${y}` : iso;
-};
-
 function emptyClientForm(): ClientInput {
   return {
     type: "particulier",
@@ -133,6 +153,8 @@ function getDefaultDraft(): DevisInput {
     statut: "brouillon",
     dateCreation: today,
     dateValidite: isoPlusDays(today, 30),
+    dateDebutPrevue: null,
+    dateFinPrevue: null,
     globalSurf: 0,
     tvaParDefaut: 10,
     engine: createInitialEngineState({
@@ -159,6 +181,8 @@ function toInput(d: Devis): DevisInput {
     statut: d.statut,
     dateCreation: d.dateCreation,
     dateValidite: d.dateValidite,
+    dateDebutPrevue: d.dateDebutPrevue,
+    dateFinPrevue: d.dateFinPrevue,
     chantierId: d.chantierId,
     globalSurf: d.globalSurf,
     tvaParDefaut: d.tvaParDefaut,
@@ -183,7 +207,9 @@ export default function DevisEditorEngine({ devisId }: Props) {
   const [chantier, setChantier] = useState<Chantier | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [cur, setCur] = useState<LotId>("demolition");
+  // `cur` = sélection courante. String (pas LotId strict) : peut porter l'id
+  // d'un lot LIBRE en plus des 15 lots moteur (sélection bidirectionnelle).
+  const [cur, setCur] = useState<string>("demolition");
   const [enteteModal, setEnteteModal] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -196,9 +222,18 @@ export default function DevisEditorEngine({ devisId }: Props) {
   // repliées (collapse par lot).
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const devisScrollRef = useRef<HTMLDivElement | null>(null);
+  // Garde-fou anti-boucle : true = le prochain changement de `cur` doit scroller
+  // le devis vers la section (sélection DEPUIS la colonne gauche). false =
+  // sélection DEPUIS le devis (clic sur une section) → ne pas re-scroller la
+  // section qu'on vient de cliquer. L'effet consomme et remet à false.
+  const scrollOnCurChange = useRef(false);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     () => new Set()
   );
+  // Repli de la box de configuration du lot (réglages + configurateur). Un seul
+  // booléen : le centre n'affiche qu'un lot à la fois. Réouvert au changement de
+  // lot sélectionné (cf. effet sur `cur`).
+  const [cfgOpen, setCfgOpen] = useState(true);
 
   const draftRef = useRef(draft);
   draftRef.current = draft;
@@ -255,6 +290,11 @@ export default function DevisEditorEngine({ devisId }: Props) {
   // qui remonterait jusqu'à la fenêtre et ferait sortir la zone config du haut).
   useEffect(() => {
     if (!loaded) return;
+    // N'auto-scroller QUE si la sélection vient de la colonne gauche. Un clic
+    // dans le devis (selectFromDevis) pose le flag à false : la section est
+    // déjà sous le curseur, pas de saut brutal.
+    if (!scrollOnCurChange.current) return;
+    scrollOnCurChange.current = false;
     const container = devisScrollRef.current;
     const el = sectionRefs.current[cur];
     if (!container || !el) return;
@@ -264,6 +304,12 @@ export default function DevisEditorEngine({ devisId }: Props) {
       container.scrollTop;
     container.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
   }, [cur, loaded]);
+
+  // Box de config réouverte à chaque changement de lot sélectionné (saisie
+  // immédiate). L'artisan replie manuellement via le chevron de l'en-tête.
+  useEffect(() => {
+    setCfgOpen(true);
+  }, [cur]);
 
   function toggleSection(id: string) {
     setCollapsedSections((prev) => {
@@ -353,38 +399,78 @@ export default function DevisEditorEngine({ devisId }: Props) {
   //   La config (surf/marge/MO/options/points/custom) est préservée : seul
   //   `lot.on` change, recliquer/recocher récupère tout.
   function onLotClick(lid: LotId) {
+    scrollOnCurChange.current = true; // sélection gauche → on scrolle le devis
     setCur(lid);
     if (!draft.engine?.lots?.[lid]?.on) patchLot(lid, { on: true });
   }
   function onLotCheck(lid: LotId, checked: boolean) {
     patchLot(lid, { on: checked });
-    if (checked) setCur(lid);
+    if (checked) {
+      scrollOnCurChange.current = true;
+      setCur(lid);
+    }
+  }
+  // Sélection DEPUIS le devis (clic sur une section). Pas de re-scroll : la
+  // section est déjà visible (garde-fou anti-boucle).
+  function selectFromDevis(id: string) {
+    scrollOnCurChange.current = false;
+    setCur(id);
   }
 
-  // ── Configurateur cloisons (Brique 2) — modèle segments (o.lignes) ──
-  function cloisonO(): Record<string, unknown> {
-    return draft.engine?.lots?.cloisons?.o ?? {};
+  // ── Configurateur générique "segments" (patron cloisons → faux-plafond…) ──
+  // Manipule lot.o.lignes pour n'importe quel lot du registre SEGMENT_LOTS.
+  function segO(lid: LotId): Record<string, unknown> {
+    return draft.engine?.lots?.[lid]?.o ?? {};
   }
-  function cloisonLignes(): CloisonSegment[] {
-    const l = cloisonO().lignes;
-    return Array.isArray(l) ? (l as CloisonSegment[]) : [];
+  function segLignes(lid: LotId): SegmentBase[] {
+    const l = segO(lid).lignes;
+    return Array.isArray(l) ? (l as SegmentBase[]) : [];
   }
-  function setCloisonLignes(lignes: CloisonSegment[]) {
-    patchLot("cloisons", { o: { ...cloisonO(), lignes } });
+  function setSegLignes(lid: LotId, lignes: SegmentBase[]) {
+    patchLot(lid, { o: { ...segO(lid), lignes } });
+  }
+  function patchLotO(lid: LotId, patch: Record<string, unknown>) {
+    patchLot(lid, { o: { ...segO(lid), ...patch } });
+  }
+  // ── Override ponctuel d'un point (lot à points : prix/libellé sur CE devis).
+  function pointsOverrideOf(
+    lid: LotId
+  ): Record<string, { pu?: number; lbl?: string }> {
+    const ov = segO(lid).pointsOverride;
+    return ov && typeof ov === "object"
+      ? (ov as Record<string, { pu?: number; lbl?: string }>)
+      : {};
+  }
+  function updatePointOverride(
+    lid: LotId,
+    pid: string,
+    patch: { pu?: number; lbl?: string }
+  ) {
+    const cur = pointsOverrideOf(lid);
+    patchLotO(lid, {
+      pointsOverride: { ...cur, [pid]: { ...cur[pid], ...patch } },
+    });
+  }
+  function resetPointOverride(lid: LotId, pid: string) {
+    const next = { ...pointsOverrideOf(lid) };
+    delete next[pid];
+    patchLotO(lid, { pointsOverride: next });
   }
   function makeSegId(): string {
     return "seg_" + Math.random().toString(36).slice(2, 10);
   }
-  // Ajout AVEC cumul : config identique (type+oss+isolant+peaux+dbl) → m² additionnés.
-  function addCloisonSegment(cfg: Omit<CloisonSegment, "id">) {
-    const lignes = cloisonLignes();
+  // Ajout AVEC cumul : un segment configuré de signature identique (toutes les
+  // dims de config sauf m2) voit ses m² additionnés. Générique (la signature
+  // = les clés du cfg remonté par la box, hors m2).
+  function addSegment(lid: LotId, cfg: Record<string, unknown>) {
+    const lignes = segLignes(lid);
+    const keys = Object.keys(cfg).filter((k) => k !== "m2");
     const idx = lignes.findIndex(
       (s) =>
-        s.type === cfg.type &&
-        s.oss === cfg.oss &&
-        s.isolant === cfg.isolant &&
-        s.peaux === cfg.peaux &&
-        !!s.dbl === !!cfg.dbl
+        s.type !== "libre" &&
+        keys.every(
+          (k) => (s as unknown as Record<string, unknown>)[k] === cfg[k]
+        )
     );
     if (idx >= 0) {
       const next = lignes.slice();
@@ -392,38 +478,145 @@ export default function DevisEditorEngine({ devisId }: Props) {
         ...next[idx],
         m2: (Number(next[idx].m2) || 0) + (Number(cfg.m2) || 0),
       };
-      setCloisonLignes(next);
+      setSegLignes(lid, next);
     } else {
-      setCloisonLignes([...lignes, { ...cfg, id: makeSegId() }]);
+      setSegLignes(lid, [
+        ...lignes,
+        { ...(cfg as object), id: makeSegId() } as SegmentBase,
+      ]);
     }
   }
-  function addCloisonLibre() {
-    setCloisonLignes([
-      ...cloisonLignes(),
+  function addSegmentLibre(lid: LotId) {
+    setSegLignes(lid, [
+      ...segLignes(lid),
+      { id: makeSegId(), type: "libre", m2: 1, lbl: "", unit: "u", puOverride: 0 },
+    ]);
+  }
+  function updateSegment(lid: LotId, id: string, patch: Partial<SegmentBase>) {
+    setSegLignes(
+      lid,
+      segLignes(lid).map((s) => (s.id === id ? { ...s, ...patch } : s))
+    );
+  }
+  function removeSegment(lid: LotId, id: string) {
+    setSegLignes(
+      lid,
+      segLignes(lid).filter((s) => s.id !== id)
+    );
+  }
+
+  // ── Lignes libres (jalon 3) — id stable, additif, prix ferme ─────────
+  function makeLibreId(): string {
+    return "lib_" + Math.random().toString(36).slice(2, 10);
+  }
+  function emptyLigneLibre(): LigneLibre {
+    return { id: makeLibreId(), lbl: "", qty: 1, unit: "u", pu: 0 };
+  }
+
+  // (a) Lignes libres d'un lot PRÉDÉFINI (LotState.lignesLibres).
+  function lotLignesLibres(lid: LotId): LigneLibre[] {
+    return draft.engine?.lots?.[lid]?.lignesLibres ?? [];
+  }
+  function addLotLigneLibre(lid: LotId) {
+    patchLot(lid, { lignesLibres: [...lotLignesLibres(lid), emptyLigneLibre()] });
+  }
+  function updateLotLigneLibre(
+    lid: LotId,
+    ligneId: string,
+    patch: Partial<LigneLibre>
+  ) {
+    patchLot(lid, {
+      lignesLibres: lotLignesLibres(lid).map((l) =>
+        l.id === ligneId ? { ...l, ...patch } : l
+      ),
+    });
+  }
+  function removeLotLigneLibre(lid: LotId, ligneId: string) {
+    patchLot(lid, {
+      lignesLibres: lotLignesLibres(lid).filter((l) => l.id !== ligneId),
+    });
+  }
+
+  // (b) Lots LIBRES (EngineState.lotsLibres) — titre + lignes manuelles.
+  function setLotsLibres(updater: (prev: LotLibre[]) => LotLibre[]) {
+    setDraft((prev) => {
+      const base: EngineState =
+        prev.engine ??
+        createInitialEngineState({
+          globalSurf: prev.globalSurf,
+          tvaParDefaut: prev.tvaParDefaut,
+          remiseMode: prev.remiseMode,
+          remiseValeur: prev.remiseValeur,
+        });
+      return {
+        ...prev,
+        engine: { ...base, lotsLibres: updater(base.lotsLibres ?? []) },
+      };
+    });
+    scheduleSave();
+  }
+  function addLotLibre() {
+    setLotsLibres((prev) => [
+      ...prev,
       {
-        id: makeSegId(),
-        type: "libre",
-        oss: "m48",
-        isolant: "non",
-        peaux: "2",
-        dbl: false,
-        m2: 1,
-        lbl: "",
-        unit: "u",
-        puOverride: 0,
+        id: "ll_" + Math.random().toString(36).slice(2, 10),
+        titre: "",
+        lignes: [emptyLigneLibre()],
       },
     ]);
   }
-  function updateCloisonSegment(id: string, patch: Partial<CloisonSegment>) {
-    setCloisonLignes(
-      cloisonLignes().map((s) => (s.id === id ? { ...s, ...patch } : s))
+  function updateLotLibreTitre(lotId: string, titre: string) {
+    setLotsLibres((prev) =>
+      prev.map((l) => (l.id === lotId ? { ...l, titre } : l))
     );
   }
-  function removeCloisonSegment(id: string) {
-    setCloisonLignes(cloisonLignes().filter((s) => s.id !== id));
+  function removeLotLibre(lotId: string) {
+    setLotsLibres((prev) => prev.filter((l) => l.id !== lotId));
+    // Si on retire le lot libre actuellement sélectionné, rebascule la
+    // sélection sur un lot prédéfini actif (ou démolition par défaut).
+    if (cur === lotId) {
+      const firstActive = (Object.keys(draft.engine?.lots ?? {}) as LotId[]).find(
+        (k) => draft.engine?.lots?.[k]?.on
+      );
+      scrollOnCurChange.current = false;
+      setCur(firstActive ?? "demolition");
+    }
   }
-  function setCloisonChute(n: number) {
-    patchLot("cloisons", { o: { ...cloisonO(), chute: n } });
+  function addLotLibreLigne(lotId: string) {
+    setLotsLibres((prev) =>
+      prev.map((l) =>
+        l.id === lotId
+          ? { ...l, lignes: [...l.lignes, emptyLigneLibre()] }
+          : l
+      )
+    );
+  }
+  function updateLotLibreLigne(
+    lotId: string,
+    ligneId: string,
+    patch: Partial<LigneLibre>
+  ) {
+    setLotsLibres((prev) =>
+      prev.map((l) =>
+        l.id === lotId
+          ? {
+              ...l,
+              lignes: l.lignes.map((x) =>
+                x.id === ligneId ? { ...x, ...patch } : x
+              ),
+            }
+          : l
+      )
+    );
+  }
+  function removeLotLibreLigne(lotId: string, ligneId: string) {
+    setLotsLibres((prev) =>
+      prev.map((l) =>
+        l.id === lotId
+          ? { ...l, lignes: l.lignes.filter((x) => x.id !== ligneId) }
+          : l
+      )
+    );
   }
 
   // ── Totaux temps réel (engine + tauxHoraire) ────────────────────
@@ -477,59 +670,23 @@ export default function DevisEditorEngine({ devisId }: Props) {
     totaux,
   ]);
 
-  // Items du lot courant (pour la table debug)
-  const curItems = useMemo(() => {
-    if (!draft.engine) return [];
-    return calcItems(
-      {
-        ...draft.engine,
-        globalSurf: draft.globalSurf ?? 0,
-        tvaParDefaut: draft.tvaParDefaut ?? 10,
-        remiseMode: draft.remiseMode,
-        remiseValeur: draft.remiseValeur,
-      },
-      cur
-    );
-  }, [
-    draft.engine,
-    draft.globalSurf,
-    draft.tvaParDefaut,
-    draft.remiseMode,
-    draft.remiseValeur,
-    cur,
-  ]);
-
-  // Lignes client agrégées du lot courant (Brique 1) : null si le lot n'a pas
-  // de stratégie (→ rendu legacy ligne-à-ligne). Réutilise le LotTotaux déjà
-  // calculé pour rester cohérent avec le récap.
-  const curLignesClient = useMemo(() => {
-    if (!draft.engine || !totaux) return null;
-    const lt = totaux.parLot.find((l) => l.lotId === cur);
-    if (!lt) return null;
-    return agregerLignesClient(
-      {
-        ...draft.engine,
-        globalSurf: draft.globalSurf ?? 0,
-        tvaParDefaut: draft.tvaParDefaut ?? 10,
-        remiseMode: draft.remiseMode,
-        remiseValeur: draft.remiseValeur,
-      },
-      lt
-    );
-  }, [
-    draft.engine,
-    draft.globalSurf,
-    draft.tvaParDefaut,
-    draft.remiseMode,
-    draft.remiseValeur,
-    totaux,
-    cur,
-  ]);
-
-  // Engine synchronisé (header → engine) pour agréger les lignes par lot dans
-  // la vue devis globale. Lignes client par lot actif (cloisons → segments ;
-  // autres → null = legacy ligne-à-ligne).
-  const sections = useMemo(() => {
+  // Sections de la vue devis = [lots LM actifs, ...lots libres]. Un seul
+  // tableau combiné → numérotation CONTINUE X.0 (l'index du map = numéro).
+  // Les lots libres s'ajoutent EN FIN de séquence, sans rompre la suite des
+  // numéros des lots prédéfinis. (Jalon 3.)
+  const sections = useMemo<
+    Array<
+      | {
+          kind: "lot";
+          id: LotId;
+          meta: (typeof LM)[number];
+          lignes: ReturnType<typeof agregerLignesClient>;
+          lignesLibres: LigneLibre[];
+          tva: number;
+        }
+      | { kind: "libre"; id: string; lot: LotLibre; tva: number }
+    >
+  >(() => {
     if (!draft.engine || !totaux) return [];
     const synced: EngineState = {
       ...draft.engine,
@@ -538,14 +695,24 @@ export default function DevisEditorEngine({ devisId }: Props) {
       remiseMode: draft.remiseMode,
       remiseValeur: draft.remiseValeur,
     };
-    return LM.filter((m) => draft.engine!.lots[m.id].on).map((meta) => {
+    const predef = LM.filter((m) => synced.lots[m.id].on).map((meta) => {
       const lt = totaux.parLot.find((l) => l.lotId === meta.id)!;
       return {
+        kind: "lot" as const,
+        id: meta.id,
         meta,
         lignes: agregerLignesClient(synced, lt),
-        items: lt.items,
+        lignesLibres: synced.lots[meta.id].lignesLibres ?? [],
+        tva: synced.lots[meta.id].tva ?? synced.tvaParDefaut,
       };
     });
+    const libres = (synced.lotsLibres ?? []).map((lot) => ({
+      kind: "libre" as const,
+      id: lot.id,
+      lot,
+      tva: synced.tvaParDefaut,
+    }));
+    return [...predef, ...libres];
   }, [
     draft.engine,
     draft.globalSurf,
@@ -600,8 +767,13 @@ export default function DevisEditorEngine({ devisId }: Props) {
     );
   }
 
-  const curLot = draft.engine?.lots?.[cur];
-  const lotMeta = LM.find((l) => l.id === cur)!;
+  // `cur` peut être un lot prédéfini (LM) ou un lot libre. lotMeta n'existe
+  // que pour les lots prédéfinis ; curLibre pour un lot libre sélectionné.
+  const lotMeta = LM.find((l) => l.id === cur);
+  const curLot = lotMeta ? draft.engine?.lots?.[lotMeta.id] : undefined;
+  const curLibre = !lotMeta
+    ? (draft.engine?.lotsLibres ?? []).find((l) => l.id === cur)
+    : undefined;
 
   // Résumé affiché dans la barre d'en-tête (repliée) pour donner le contexte
   // d'un coup d'œil sans déplier.
@@ -648,24 +820,18 @@ export default function DevisEditorEngine({ devisId }: Props) {
               <span>
                 <em>Client</em> {clientNom}
               </span>
-              <span>
-                <em>Validité</em> {formatDateFr(draft.dateValidite)}
-              </span>
-              <span>
-                <em>Acompte</em> {draft.acomptePct}&nbsp;%
-              </span>
             </span>
           ) : (
-            <span className="dee-entete-btn-label">En-tête du devis</span>
+            <span className="dee-entete-btn-label">Client &amp; réglages</span>
           )}
           <i className="ti ti-pencil dee-entete-btn-edit" aria-hidden="true" />
         </button>
-        <input
-          className="dee-topbar-titre"
-          value={draft.titre}
-          onChange={(e) => patchDraft({ titre: e.target.value })}
-          placeholder="Titre du devis"
-        />
+        {/* Titre en lecture seule : il se définit à la finalisation (source unique). */}
+        <span className="dee-topbar-titre-ro" title={draft.titre || undefined}>
+          {draft.titre || (
+            <em className="dee-topbar-titre-ph">Titre — à définir à la finalisation</em>
+          )}
+        </span>
         <span className="dee-topbar-statut">
           {STATUT_LABEL[statut] || statut}
         </span>
@@ -679,24 +845,21 @@ export default function DevisEditorEngine({ devisId }: Props) {
         <div className="dee-topbar-actions">
           {id ? (
             <Link
-              href={`/chantier/devis/${id}/apercu`}
-              className="dee-btn"
-              target="_blank"
+              href={`/chantier/devis/${id}/finaliser`}
+              className="dee-btn dee-btn-primary"
+              title="Habiller le devis et l'exporter"
             >
-              Voir l&apos;aperçu
+              Finaliser <i className="ti ti-arrow-right" aria-hidden="true" />
             </Link>
           ) : (
-            <button className="dee-btn" disabled title="Sauvegarde en cours…">
-              Voir l&apos;aperçu
+            <button
+              className="dee-btn dee-btn-primary"
+              disabled
+              title="Sauvegarde en cours…"
+            >
+              Finaliser
             </button>
           )}
-          <button
-            className="dee-btn dee-btn-primary"
-            disabled
-            title="PDF — disponible en P5"
-          >
-            PDF
-          </button>
         </div>
       </header>
 
@@ -707,8 +870,8 @@ export default function DevisEditorEngine({ devisId }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <h3>
-              <i className="ti ti-clipboard-text" aria-hidden="true" /> En-tête
-              du devis
+              <i className="ti ti-clipboard-text" aria-hidden="true" /> Client
+              &amp; réglages de calcul
             </h3>
             <div className="dee-config-grid">
               <div className="dee-field col-full">
@@ -735,62 +898,6 @@ export default function DevisEditorEngine({ devisId }: Props) {
               </button>
             </div>
           </div>
-          <div className="dee-field col-full">
-            <label className="dee-field-label">Titre du devis</label>
-            <input
-              className="dee-input"
-              value={draft.titre}
-              onChange={(e) => patchDraft({ titre: e.target.value })}
-              placeholder="Ex. Rénovation appartement — 45 m²"
-            />
-          </div>
-          <div className="dee-field">
-            <label className="dee-field-label">Date création</label>
-            <input
-              className="dee-input"
-              type="date"
-              value={draft.dateCreation}
-              onChange={(e) => patchDraft({ dateCreation: e.target.value })}
-            />
-          </div>
-          <div className="dee-field">
-            <label className="dee-field-label">Date validité</label>
-            <input
-              className="dee-input"
-              type="date"
-              value={draft.dateValidite ?? ""}
-              onChange={(e) =>
-                patchDraft({ dateValidite: e.target.value || null })
-              }
-            />
-          </div>
-          {/* Adresse de chantier : lecture seule. Elle vient désormais du
-              Chantier parent (via chantierId), elle ne se saisit plus dans le
-              devis. Le rattachement du chantierId à l'ouverture sera câblé
-              depuis la page Chantier (autre chantier) — pas de sélecteur ici. */}
-          <div className="dee-field col-full">
-            <label className="dee-field-label">Chantier</label>
-            {chantier ? (
-              <div className="dee-readonly">
-                <span className="dee-readonly-strong">{chantier.nom}</span>
-                {chantier.adresse && <span>{chantier.adresse}</span>}
-                {(chantier.codePostal || chantier.ville) && (
-                  <span>
-                    {chantier.codePostal} {chantier.ville}
-                  </span>
-                )}
-                <span className="dee-readonly-hint">
-                  Adresse gérée depuis le chantier — non modifiable ici.
-                </span>
-              </div>
-            ) : (
-              <div className="dee-readonly is-empty">
-                Aucun chantier rattaché. L&apos;adresse proviendra du chantier
-                depuis lequel le devis est ouvert.
-              </div>
-            )}
-          </div>
-
           <div className="dee-field">
             <label className="dee-field-label">Surface globale (m²)</label>
             <input
@@ -820,73 +927,34 @@ export default function DevisEditorEngine({ devisId }: Props) {
               ))}
             </select>
           </div>
-          <div className="dee-field">
-            <label className="dee-field-label">Remise</label>
-            <div className="dee-input-row">
-              <select
-                className="dee-select"
-                style={{ flex: "0 0 110px" }}
-                value={draft.remiseMode}
-                onChange={(e) =>
-                  patchDraft({ remiseMode: e.target.value as RemiseMode })
-                }
-              >
-                <option value="aucune">Aucune</option>
-                <option value="pourcent">%</option>
-                <option value="euros">€</option>
-              </select>
-              {draft.remiseMode !== "aucune" && (
-                <input
-                  className="dee-input"
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={draft.remiseValeur || ""}
-                  onChange={(e) =>
-                    patchDraft({
-                      remiseValeur: Number(e.target.value) || 0,
-                    })
-                  }
-                />
-              )}
+          {/* Adresse de chantier : lecture seule (portée par le Chantier parent). */}
+          <div className="dee-field col-full">
+            <label className="dee-field-label">Chantier</label>
+            {chantier ? (
+              <div className="dee-readonly">
+                <span className="dee-readonly-strong">{chantier.nom}</span>
+                {chantier.adresse && <span>{chantier.adresse}</span>}
+                {(chantier.codePostal || chantier.ville) && (
+                  <span>
+                    {chantier.codePostal} {chantier.ville}
+                  </span>
+                )}
+                <span className="dee-readonly-hint">
+                  Adresse gérée depuis le chantier — non modifiable ici.
+                </span>
+              </div>
+            ) : (
+              <div className="dee-readonly is-empty">
+                Aucun chantier rattaché. L&apos;adresse proviendra du chantier
+                depuis lequel le devis est ouvert.
+              </div>
+            )}
+          </div>
+          <div className="dee-field col-full">
+            <div className="dee-readonly-hint" style={{ marginTop: 0 }}>
+              Objet, dates, remise, acomptes, message d&apos;introduction et
+              notes se règlent à la <strong>finalisation</strong>.
             </div>
-          </div>
-          <div className="dee-field">
-            <label className="dee-field-label">Acompte (%)</label>
-            <input
-              className="dee-input"
-              type="number"
-              min={0}
-              max={100}
-              step={1}
-              value={draft.acomptePct}
-              onChange={(e) =>
-                patchDraft({ acomptePct: Number(e.target.value) || 0 })
-              }
-            />
-          </div>
-
-          <div className="dee-field col-full">
-            <label className="dee-field-label">
-              Lettre d&apos;introduction (affichée sur le devis client)
-            </label>
-            <textarea
-              className="dee-textarea"
-              value={draft.lettreIntro}
-              onChange={(e) => patchDraft({ lettreIntro: e.target.value })}
-              placeholder="Madame, Monsieur,&#10;Suite à notre rencontre…"
-            />
-          </div>
-          <div className="dee-field col-full">
-            <label className="dee-field-label">
-              Notes internes (privé — jamais affichées au client)
-            </label>
-            <textarea
-              className="dee-textarea"
-              value={draft.notesInternes}
-              onChange={(e) => patchDraft({ notesInternes: e.target.value })}
-              placeholder="Notes pour vous : devis envoyé après visite, négocier la cuisine…"
-            />
           </div>
             </div>
             <div className="dee-modal-actions">
@@ -984,130 +1052,88 @@ export default function DevisEditorEngine({ devisId }: Props) {
         <section className="dee-cols-center">
           {/* ── ZONE CONFIGURATEUR (atelier) — panneau teinté, distinct ── */}
           <div className="dee-cfgzone">
-          <div className="dee-cfgzone-eyebrow">
-            <i className="ti ti-tools" aria-hidden="true" /> Configurer
-          </div>
-          <div className="dee-config-head-inline">
-            <h2 className="dee-config-name">{lotMeta.label}</h2>
-
-            {curLot?.on && (
-              <>
-                <div className="dee-config-controls">
-                  {!LOTS_NO_SURF.has(cur) && (
-                    <span className="dee-inline-field">
-                      surface
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.5}
-                        value={curLot.surf ?? ""}
-                        placeholder={String(draft.globalSurf || 0)}
-                        onChange={(e) =>
-                          patchLot(cur, {
-                            surf:
-                              e.target.value === ""
-                                ? null
-                                : Number(e.target.value),
-                          })
-                        }
-                      />
-                      <span className="dee-inline-unit">m²</span>
-                    </span>
-                  )}
-                  <span className="dee-inline-field">
-                    marge
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={curLot.m}
-                      onChange={(e) =>
-                        patchLot(cur, { m: Number(e.target.value) || 0 })
-                      }
-                    />
-                    <span className="dee-inline-unit">%</span>
+          {lotMeta ? (
+            curLot?.on ? (
+              // UNE box repliable par lot : en-tête (titre + chevron, cliquable)
+              // → corps = réglages partagés (LotReglages) + configurateur du lot.
+              // Replier masque TOUT (réglages compris) → hauteur récupérée.
+              <div className="dee-cfg-box">
+                <button
+                  type="button"
+                  className="dee-cfg-box-head"
+                  onClick={() => setCfgOpen((v) => !v)}
+                  aria-expanded={cfgOpen}
+                >
+                  <i className="ti ti-tools dee-cfg-box-head-ic" aria-hidden="true" />
+                  <span className="dee-cfg-box-title">
+                    Configurer — {lotMeta.label}
                   </span>
-                  <span className="dee-inline-field">
-                    MO
-                    <input
-                      type="number"
-                      min={0}
-                      step={0.5}
-                      value={curLot.tempsMoHeures || ""}
-                      onChange={(e) =>
-                        patchLot(cur, {
-                          tempsMoHeures: Number(e.target.value) || 0,
-                        })
-                      }
+                  <i
+                    className={`ti ti-chevron-${cfgOpen ? "up" : "down"} dee-cfg-box-caret`}
+                    aria-hidden="true"
+                  />
+                </button>
+                {cfgOpen && (
+                  <div className="dee-cfg-box-body">
+                    <LotReglages
+                      lot={curLot}
+                      globalSurf={draft.globalSurf ?? 0}
+                      showSurface={!LOTS_NO_SURF.has(lotMeta.id)}
+                      showRevient={LOTS_AVEC_POINTS.has(lotMeta.id)}
+                      onPatch={(p) => patchLot(lotMeta.id, p)}
                     />
-                    <span className="dee-inline-unit">h</span>
-                  </span>
-                  {LOTS_AVEC_POINTS.has(cur) && (
-                    <span className="dee-inline-field">
-                      revient pts
-                      <input
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={curLot.coutRevientPoints ?? ""}
-                        placeholder="—"
-                        onChange={(e) =>
-                          patchLot(cur, {
-                            coutRevientPoints:
-                              e.target.value === ""
-                                ? undefined
-                                : Number(e.target.value),
-                          })
-                        }
+                    {SEGMENT_LOTS[lotMeta.id] ? (
+                      (() => {
+                        const Cfg = SEGMENT_LOTS[lotMeta.id]!.ConfigBox;
+                        return (
+                          <Cfg
+                            o={curLot.o}
+                            onAdd={(cfg) => addSegment(lotMeta.id, cfg)}
+                            onPatchO={(patch) => patchLotO(lotMeta.id, patch)}
+                          />
+                        );
+                      })()
+                    ) : lotMeta.id === "elec" ? (
+                      <ElecConfigBox
+                        o={curLot.o}
+                        globalSurf={draft.globalSurf ?? 0}
+                        onPatchO={(patch) => patchLotO("elec", patch)}
                       />
-                      <span className="dee-inline-unit">€</span>
-                    </span>
-                  )}
-                </div>
-                {LOTS_AVEC_GAMME.has(cur) && cur !== "cloisons" && (
-                  <div className="dee-quality-inline">
-                    <span className="dee-quality-inline-label">Gamme</span>
-                    {(["std", "mid", "prm"] as Qualite[]).map((q) => (
-                      <button
-                        key={q}
-                        type="button"
-                        className={`dee-quality-pill${
-                          curLot.q === q ? " is-active" : ""
-                        }`}
-                        onClick={() => patchLot(cur, { q })}
-                      >
-                        {q === "std"
-                          ? "Éco"
-                          : q === "mid"
-                            ? "Standard"
-                            : "Premium"}
-                      </button>
-                    ))}
+                    ) : (
+                      <div className="dee-cfgzone-soon">
+                        Configurateur « {lotMeta.label} » à venir — ajoutez des
+                        lignes libres dans sa section ci-dessous.
+                      </div>
+                    )}
                   </div>
                 )}
-              </>
-            )}
-          </div>
-
-          {/* Box de config du lot courant (cloisons → box d'ajout). */}
-          {curLot?.on && cur === "cloisons" && (
-            <CloisonsConfigBox
-              chute={Number(curLot.o.chute) || 0}
-              onAdd={addCloisonSegment}
-              onChute={setCloisonChute}
-              defaultOpen={cloisonLignes().length === 0}
-            />
-          )}
-          {curLot?.on && cur !== "cloisons" && (
+              </div>
+            ) : (
+              <div className="dee-cfgzone-off">
+                <strong>{lotMeta.label}</strong> n&apos;est pas inclus. Cochez-le
+                dans la colonne gauche pour l&apos;ajouter au devis.
+              </div>
+            )
+          ) : curLibre ? (
+            <>
+              <div className="dee-config-head-inline">
+                <h2 className="dee-config-name">
+                  <i className="ti ti-tools dee-config-name-ic" aria-hidden="true" />
+                  <span className="dee-config-name-pre">Configurer</span>
+                  <span className="dee-config-name-lot">
+                    {curLibre.titre || "Lot libre"}
+                  </span>
+                </h2>
+              </div>
+              <div className="dee-cfgzone-soon">
+                Lot libre — son intitulé et ses lignes se composent directement
+                dans le devis, dans sa section ci-dessous.
+              </div>
+            </>
+          ) : (
             <div className="dee-cfgzone-soon">
-              Configurateur « {lotMeta.label} » à venir — ajoutez des lignes
-              libres dans sa section ci-dessous.
-            </div>
-          )}
-          {!curLot?.on && (
-            <div className="dee-cfgzone-off">
-              <strong>{lotMeta.label}</strong> n&apos;est pas inclus. Cochez-le
-              dans la colonne gauche pour l&apos;ajouter au devis.
+              Sélectionnez un lot à gauche, ou une section dans le devis, pour
+              le configurer ici.
             </div>
           )}
           </div>
@@ -1115,39 +1141,142 @@ export default function DevisEditorEngine({ devisId }: Props) {
           {/* ── ZONE DEVIS (résultat) — sobre/neutre, ce que verra le client ── */}
           <div className="dee-devis" ref={devisScrollRef}>
             <div className="dee-devis-eyebrow">Le devis</div>
-            {sections.length === 0 ? (
+            {sections.length === 0 && (
               <div className="dee-empty">
                 <strong>Devis vide.</strong>
                 <br />
-                Cochez un lot dans la colonne gauche pour commencer.
+                Cochez un lot dans la colonne gauche — ou ajoutez un lot libre
+                ci-dessous — pour commencer.
               </div>
-            ) : (
-              sections.map(({ meta, lignes }, idx) => {
-                const collapsed = collapsedSections.has(meta.id);
-                const isCurrent = cur === meta.id;
-                const lt = totaux?.parLot.find((l) => l.lotId === meta.id);
-                const lotHT = safe(clientTotaux?.parLotClientHT[meta.id]);
-                const marge = safe(lt?.margeDeboursé);
+            )}
+            {sections.map((entry, idx) => {
+              const num = idx + 1;
+              const collapsed = collapsedSections.has(entry.id);
+
+              // ── Lot LIBRE (titre + lignes manuelles, prix ferme) ──────
+              if (entry.kind === "libre") {
+                const lot = entry.lot;
+                const lotHT = safe(clientTotaux?.parLotClientHT[lot.id]);
                 return (
                   <section
-                    key={meta.id}
+                    key={lot.id}
                     ref={(el) => {
-                      sectionRefs.current[meta.id] = el;
+                      sectionRefs.current[lot.id] = el;
                     }}
-                    className={`dee-sec${isCurrent ? " is-current" : ""}${
-                      collapsed ? " is-collapsed" : ""
-                    }`}
+                    className={`dee-sec${
+                      cur === lot.id ? " is-current" : ""
+                    }${collapsed ? " is-collapsed" : ""}`}
                   >
+                    <div className="dee-sec-eyebrow-libre">Lot libre</div>
+                    {/* Clic sur l'en-tête (hors chevron/titre/corbeille) =
+                        sélectionne le lot libre (sync ⇄ section). */}
+                    <div
+                      className="dee-sec-head dee-sec-head-libre"
+                      onClick={() => selectFromDevis(lot.id)}
+                    >
+                      <button
+                        type="button"
+                        className="dee-sec-caret-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSection(lot.id);
+                        }}
+                        title={collapsed ? "Déplier" : "Replier"}
+                      >
+                        <i className="ti ti-chevron-right" aria-hidden="true" />
+                      </button>
+                      <span className="dee-sec-num">{num}.0</span>
+                      <span className="dee-sec-icon">
+                        <i className="ti ti-tag" aria-hidden="true" />
+                      </span>
+                      <input
+                        className="dee-sec-titre-input"
+                        value={lot.titre}
+                        placeholder="Intitulé du lot"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) =>
+                          updateLotLibreTitre(lot.id, e.target.value)
+                        }
+                      />
+                      <span className="dee-sec-fig">
+                        <span className="dee-sec-fig-row">
+                          <span className="dee-sec-fig-lbl">
+                            Total de la prestation
+                          </span>
+                          <span className="dee-sec-fig-val">
+                            {formatEuro(lotHT)}
+                          </span>
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        className="dee-sec-remove"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeLotLibre(lot.id);
+                        }}
+                        title="Retirer ce lot"
+                      >
+                        <i className="ti ti-trash" aria-hidden="true" />
+                      </button>
+                    </div>
+                    {!collapsed && (
+                      <LignesLibres
+                        lotIndex={num}
+                        lignes={lot.lignes}
+                        tva={entry.tva}
+                        onAdd={() => addLotLibreLigne(lot.id)}
+                        onUpdate={(id, patch) =>
+                          updateLotLibreLigne(lot.id, id, patch)
+                        }
+                        onRemove={(id) => removeLotLibreLigne(lot.id, id)}
+                        addLabel="Ajouter une ligne"
+                      />
+                    )}
+                  </section>
+                );
+              }
+
+              // ── Lot PRÉDÉFINI (moteur) ────────────────────────────────
+              const { meta, lignes } = entry;
+              const isCurrent = cur === meta.id;
+              const lt = totaux?.parLot.find((l) => l.lotId === meta.id);
+              const lotHT = safe(clientTotaux?.parLotClientHT[meta.id]);
+              const marge = safe(lt?.margeDeboursé);
+              const isSegmentLot = meta.id in SEGMENT_LOTS;
+              return (
+                <section
+                  key={meta.id}
+                  ref={(el) => {
+                    sectionRefs.current[meta.id] = el;
+                  }}
+                  className={`dee-sec${isCurrent ? " is-current" : ""}${
+                    collapsed ? " is-collapsed" : ""
+                  }`}
+                >
+                  <div className="dee-sec-head">
+                    {/* Chevron = SEUL toggle repli/dépli. */}
                     <button
                       type="button"
-                      className="dee-sec-head"
-                      onClick={() => toggleSection(meta.id)}
+                      className="dee-sec-caret-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSection(meta.id);
+                      }}
+                      title={collapsed ? "Déplier" : "Replier"}
                     >
                       <i
                         className="ti ti-chevron-right dee-sec-caret"
                         aria-hidden="true"
                       />
-                      <span className="dee-sec-num">{idx + 1}.0</span>
+                    </button>
+                    {/* Reste de l'en-tête = SÉLECTIONNE le lot (sync ⇄ gauche). */}
+                    <button
+                      type="button"
+                      className="dee-sec-head-sel"
+                      onClick={() => selectFromDevis(meta.id)}
+                    >
+                      <span className="dee-sec-num">{num}.0</span>
                       <span className="dee-sec-icon">
                         <i className={`ti ti-${meta.icon}`} aria-hidden="true" />
                       </span>
@@ -1169,27 +1298,90 @@ export default function DevisEditorEngine({ devisId }: Props) {
                         </span>
                       </span>
                     </button>
-                    {!collapsed &&
-                      (meta.id === "cloisons" && lignes && lignes.length > 0 ? (
-                        <CloisonsLignes
-                          lotIndex={idx + 1}
-                          segments={cloisonLignes()}
+                  </div>
+                  {/* Gate de rendu à 3 branches :
+                      1. lot SEGMENTS → cartes éditables inline (SegmentCards).
+                      2. lot À AGRÉGATEUR non-segments (élec…) → lignes client
+                         agrégées en LECTURE SEULE (l'édition vit dans le
+                         ConfigBox). Critère générique hasAggregateur(), pas de
+                         "si élec" en dur : tout futur lot à points en profite.
+                      3. sinon → lignes libres manuelles. */}
+                  {!collapsed &&
+                    (isSegmentLot ? (
+                      lignes && lignes.length > 0 ? (
+                        <SegmentCards
+                          lotIndex={num}
+                          segments={segLignes(meta.id)}
                           lignesClient={lignes}
-                          onUpdate={updateCloisonSegment}
-                          onRemove={removeCloisonSegment}
-                          onAddLibre={addCloisonLibre}
+                          onUpdate={(id, patch) =>
+                            updateSegment(meta.id, id, patch)
+                          }
+                          onRemove={(id) => removeSegment(meta.id, id)}
+                          onAddLibre={() => addSegmentLibre(meta.id)}
                         />
                       ) : (
-                        // Pas de modèle segments / lot vide → état vide propre.
-                        // Aucun rendu legacy (détail matière) dans la vue globale.
                         <div className="dee-sec-empty">
                           Configurez ce lot pour ajouter des prestations.
                         </div>
-                      ))}
-                  </section>
-                );
-              })
-            )}
+                      )
+                    ) : hasAggregateur(meta.id) ? (
+                      // Lot à agrégateur (élec) : prestations agrégées en
+                      // lecture seule + ajout de lignes libres en complément.
+                      <>
+                        {lignes && lignes.length > 0 ? (
+                          <PointsLignesView
+                            lotIndex={num}
+                            lignesClient={lignes}
+                            onOverride={(pid, patch) =>
+                              updatePointOverride(meta.id, pid, patch)
+                            }
+                            onResetOverride={(pid) =>
+                              resetPointOverride(meta.id, pid)
+                            }
+                          />
+                        ) : (
+                          <div className="dee-sec-empty">
+                            Configurez ce lot dans le panneau ci-dessus pour
+                            ajouter des prestations.
+                          </div>
+                        )}
+                        <LignesLibres
+                          lotIndex={num}
+                          lignes={entry.lignesLibres}
+                          tva={entry.tva}
+                          onAdd={() => addLotLigneLibre(meta.id)}
+                          onUpdate={(id, patch) =>
+                            updateLotLigneLibre(meta.id, id, patch)
+                          }
+                          onRemove={(id) => removeLotLigneLibre(meta.id, id)}
+                        />
+                      </>
+                    ) : (
+                      // Autres lots : configurateur détaillé à venir → on
+                      // garnit la section via des lignes libres (additif,
+                      // prix ferme). Numérotation continue dans la section.
+                      <LignesLibres
+                        lotIndex={num}
+                        lignes={entry.lignesLibres}
+                        tva={entry.tva}
+                        onAdd={() => addLotLigneLibre(meta.id)}
+                        onUpdate={(id, patch) =>
+                          updateLotLigneLibre(meta.id, id, patch)
+                        }
+                        onRemove={(id) => removeLotLigneLibre(meta.id, id)}
+                      />
+                    ))}
+                </section>
+              );
+            })}
+            <button
+              type="button"
+              className="dee-addlot"
+              onClick={addLotLibre}
+              title="Ajouter un lot libre au devis"
+            >
+              <i className="ti ti-plus" aria-hidden="true" /> Ajouter un lot
+            </button>
           </div>
         </section>
 

@@ -5,7 +5,7 @@
 // lots conservent la forme ChiffReno.
 // ============================================================
 
-import type { LotId, LotState, Qualite, RemiseMode, EngineState } from "./types";
+import type { LotId, LotState, RemiseMode, EngineState } from "./types";
 import type { TauxTVA } from "../types";
 
 /** Métadonnée d'un lot pour la sidebar. */
@@ -63,91 +63,17 @@ export const LOTS_PRODUIT_FINI: ReadonlySet<LotId> = new Set<LotId>([
   "cuisine",
 ]);
 
-/** Quality presets — patch partiel sur `lot.o` à appliquer via setQuality. */
-export const QP: Partial<Record<LotId, Record<Qualite, Record<string, unknown>>>> = {
-  demolition: {
-    std: { nb_bennes: 1 },
-    mid: { nb_bennes: 3 },
-    prm: { nb_bennes: 6 },
-  },
-  iti: {
-    std: { epa: "100", iso: "gr32", membrane: false, parement: "ba13_std" },
-    mid: { epa: "120", iso: "gr32", membrane: true, parement: "ba13_std" },
-    prm: { epa: "120", iso: "steico", membrane: true, parement: "ba13_hydro" },
-  },
-  // cloisons : plus de preset gamme — configurateur "segments" (o.lignes).
-  peinture: {
-    std: { z1_on: true, z1_m2: 80, z1_passes: "1", z1_fin: "mat", z1_imp: false, z2_on: false, z2_m2: 20, z2_passes: "1", z2_fin: "mat", z2_imp: false, z3_on: false, z3_m2: 0, z3_passes: "1", z3_fin: "mat", z3_imp: false, z4_on: false, z4_m2: 0, z4_passes: "1", z4_fin: "mat", z4_imp: false },
-    mid: { z1_on: true, z1_m2: 100, z1_passes: "2", z1_fin: "velours", z1_imp: true, z2_on: false, z2_m2: 30, z2_passes: "1", z2_fin: "mat", z2_imp: false, z3_on: false, z3_m2: 0, z3_passes: "1", z3_fin: "mat", z3_imp: false, z4_on: false, z4_m2: 0, z4_passes: "1", z4_fin: "mat", z4_imp: false },
-    prm: { z1_on: true, z1_m2: 100, z1_passes: "3", z1_fin: "satin", z1_imp: true, z2_on: true, z2_m2: 30, z2_passes: "2", z2_fin: "velours", z2_imp: true, z3_on: false, z3_m2: 0, z3_passes: "1", z3_fin: "mat", z3_imp: false, z4_on: false, z4_m2: 0, z4_passes: "1", z4_fin: "mat", z4_imp: false },
-  },
-  plombs: {
-    std: { ce: "ce_elec_100" },
-    mid: { ce: "ce_elec_150" },
-    prm: { ce: "ce_thermo" },
-  },
-  parquet: {
-    std: { z1_on: true, z1_m2: 30, z1_type: "parquet_strat", z1_pose: "flottant", z1_chute: 5, z2_on: false, z2_m2: 0, z2_type: "parquet_strat", z2_pose: "flottant", z2_chute: 5, z3_on: false, z3_m2: 0, z3_type: "parquet_strat", z3_pose: "flottant", z3_chute: 5 },
-    mid: { z1_on: true, z1_m2: 30, z1_type: "parquet_contre", z1_pose: "colle", z1_chute: 7, z2_on: false, z2_m2: 0, z2_type: "parquet_contre", z2_pose: "colle", z2_chute: 7, z3_on: false, z3_m2: 0, z3_type: "parquet_contre", z3_pose: "colle", z3_chute: 7 },
-    prm: { z1_on: true, z1_m2: 30, z1_type: "parquet_massif", z1_pose: "colle", z1_chute: 10, z2_on: false, z2_m2: 0, z2_type: "parquet_massif", z2_pose: "colle", z2_chute: 10, z3_on: false, z3_m2: 0, z3_type: "parquet_massif", z3_pose: "colle", z3_chute: 10 },
-  },
-  carrelage: {
-    std: { z1_on: true, z1_m2: 15, z1_type: "carrelage_std", z1_chute: 10, z2_on: false, z2_m2: 0, z2_type: "carrelage_std", z2_chute: 10, z3_on: false, z3_m2: 0, z3_type: "carrelage_std", z3_chute: 10 },
-    mid: { z1_on: true, z1_m2: 15, z1_type: "gres_cerame", z1_chute: 12, z2_on: false, z2_m2: 0, z2_type: "gres_cerame", z2_chute: 12, z3_on: false, z3_m2: 0, z3_type: "gres_cerame", z3_chute: 12 },
-    prm: { z1_on: true, z1_m2: 15, z1_type: "grand_format", z1_chute: 18, z2_on: false, z2_m2: 0, z2_type: "grand_format", z2_chute: 18, z3_on: false, z3_m2: 0, z3_type: "grand_format", z3_chute: 18 },
-  },
-  faience: {
-    std: { z1_on: true, z1_m2: 15, z1_type: "faience_std", z1_profiles_ml: 15, z1_chute: 10, z2_on: false, z2_m2: 0, z2_type: "faience_std", z2_profiles_ml: 0, z2_chute: 10, z3_on: false, z3_m2: 0, z3_type: "faience_std", z3_profiles_ml: 0, z3_chute: 10 },
-    mid: { z1_on: true, z1_m2: 15, z1_type: "gres_mural", z1_profiles_ml: 20, z1_chute: 10, z2_on: false, z2_m2: 0, z2_type: "gres_mural", z2_profiles_ml: 0, z2_chute: 10, z3_on: false, z3_m2: 0, z3_type: "gres_mural", z3_profiles_ml: 0, z3_chute: 10 },
-    prm: { z1_on: true, z1_m2: 15, z1_type: "gf_mural", z1_profiles_ml: 20, z1_chute: 15, z2_on: false, z2_m2: 0, z2_type: "gf_mural", z2_profiles_ml: 0, z2_chute: 15, z3_on: false, z3_m2: 0, z3_type: "gf_mural", z3_profiles_ml: 0, z3_chute: 15 },
-  },
-  ragreage: {
-    std: { z1_on: true, z1_m2: 40, z1_type: "ragreage_simple", z1_epa_mm: 4, z2_on: false, z2_m2: 0, z2_type: "ragreage_simple", z2_epa_mm: 4, z3_on: false, z3_m2: 0, z3_type: "ragreage_simple", z3_epa_mm: 4, primaire: false, bandes: true, ml_bandes: 25 },
-    mid: { z1_on: true, z1_m2: 40, z1_type: "ragreage_simple", z1_epa_mm: 5, z2_on: false, z2_m2: 0, z2_type: "ragreage_simple", z2_epa_mm: 5, z3_on: false, z3_m2: 0, z3_type: "ragreage_simple", z3_epa_mm: 5, primaire: true, bandes: true, ml_bandes: 28 },
-    prm: { z1_on: true, z1_m2: 40, z1_type: "ragreage_fibre", z1_epa_mm: 10, z2_on: false, z2_m2: 0, z2_type: "ragreage_fibre", z2_epa_mm: 10, z3_on: false, z3_m2: 0, z3_type: "ragreage_fibre", z3_epa_mm: 10, primaire: true, bandes: true, ml_bandes: 28 },
-  },
-  etancheite: {
-    std: { mode: "liquide", primaire: false, ml_bandes: 20 },
-    mid: { mode: "liquide", primaire: true, ml_bandes: 20 },
-    prm: { mode: "natte_d", primaire: true, ml_bandes: 20 },
-  },
-  menus: {
-    std: { type_porte: "porte_std", type_plinthe: "plinthe_mdf" },
-    mid: { type_porte: "porte_mid", type_plinthe: "plinthe_mdf" },
-    prm: { type_porte: "porte_prm", type_plinthe: "plinthe_bois" },
-  },
-  menuext: {
-    std: { type_fen: "fenetre_pvc", type_pf: "pf_pvc", type_vol: "volet_bat_pvc", porte_entree: "porte_entree_std" },
-    mid: { type_fen: "fenetre_alu", type_pf: "pf_alu", type_vol: "volet_bat_alu", porte_entree: "porte_entree_std" },
-    prm: { type_fen: "fenetre_bois", type_pf: "pf_bois", type_vol: "volet_roul", porte_entree: "porte_entree_prm" },
-  },
-  cuisine: {
-    std: { type_pt: "plan_travail", lave_vaisselle: false },
-    mid: { type_pt: "plan_travail", lave_vaisselle: true },
-    prm: { type_pt: "plan_travail_qtz", lave_vaisselle: true },
-  },
-  fauxplafond: {
-    std: { suspente: "cav", plaque: "fp_ba13_std", peaux: "1", isolant: "fp_lv_45", avec_isolant: false },
-    mid: { suspente: "res", plaque: "fp_ba13_std", peaux: "1", isolant: "fp_lv_45", avec_isolant: true },
-    prm: { suspente: "res", plaque: "fp_ba13_phon", peaux: "2", isolant: "fp_lr_100", avec_isolant: true },
-  },
-  // elec : nouveau modèle SOCLE — pas de QP (infrastructure ferme + points par compteur).
-};
-
-/** Lots dotés d'un sélecteur Éco/Standard/Premium dans le header (cf. render()). */
-export const LOTS_AVEC_GAMME: ReadonlySet<LotId> = new Set<LotId>([
-  "elec",
-  "cuisine",
-  "menus",
-  "menuext",
-  "plombs",
-]);
+// Plus de GAMMES (Éco/Standard/Premium) — décision produit juin 2026.
+// QP (presets qualité) et LOTS_AVEC_GAMME supprimés ; barèmes mono-prix
+// (valeurs = ancienne gamme std, cf. bp.ts). Le champ legacy `q` des devis
+// sérialisés est purgé par normalize.ts.
 
 /** Lots qui n'utilisent PAS de surface explicite (lue depuis options / globale). */
 export const LOTS_NO_SURF: ReadonlySet<LotId> = new Set<LotId>([
   "demolition",
   "iti",
   "cloisons",
+  "fauxplafond",
   "peinture",
   "etancheite",
   "parquet",
@@ -161,7 +87,7 @@ export const LOTS_NO_SURF: ReadonlySet<LotId> = new Set<LotId>([
 
 /** État initial vide d'un lot (forme spécifique à chaque lot pour `o`). */
 function lotEmpty(o: Record<string, unknown>): LotState {
-  return { on: false, surf: null, q: "std", m: 0, tempsMoHeures: 0, o, cp: {}, custom: [] };
+  return { on: false, surf: null, m: 0, tempsMoHeures: 0, o, cp: {}, custom: [], lignesLibres: [] };
 }
 
 /** Construit l'état initial des 15 lots. */
@@ -170,7 +96,9 @@ export function createInitialLotStates(): Record<LotId, LotState> {
     // DÉMOLITION — nouvelle forme SOCLE : 100% postes à prix ferme (catalogue-demolition.ts).
     // Pas d'infrastructure à déboursé (contrairement à élec). Marge interne via coutRevientPoints.
     demolition: lotEmpty({ points: {} as Record<string, number> }),
-    iti: lotEmpty({ m2: 0, epa: "120", iso: "gr32", membrane: false, parement: "ba13_std" }),
+    // ITI — modèle "segments" (patron cloisons) : prestations dans o.lignes ;
+    // chute = réglage niveau lot. Isolant = ligne hl (R indicatif affiché).
+    iti: lotEmpty({ lignes: [], chute: 0 }),
     cloisons: lotEmpty({ lignes: [], chute: 0 }),
     // ÉLECTRICITÉ — nouvelle forme SOCLE : infrastructure + points
     elec: lotEmpty({ tableau_rangees: 0, gtl: false, consuel: false, terre: false, vmc: "non", points: {} as Record<string, number> }),
@@ -184,7 +112,9 @@ export function createInitialLotStates(): Record<LotId, LotState> {
     menus: lotEmpty({ nb_portes: 0, type_porte: "porte_mid", m_plinthes: 0, type_plinthe: "plinthe_mdf", nb_seuils: 0 }),
     menuext: lotEmpty({ type_fen: "fenetre_pvc", nb_fen: 0, type_pf: "pf_pvc", nb_pf: 0, type_vol: "volet_bat_pvc", nb_vol: 0, porte_entree: "porte_entree_std", nb_porte_entree: 0, nb_seuils_ext: 0 }),
     cuisine: lotEmpty({ ml_bas: 0, ml_haut: 0, type_pt: "plan_travail", ml_pt: 0, m2_cred: 0, four: false, plaques: false, hotte: false, lave_vaisselle: false, evier: false }),
-    fauxplafond: lotEmpty({ suspente: "res", plaque: "fp_ba13_std", peaux: "1", isolant: "fp_lv_45", avec_isolant: false, joints: false, chute: 0, entraxe: "0.60" }),
+    // FAUX-PLAFOND — modèle "segments" (patron cloisons) : prestations dans
+    // o.lignes ; entraxe/bandes/chute = réglages niveau lot.
+    fauxplafond: lotEmpty({ lignes: [], entraxe: "0.60", bandes: false, chute: 0 }),
   };
 }
 

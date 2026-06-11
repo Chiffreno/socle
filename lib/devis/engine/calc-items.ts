@@ -10,15 +10,34 @@ import { BP } from "./bp";
 import { CATALOGUE_DEMOLITION } from "./catalogue-demolition";
 import { CATALOGUE_ELEC } from "./catalogue-elec";
 import { LOTS_PRODUIT_FINI } from "./lots";
-import { findPrestation, type PointPrestation } from "./points";
+import {
+  findPrestation,
+  type PointOverride,
+  type PointPrestation,
+} from "./points";
 import type {
   CloisonOss,
   CloisonSegment,
   CustomLigne,
   EngineLigne,
   EngineState,
+  FauxPlafondSegment,
+  ItiEpa,
+  ItiSegment,
   LotId,
+  PeintureFinition,
+  PeintureNature,
+  PeintureSegment,
+  PeintureSupport,
+  SegmentBase,
 } from "./types";
+import type { TauxTVA } from "../types";
+import {
+  ITI_FAMILLE_LABEL,
+  ITI_LAMBDA,
+  itiIsoKey,
+  itiRText,
+} from "./iti";
 
 // ─── Cloisons : dérivations centralisées (isolant + rail depuis l'ossature) ──
 // Épaisseur d'isolant DÉRIVÉE de l'ossature : M48→45, M70→70, M90→90.
@@ -228,6 +247,33 @@ function customRow(
   };
 }
 
+// ─── Segments : ligne LIBRE (prix ferme) partagée par tous les lots à segments ──
+/** Item d'un segment `libre` (prix de vente ferme, qty × pu, aucune marge).
+ *  Mutualisé entre cloisons, faux-plafond, … (même comportement). */
+function segmentLibreItem(
+  lotId: LotId,
+  seg: SegmentBase,
+  tvaLot: TauxTVA
+): EngineLigne {
+  const m2 = Number(seg.m2) || 0;
+  const pu = Number(seg.puOverride) || 0;
+  return {
+    key: `_seg_${seg.id}`,
+    lotId,
+    qty: m2,
+    lbl: seg.lbl || "Ligne libre",
+    unit: seg.unit || "u",
+    note: "",
+    groupId: seg.id,
+    p: pu,
+    total: m2 * pu,
+    hl: true,
+    prixEstFinal: true,
+    afficheFourniture: false,
+    tva: tvaLot,
+  };
+}
+
 // ─── Point d'entrée principal ────────────────────────────────────────
 
 /**
@@ -281,70 +327,128 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
     }
 
     case "iti": {
-      const epa = String(o.epa);
-      const isGR = o.iso === "gr32";
-      const isoKey = isGR ? `iti_gr32_${epa}` : `iti_steico_${epa}`;
-      const R_gr: Record<string, string> = { "80": "2,50", "100": "3,15", "120": "3,75", "140": "4,40", "160": "5,00" };
-      const R_st: Record<string, string> = { "60": "1,65", "80": "2,20", "100": "2,80", "120": "3,35", "140": "3,90" };
-      const isoLbl = isGR
-        ? `GR32 Kraft ${epa}mm — R=${R_gr[epa] || "?"} m².K/W`
-        : `Steicoflex 036 ${epa}mm — R=${R_st[epa] || "?"} m².K/W`;
-      const m2 = Number(o.m2) || 0;
-      const items: EngineLigne[] = [
-        _row("iti_oss", m2, "Ossature Optima — lisses Clip'Optima + fourrures 240", "m²"),
-        _row("iti_appuis", m2, "Appuis intermédiaires Optima2", "m²", "1,5 pce/m²"),
-        _row(isoKey, m2, isoLbl, "m²", isGR ? "Isover GR32 Kraft" : "Steicoflex 036 — fibre de bois souple"),
-      ];
-      if (o.membrane) {
-        items.push(_row("iti_vario", m2, "Membrane hygro-régulante Vario Xtra", "m²", "Frein-vapeur intelligent"));
-        const sml = Math.round(m2 * 0.7);
-        items.push(_row("iti_scotch", sml, "Scotch Vario Multitape — jointoiement des lés", "ml", `~${sml} ml (0,7 ml/m²)`));
-        items.push(_row("iti_pastilles", m2, "Pastilles Optima2 — maintien membrane", "m²"));
-      }
-      if (o.parement !== "aucun") {
-        const pk = `iti_${o.parement}`;
-        items.push(_row(pk, m2, o.parement === "ba13_std" ? "Parement BA13 standard" : "Parement BA13 hydrofuge", "m²"));
+      // Modèle "segments" (patron cloisons) : une prestation par segment de
+      // o.lignes. L'isolant est la ligne hl (avec R indicatif affiché). Réglage
+      // niveau lot : chute. groupId = seg.id.
+      const lignes = Array.isArray(o.lignes)
+        ? (o.lignes as ItiSegment[])
+        : [];
+      if (lignes.length === 0) return [];
+      const tvaLot = state.lots[lotId].tva ?? state.tvaParDefaut;
+      const items: EngineLigne[] = [];
+
+      for (const seg of lignes) {
+        const m2 = Number(seg.m2) || 0;
+        if (m2 <= 0) continue;
+
+        // ── Ligne libre : prix ferme.
+        if (seg.type === "libre") {
+          items.push(segmentLibreItem(lotId, seg, tvaLot));
+          continue;
+        }
+
+        const iso = seg.type; // famille validée
+        const epa = (seg.epa || "120") as ItiEpa;
+        const isoKey = itiIsoKey(iso, epa);
+        const isoLbl = `${ITI_FAMILLE_LABEL[iso]} ${epa}mm — R ≈ ${itiRText(iso, epa)} m².K/W`;
+
+        const zoneItems: EngineLigne[] = [
+          _row("iti_oss", m2, "Ossature Optima — lisses Clip'Optima + fourrures 240", "m²"),
+          _row("iti_appuis", m2, "Appuis intermédiaires Optima2", "m²", "1,5 pce/m²"),
+          // Isolant = ligne hl (produit principal de la prestation ITI).
+          _hrow(isoKey, m2, isoLbl, "m²", `${ITI_FAMILLE_LABEL[iso]} — λ ${ITI_LAMBDA[iso]} (R indicatif)`),
+        ];
+        if (seg.membrane) {
+          zoneItems.push(_row("iti_vario", m2, "Membrane hygro-régulante Vario Xtra", "m²", "Frein-vapeur intelligent"));
+          const sml = Math.round(m2 * 0.7);
+          zoneItems.push(_row("iti_scotch", sml, "Scotch Vario Multitape — jointoiement des lés", "ml", `~${sml} ml (0,7 ml/m²)`));
+          zoneItems.push(_row("iti_pastilles", m2, "Pastilles Optima2 — maintien membrane", "m²"));
+        }
+        if (seg.parement !== "aucun") {
+          const pk = `iti_${seg.parement}`;
+          zoneItems.push(_row(pk, m2, seg.parement === "ba13_std" ? "Parement BA13 standard" : "Parement BA13 hydrofuge", "m²"));
+        }
+
+        for (const it of zoneItems) it.groupId = seg.id;
+        items.push(...zoneItems);
       }
       return items;
     }
 
     case "fauxplafond": {
+      // Modèle "segments" (patron cloisons) : une prestation par segment de
+      // o.lignes. Suspentes TOUJOURS à ressort (pas de paramètre). Réglages au
+      // niveau lot : entraxe, bandes, chute. groupId = seg.id.
+      const lignes = Array.isArray(o.lignes)
+        ? (o.lignes as FauxPlafondSegment[])
+        : [];
+      if (lignes.length === 0) return [];
       const ex = Number(o.entraxe) || 0.6;
+      const bandes = !!o.bandes;
+      const chute = Number(o.chute) || 0;
+      const tvaLot = state.lots[lotId].tva ?? state.tvaParDefaut;
       const four_ratio = Math.round((1 / ex + 0.4) * 10) / 10;
-      const nb_four = Math.round(S * four_ratio);
-      const peaux = Number(o.peaux) || 1;
-      const plq_net = S * peaux;
-      const plq = chuted(plq_net, o.chute as number | undefined);
       const pqLbls: Record<string, string> = {
-        fp_ba13_std: "BA13 standard",
-        fp_ba13_hydro: "BA13 hydrofuge",
-        fp_ba13_feu: "BA13 coupe-feu",
-        fp_ba13_phon: "BA13 phonique",
+        std: "Plafond BA13 standard",
+        hydro: "Plafond BA13 hydrofuge",
+        feu: "Plafond BA13 coupe-feu",
+        phon: "Plafond BA13 phonique",
+      };
+      // Isolant : clé segment → clé BP + libellé.
+      const isoKeys: Record<string, string> = {
+        lv45: "fp_lv_45",
+        lr45: "fp_lr_45",
+        lv100: "fp_lv_100",
+        lr100: "fp_lr_100",
+        ouate: "fp_ouate",
       };
       const isoLbls: Record<string, string> = {
-        fp_lv_45: "Laine de verre 45mm",
-        fp_lr_45: "Laine de roche 45mm",
-        fp_lv_100: "Laine de verre 100mm",
-        fp_lr_100: "Laine de roche 100mm",
-        fp_ouate: "Ouate de cellulose 100mm",
+        lv45: "Laine de verre 45mm",
+        lr45: "Laine de roche 45mm",
+        lv100: "Laine de verre 100mm",
+        lr100: "Laine de roche 100mm",
+        ouate: "Ouate de cellulose 100mm",
       };
       const items: EngineLigne[] = [];
-      const nb_susp = Math.round(nb_four / 1.4);
-      if (o.suspente === "res")
-        items.push(_row("fp_suspente_res", nb_susp, `Suspentes à ressort — ${nb_susp} pce`, "pce", `~${(nb_susp / S).toFixed(1)}/m²`));
-      else
-        items.push(_row("fp_suspente_cav", nb_susp, `Cavaliers pivot — ${nb_susp} pce`, "pce", `~${(nb_susp / S).toFixed(1)}/m²`));
-      items.push(_row("fp_fourrure", nb_four, `Fourrures 47×17 — ${nb_four} ml`, "ml", `Entraxe ${o.entraxe} m`));
-      const lisse_ml = Math.round(4 * Math.sqrt(S));
-      items.push(_row("fp_lisse_peri", lisse_ml, `Lisses périphériques — ${lisse_ml} ml`, "ml", `4 × √${Math.round(S)} m²`));
-      if (o.avec_isolant) {
-        const isoKey = String(o.isolant);
-        items.push(_row(isoKey, S, isoLbls[isoKey] || isoKey, "m²", "Entre fourrures / plafond"));
+
+      for (const seg of lignes) {
+        const m2 = Number(seg.m2) || 0;
+        if (m2 <= 0) continue;
+
+        // ── Ligne libre : prix ferme.
+        if (seg.type === "libre") {
+          items.push(segmentLibreItem(lotId, seg, tvaLot));
+          continue;
+        }
+
+        const peaux = Number(seg.peaux) || 1;
+        const nb_four = Math.round(m2 * four_ratio);
+        const nb_susp = Math.round(nb_four / 1.4);
+        const lisse_ml = Math.round(4 * Math.sqrt(m2));
+        const plq_net = m2 * peaux;
+        const plq = chuted(plq_net, chute);
+        const plaqKey = `fp_ba13_${seg.type}`;
+        const plaqLbl = pqLbls[seg.type] || "Plafond BA13";
+
+        const zoneItems: EngineLigne[] = [
+          _row("fp_suspente_res", nb_susp, `Suspentes à ressort — ${nb_susp} pce`, "pce", `~${(nb_susp / m2).toFixed(1)}/m²`),
+          _row("fp_fourrure", nb_four, `Fourrures 47×17 — ${nb_four} ml`, "ml", `Entraxe ${ex} m`),
+          _row("fp_lisse_peri", lisse_ml, `Lisses périphériques — ${lisse_ml} ml`, "ml", `4 × √${Math.round(m2)} m²`),
+        ];
+        if (seg.isolant && seg.isolant !== "non") {
+          const isoKey = isoKeys[seg.isolant];
+          if (isoKey)
+            zoneItems.push(_row(isoKey, m2, isoLbls[seg.isolant] || isoKey, "m²", "Entre fourrures / plafond"));
+        }
+        zoneItems.push(
+          _hrow(plaqKey, plq, `${plaqLbl} — ${peaux} peau${peaux > 1 ? "x" : ""} × ${m2} m²`, "m²", `Brut : ${plq} m² (+${chute}% chute, net ${plq_net} m²)`),
+          _row("fp_visserie", m2, "Visserie TF plafond", "m²")
+        );
+        if (bandes) zoneItems.push(_row("fp_bande_joint", plq_net, `Bandes + enduit joints — ${plq_net} m²`, "m²", "Faces visibles"));
+
+        for (const it of zoneItems) it.groupId = seg.id;
+        items.push(...zoneItems);
       }
-      const plaqKey = String(o.plaque);
-      items.push(_hrow(plaqKey, plq, `${pqLbls[plaqKey] || plaqKey} — ${peaux} peau${peaux > 1 ? "x" : ""} × ${S} m²`, "m²", `Brut : ${plq} m² (+${o.chute}% chute, net ${plq_net} m²)`));
-      items.push(_row("fp_visserie", S, "Visserie TF plafond", "m²"));
-      if (o.joints) items.push(_row("fp_bande_joint", plq_net, `Bandes + enduit joints — ${plq_net} m²`, "m²", "Faces visibles"));
       return items;
     }
 
@@ -365,22 +469,7 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
 
         // ── Ligne libre : prix ferme (puOverride = PU manuel), pas de marge.
         if (seg.type === "libre") {
-          const pu = Number(seg.puOverride) || 0;
-          items.push({
-            key: `_seg_${seg.id}`,
-            lotId,
-            qty: m2,
-            lbl: seg.lbl || "Ligne libre",
-            unit: seg.unit || "u",
-            note: "",
-            groupId: seg.id,
-            p: pu,
-            total: m2 * pu,
-            hl: true,
-            prixEstFinal: true,
-            afficheFourniture: false,
-            tva: tvaLot,
-          });
+          items.push(segmentLibreItem(lotId, seg, tvaLot));
           continue;
         }
 
@@ -423,30 +512,77 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
     }
 
     case "peinture": {
-      const finLbl: Record<string, string> = {
-        mat: "Peinture mate — gamme GSB",
-        velours: "Peinture velours Unikalo Aqualine Evo",
-        satin: "Peinture satin premium",
-      };
-      const zones = [1, 2, 3, 4]
-        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
-        .map((n) => ({
-          n,
-          m2: Number(o[`z${n}_m2`]) || 0,
-          passes: parseInt(String(o[`z${n}_passes`])) || 0,
-          fin: String(o[`z${n}_fin`] || "mat"),
-          imp: !!o[`z${n}_imp`],
-          treillis: !!o[`z${n}_treillis`],
-        }));
-      if (zones.length === 0) return [];
+      // Modèle "segments" (patron cloisons) : une prestation par segment de
+      // o.lignes. Deux familles : surfaces (briques déboursé €/m² → MO+marge)
+      // et menuiseries (segment `libre`, prix ferme à l'unité). groupId = seg.id.
+      const lignes = Array.isArray(o.lignes)
+        ? (o.lignes as PeintureSegment[])
+        : [];
+      if (lignes.length === 0) return [];
+      const tvaLot = state.lots[lotId].tva ?? state.tvaParDefaut;
       const items: EngineLigne[] = [];
-      for (const z of zones) {
-        const zlbl = `Zone ${z.n} — ${z.m2} m²`;
-        if (z.passes > 0) items.push(_row("enduit_pate", z.m2 * z.passes, `${zlbl} · Enduit pâte ${z.passes} passe${z.passes > 1 ? "s" : ""}`, "m²", `${z.m2 * z.passes} m²`));
-        if (z.passes === 3 && z.treillis) items.push(_row("toile_treillis", z.m2, `${zlbl} · Toile treillis de verre`, "m²"));
-        if (z.imp) items.push(_row("impression", z.m2, `${zlbl} · Impression fixante`, "m²", "Unikalo Aqualine Impress Evo"));
-        const fk = `peinture_${z.fin}`;
-        items.push(_hrow(fk, z.m2 * 2, `${zlbl} · ${finLbl[z.fin] || z.fin} — 2 couches`, "m²", `${z.m2 * 2} m²`));
+
+      for (const seg of lignes) {
+        const q = Number(seg.m2) || 0;
+        if (q <= 0) continue;
+
+        // ── Menuiserie (porte/fenêtre) : prix ferme à l'unité.
+        if (seg.type === "libre") {
+          items.push(segmentLibreItem(lotId, seg, tvaLot));
+          continue;
+        }
+
+        // ── Surface : somme de briques déboursé (MO + marge appliqués par le
+        //    moteur via tempsMoHeures + marge lot, comme cloisons).
+        const support = (seg.support || "mur") as PeintureSupport;
+        const nature = (seg.nature || "ancien") as PeintureNature;
+        // Toile (nature ancien only) force 3 passes ; sinon passes saisies 0..3.
+        const toile = nature === "ancien" && !!seg.toile;
+        const passes = toile
+          ? 3
+          : Math.min(3, Math.max(0, Number(seg.passes) || 0));
+        const finition = (seg.finition || "mat") as PeintureFinition;
+
+        const supLbl = support === "mur" ? "Murs" : "Plafond";
+        const natLbl = nature === "ancien" ? "support ancien" : "support BA13";
+        // Base support = ligne hl (préparation + mise en peinture, finition mat
+        // de référence). Les surcoûts (passes, toile, finition) s'y ajoutent.
+        const zoneItems: EngineLigne[] = [
+          _hrow(
+            `peint_base_${support}_${nature}`,
+            q,
+            `${supLbl} — ${natLbl} : préparation + mise en peinture`,
+            "m²"
+          ),
+        ];
+        if (passes > 0) {
+          zoneItems.push(
+            _row(
+              "peint_passe_enduit",
+              q * passes,
+              `Enduit de lissage — ${passes} passe${passes > 1 ? "s" : ""}`,
+              "m²",
+              `${q * passes} m²`
+            )
+          );
+        }
+        if (toile) {
+          zoneItems.push(
+            _row("peint_toile", q, "Toile à enduire (intissé de rénovation)", "m²")
+          );
+        }
+        if (finition !== "mat") {
+          zoneItems.push(
+            _row(
+              `peint_fin_${finition}`,
+              q,
+              `Surcoût finition ${finition === "velours" ? "velours" : "satinée"}`,
+              "m²"
+            )
+          );
+        }
+        for (const it of zoneItems) it.groupId = seg.id;
+        items.push(...zoneItems);
       }
       return items;
     }
@@ -700,12 +836,13 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
       ];
       const wc_sol = Number(o.wc_sol) || 0;
       const wc_susp = Number(o.wc_susp) || 0;
-      const q = (lot.q || "mid") as string;
-      if (wc_sol > 0) items.push(_hrow(`wc_complet_${q}`, wc_sol, `WC au sol — cuvette + réservoir + abattant${wc_sol > 1 ? " × " + wc_sol : ""}`, "pce"));
+      // Plus de gammes (décision produit) : barème MONO-PRIX, clés non
+      // suffixées (valeurs = ancienne gamme std, cf. bp.ts).
+      if (wc_sol > 0) items.push(_hrow("wc_complet", wc_sol, `WC au sol — cuvette + réservoir + abattant${wc_sol > 1 ? " × " + wc_sol : ""}`, "pce"));
       if (wc_susp > 0) {
         items.push(_hrow("bati_support", wc_susp, `Bâti-support WC suspendu${wc_susp > 1 ? " × " + wc_susp : ""}`, "pce", "Geberit / Grohe / Viega"));
-        items.push(_hrow(`wc_suspendu_cuvette_${q}`, wc_susp, `Cuvette WC suspendue${wc_susp > 1 ? " × " + wc_susp : ""}`, "pce", "Rimless"));
-        items.push(_hrow(`plaque_declenchement_${q}`, wc_susp, `Plaque de déclenchement${wc_susp > 1 ? " × " + wc_susp : ""}`, "pce"));
+        items.push(_hrow("wc_suspendu_cuvette", wc_susp, `Cuvette WC suspendue${wc_susp > 1 ? " × " + wc_susp : ""}`, "pce", "Rimless"));
+        items.push(_hrow("plaque_declenchement", wc_susp, `Plaque de déclenchement${wc_susp > 1 ? " × " + wc_susp : ""}`, "pce"));
       }
       const nbDouche = Number(pts.douche) || 0;
       const nbCuisine = Number(pts.cuisine) || 0;
@@ -718,15 +855,15 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
           items.push(_hrow("bonde_design", nbDouche, `Bonde design / linéaire${nbDouche > 1 ? " × " + nbDouche : ""}`, "pce"));
           items.push(_row("kit_etanche_douche", nbDouche * 3.5, `Kit étanchéité douche${nbDouche > 1 ? " × " + nbDouche : ""}`, "m²", "Membrane liquide + bandes"));
         } else {
-          items.push(_hrow(`receveur_90_${q}`, nbDouche, `Receveur douche 90×90 + bonde${nbDouche > 1 ? " × " + nbDouche : ""}`, "pce"));
+          items.push(_hrow("receveur_90", nbDouche, `Receveur douche 90×90 + bonde${nbDouche > 1 ? " × " + nbDouche : ""}`, "pce"));
         }
-        items.push(_hrow(`mitigeur_douche_${q}`, nbDouche, `Mitigeur douche + flexible + douchette${nbDouche > 1 ? " × " + nbDouche : ""}`, "pce"));
+        items.push(_hrow("mitigeur_douche", nbDouche, `Mitigeur douche + flexible + douchette${nbDouche > 1 ? " × " + nbDouche : ""}`, "pce"));
       }
-      if (nbCuisine > 0) items.push(_hrow(`mitigeur_cuisine_${q}`, nbCuisine, `Mitigeur évier cuisine${nbCuisine > 1 ? " × " + nbCuisine : ""}`, "pce"));
-      if (nbLavabo > 0) items.push(_hrow(`mitigeur_lavabo_${q}`, nbLavabo, `Mitigeur lavabo + siphon${nbLavabo > 1 ? " × " + nbLavabo : ""}`, "pce"));
+      if (nbCuisine > 0) items.push(_hrow("mitigeur_cuisine", nbCuisine, `Mitigeur évier cuisine${nbCuisine > 1 ? " × " + nbCuisine : ""}`, "pce"));
+      if (nbLavabo > 0) items.push(_hrow("mitigeur_lavabo", nbLavabo, `Mitigeur lavabo + siphon${nbLavabo > 1 ? " × " + nbLavabo : ""}`, "pce"));
       if (nbBain > 0) {
-        items.push(_hrow(`baignoire_${q}`, nbBain, `Baignoire standard 170×75${nbBain > 1 ? " × " + nbBain : ""}`, "pce"));
-        items.push(_hrow(`mitigeur_bain_${q}`, nbBain, `Mitigeur bain/douche${nbBain > 1 ? " × " + nbBain : ""}`, "pce"));
+        items.push(_hrow("baignoire", nbBain, `Baignoire standard 170×75${nbBain > 1 ? " × " + nbBain : ""}`, "pce"));
+        items.push(_hrow("mitigeur_bain", nbBain, `Mitigeur bain/douche${nbBain > 1 ? " × " + nbBain : ""}`, "pce"));
       }
       const ceKey = String(o.ce || "ce_elec_150");
       const ceLbl: Record<string, string> = {
@@ -759,19 +896,85 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
           )
         );
       }
+      // Installation réseau (tirage gaines + distribution) — au choix du devis :
+      //   o.reseau_mode "m2"      → surface globale × prix/m² ÉDITABLE
+      //                             (o.reseau_prix_m2 ?? BP.elec_reseau_m2).
+      //   o.reseau_mode "forfait" → montant déboursé saisi (o.reseau_forfait).
+      // Déboursé (prixEstFinal=false) → marge + MO du lot via totals.ts.
+      const RESEAU_LBL =
+        "Installation réseau électrique — tirage des gaines et distribution";
+      if (o.reseau_mode === "m2") {
+        const surf = Number(state.globalSurf) || 0;
+        const prixM2 = Number(o.reseau_prix_m2) || BP.elec_reseau_m2 || 20;
+        if (surf > 0) {
+          items.push({
+            key: "elec_reseau_m2",
+            lotId,
+            qty: surf,
+            lbl: RESEAU_LBL,
+            unit: "m²",
+            note: "",
+            p: prixM2,
+            total: surf * prixM2,
+            hl: false,
+            prixEstFinal: false,
+            afficheFourniture: false,
+            tva: state.lots[lotId].tva ?? state.tvaParDefaut,
+          });
+        }
+      } else if (o.reseau_mode === "forfait") {
+        const f = Number(o.reseau_forfait) || 0;
+        if (f > 0) {
+          items.push({
+            key: "elec_reseau_forfait",
+            lotId,
+            qty: 1,
+            lbl: RESEAU_LBL,
+            unit: "forfait",
+            note: "",
+            p: f,
+            total: f,
+            hl: false,
+            prixEstFinal: false,
+            afficheFourniture: false,
+            tva: state.lots[lotId].tva ?? state.tvaParDefaut,
+          });
+        }
+      }
+
       if (o.gtl) items.push(_row("elec_gtl", 1, "Gaine Technique Logement (GTL)", "forfait"));
-      if (o.consuel) items.push(_row("elec_consuel", 1, "Attestation Consuel", "forfait", "Visa de conformité"));
+      // Consuel = attestation : déboursé + marge MAIS AUCUNE main d'œuvre.
+      if (o.consuel) {
+        const ce = _row("elec_consuel", 1, "Attestation Consuel", "forfait", "Visa de conformité");
+        ce.sansMO = true;
+        items.push(ce);
+      }
       if (o.terre) items.push(_row("elec_terre", 1, "Mise à la terre + distribution principale", "forfait", "Conducteur de terre + barrette + distribution réseau"));
       if (o.vmc === "sf") items.push(_row("elec_vmc_sf", 1, "VMC simple flux hygro-réglable", "forfait"));
       else if (o.vmc === "df") items.push(_row("elec_vmc_df", 1, "VMC double flux à échangeur", "forfait", "Rendement ≥ 85%"));
 
-      // Points (catalogue-elec.ts) — postes inconnus ignorés silencieusement
+      // Points (catalogue-elec.ts) — postes inconnus ignorés silencieusement.
+      // Override PONCTUEL par devis (o.pointsOverride) : pu et/ou libellé.
+      // pu absent → prixVente catalogue ; lbl absent → libellé catalogue.
       const points = (o.points as Record<string, number> | undefined) || {};
+      const overrides =
+        (o.pointsOverride as Record<string, PointOverride> | undefined) || {};
       for (const [pid, qty] of Object.entries(points)) {
         if (!qty || qty <= 0) continue;
         const prestation = findPrestation(CATALOGUE_ELEC, pid);
         if (!prestation) continue;
-        items.push(pointRow(state, lotId, prestation, qty));
+        const line = pointRow(state, lotId, prestation, qty);
+        const ov = overrides[pid];
+        if (ov) {
+          if (typeof ov.pu === "number" && ov.pu >= 0) {
+            line.p = ov.pu;
+            line.total = qty * ov.pu;
+          }
+          if (typeof ov.lbl === "string" && ov.lbl.trim()) {
+            line.lbl = ov.lbl.trim();
+          }
+        }
+        items.push(line);
       }
       return items;
     }

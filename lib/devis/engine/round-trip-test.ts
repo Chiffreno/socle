@@ -17,7 +17,8 @@
 // Lancer : npx tsx lib/devis/engine/round-trip-test.ts
 // ============================================================
 
-import { calcEngineTotaux, type DevisTotaux } from "./totals";
+import { calcEngineTotaux, round2, type DevisTotaux } from "./totals";
+import { agregerLignesClient, calcClientTotaux } from "./agregation";
 import { createInitialEngineState } from "./lots";
 import type { EngineState } from "./types";
 
@@ -111,7 +112,15 @@ Object.assign(engine.lots.elec.o, {
 // C'est le cas le plus piégeux : on doit récupérer `undefined` après
 // round-trip, PAS `null` (qui serait interprété comme "saisi à 0").
 engine.lots.plombs.on = true;
-engine.lots.plombs.q = "mid";
+// Champ legacy `q` (gammes supprimées juin 2026) injecté volontairement :
+// normalize doit le PURGER silencieusement. Idem cp gammé : X_std → X
+// (remappé), X_mid/X_prm tombent (orphelins).
+(engine.lots.plombs as unknown as Record<string, unknown>).q = "mid";
+engine.lots.plombs.cp = {
+  wc_complet_std: 119, // → doit devenir cp.wc_complet = 119
+  mitigeur_douche_prm: 999, // → doit tomber
+  reseau_mc: 11, // clé non gammée → préservée telle quelle
+};
 // coutRevientPoints volontairement NON défini → ★ champ sensible (b, undefined)
 Object.assign(engine.lots.plombs.o, {
   pts: { douche: 1, cuisine: 1, lavabo: 1, bain: 0 },
@@ -229,6 +238,16 @@ assertEqJSON(
 assert(
   devisAfter.engine.lots.plombs.coutRevientPoints === undefined,
   "plombs.coutRevientPoints reste === undefined (pas 0 ni null) après round-trip"
+);
+// Migration gammes : `q` purgé, cp gammé remappé (std → unique, mid/prm tombent).
+assert(
+  !("q" in (devisAfter.engine.lots.plombs as unknown as Record<string, unknown>)),
+  "legacy q purgé par normalize (gammes supprimées)"
+);
+assertEqJSON(
+  "cp plombs migré (wc_complet_std→wc_complet, prm tombe, reseau_mc préservé)",
+  { wc_complet: 119, reseau_mc: 11 },
+  devisAfter.engine.lots.plombs.cp
 );
 // Note : plombs n'est pas un lot à points (utilise BP+qualité, pas catalogue),
 // donc n'apparaît jamais dans pointsLotsNonRenseignes. Le mini-scénario plus
@@ -404,6 +423,287 @@ assert(
   totsNoMo.tauxHoraireManquant === false,
   "tauxHoraire=0 mais 0 MO sur tous les lots → tauxHoraireManquant === false"
 );
+
+// ─── (7) Jalon 3 — lignes libres (lot prédéfini) + lots libres ──────
+// Vérifie que le contenu libre (additif, prix ferme) : (a) survit au
+// round-trip JSON → normalize, (b) s'ajoute au total CLIENT sans déplacer
+// les chiffres du moteur des lots existants.
+console.log("\n  [7] Lignes libres (lot prédéfini) + lots libres — additif & round-trip");
+{
+  const base = createInitialEngineState({ globalSurf: 30, tvaParDefaut: 10 });
+  base.lots.cloisons.on = true;
+  Object.assign(base.lots.cloisons.o, {
+    lignes: [
+      { id: "seg_std", type: "std", oss: "m48", isolant: "non", peaux: "2", dbl: false, m2: 20 },
+    ],
+    chute: 5,
+  });
+
+  // Référence AVANT contenu libre.
+  const totsRef = calcEngineTotaux(base, TAUX_HORAIRE);
+  const cliRef = calcClientTotaux(base, totsRef);
+  const caCloisonsRef = totsRef.parLot.find((l) => l.lotId === "cloisons")!.caLot;
+
+  // Ajout : 1 ligne libre sur cloisons (2 × 100 = 200 HT) + 1 lot libre (1 × 500 = 500 HT).
+  base.lots.cloisons.lignesLibres = [
+    { id: "lib_1", lbl: "Trappe de visite sur-mesure", qty: 2, unit: "u", pu: 100 },
+  ];
+  base.lotsLibres = [
+    {
+      id: "ll_1",
+      titre: "Prestations diverses",
+      lignes: [
+        { id: "lib_2", lbl: "Nettoyage fin de chantier", qty: 1, unit: "forfait", pu: 500 },
+      ],
+    },
+  ];
+
+  const totsLibre = calcEngineTotaux(base, TAUX_HORAIRE);
+  const cliLibre = calcClientTotaux(base, totsLibre);
+
+  // (a) Moteur INCHANGÉ : les lignes libres ne touchent pas calcEngineTotaux.
+  const caCloisonsLibre = totsLibre.parLot.find((l) => l.lotId === "cloisons")!.caLot;
+  assert(
+    caCloisonsLibre === caCloisonsRef,
+    "cloisons.caLot (moteur) inchangé malgré lignes libres",
+    caCloisonsLibre === caCloisonsRef ? "" : `avant ${caCloisonsRef} · après ${caCloisonsLibre}`
+  );
+  assert(
+    totsLibre.subTotalHT === totsRef.subTotalHT,
+    "moteur.subTotalHT inchangé (le contenu libre n'entre pas dans le moteur)"
+  );
+
+  // (b) CLIENT additif : +200 (ligne libre) +500 (lot libre) = +700 HT.
+  const deltaHT = round2(cliLibre.subTotalHT - cliRef.subTotalHT);
+  assert(
+    deltaHT === 700,
+    "clientTotaux.subTotalHT augmente de +700 € (200 ligne libre + 500 lot libre)",
+    deltaHT === 700 ? "" : `delta ${deltaHT}`
+  );
+  assert(
+    cliLibre.parLotClientHT.cloisons === round2(cliRef.parLotClientHT.cloisons + 200),
+    "parLotClientHT.cloisons inclut la ligne libre (+200)",
+    `${cliLibre.parLotClientHT.cloisons} vs ${round2(cliRef.parLotClientHT.cloisons + 200)}`
+  );
+  assert(
+    cliLibre.parLotClientHT.ll_1 === 500,
+    "parLotClientHT[lot libre] === 500"
+  );
+
+  // (c) Round-trip : lignesLibres + lotsLibres préservés tel quel.
+  const ser = JSON.stringify(base);
+  const parsedLibre = JSON.parse(ser);
+  const after = normalizeEngine(parsedLibre, {
+    globalSurf: 30,
+    tvaParDefaut: 10,
+    remiseMode: "aucune",
+    remiseValeur: 0,
+  });
+  assertEqJSON(
+    "cloisons.lignesLibres préservées après round-trip",
+    base.lots.cloisons.lignesLibres,
+    after.lots.cloisons.lignesLibres
+  );
+  assertEqJSON(
+    "lotsLibres préservés après round-trip",
+    base.lotsLibres,
+    after.lotsLibres
+  );
+
+  // (d) Migration : un devis ANTÉRIEUR (sans lignesLibres ni lotsLibres) se
+  // charge sans rien casser → champs défaut [], totaux identiques.
+  const legacy = createInitialEngineState({ globalSurf: 30, tvaParDefaut: 10 });
+  legacy.lots.cloisons.on = true;
+  Object.assign(legacy.lots.cloisons.o, {
+    lignes: [{ id: "seg_std", type: "std", oss: "m48", isolant: "non", peaux: "2", dbl: false, m2: 20 }],
+    chute: 5,
+  });
+  const legacyRaw = JSON.parse(JSON.stringify(legacy)) as Record<string, unknown>;
+  // Simule un blob legacy : on retire les clés ajoutées au jalon 3.
+  delete (legacyRaw as { lotsLibres?: unknown }).lotsLibres;
+  for (const l of Object.values((legacyRaw as { lots: Record<string, Record<string, unknown>> }).lots)) {
+    delete l.lignesLibres;
+  }
+  const migrated = normalizeEngine(legacyRaw, {
+    globalSurf: 30, tvaParDefaut: 10, remiseMode: "aucune", remiseValeur: 0,
+  });
+  assert(
+    Array.isArray(migrated.lotsLibres) && migrated.lotsLibres.length === 0,
+    "devis legacy : lotsLibres absent → [] (défaut)"
+  );
+  assert(
+    Array.isArray(migrated.lots.cloisons.lignesLibres) &&
+      migrated.lots.cloisons.lignesLibres.length === 0,
+    "devis legacy : lot.lignesLibres absent → [] (défaut)"
+  );
+  const totsMig = calcEngineTotaux(migrated, TAUX_HORAIRE);
+  assert(
+    totsMig.subTotalHT === totsRef.subTotalHT,
+    "devis legacy migré : totaux moteur identiques (rien cassé)"
+  );
+}
+
+// ─── (8) Faux-plafond — modèle segments : lignes réelles, round-trip, migration ──
+// Vérifie que faux-plafond (passé au patron cloisons) : (a) produit de VRAIES
+// lignes client (montant adossé à une prestation visible → fin du « montant
+// sans corps »), (b) survit au round-trip, (c) migre proprement depuis l'ancien
+// modèle (config unique → lignes vides + réglages lot préservés).
+console.log("\n  [8] Faux-plafond (modèle segments) — lignes réelles & migration");
+{
+  const fp = createInitialEngineState({ globalSurf: 0, tvaParDefaut: 10 });
+  fp.lots.fauxplafond.on = true;
+  fp.lots.fauxplafond.m = 20;
+  fp.lots.fauxplafond.tempsMoHeures = 4;
+  fp.lots.fauxplafond.o = {
+    lignes: [
+      { id: "fpseg1", type: "std", isolant: "lv45", peaux: "1", m2: 20 },
+    ],
+    entraxe: "0.60",
+    bandes: true,
+    chute: 10,
+  };
+
+  const tots = calcEngineTotaux(fp, TAUX_HORAIRE);
+  const ltFp = tots.parLot.find((l) => l.lotId === "fauxplafond")!;
+  assert(ltFp.caLot > 0, "fauxplafond.caLot > 0 (segment produit un montant)", `caLot ${ltFp.caLot}`);
+  assert(
+    ltFp.items.length > 0 && ltFp.items.every((i) => i.groupId === "fpseg1"),
+    "toutes les lignes moteur portent groupId = id du segment"
+  );
+
+  const cli = calcClientTotaux(fp, tots);
+  // Le montant du lot est adossé à des LIGNES CLIENT visibles (pas un corps vide).
+  assert(
+    round2(cli.parLotClientHT.fauxplafond) === round2(ltFp.caLot),
+    "HT client faux-plafond = caLot (1 prestation adossée au montant)",
+    `${cli.parLotClientHT.fauxplafond} vs ${ltFp.caLot}`
+  );
+
+  // Round-trip : segments préservés, total identique.
+  const after = normalizeEngine(JSON.parse(JSON.stringify(fp)), {
+    globalSurf: 0, tvaParDefaut: 10, remiseMode: "aucune", remiseValeur: 0,
+  });
+  assertEqJSON(
+    "fauxplafond.o.lignes préservées au round-trip",
+    fp.lots.fauxplafond.o.lignes,
+    after.lots.fauxplafond.o.lignes
+  );
+  const totsAfter = calcEngineTotaux(after, TAUX_HORAIRE);
+  assert(
+    totsAfter.parLot.find((l) => l.lotId === "fauxplafond")!.caLot === ltFp.caLot,
+    "faux-plafond caLot identique après round-trip"
+  );
+
+  // Migration : ANCIEN modèle (config unique, sans surface dans o) → segments.
+  const legacyFp = normalizeEngine(
+    {
+      lots: {
+        fauxplafond: {
+          on: true,
+          o: {
+            suspente: "res", plaque: "fp_ba13_std", peaux: "1",
+            isolant: "fp_lv_45", avec_isolant: true, joints: true,
+            entraxe: "0.50", chute: 8,
+          },
+        },
+      },
+    },
+    { globalSurf: 0, tvaParDefaut: 10, remiseMode: "aucune", remiseValeur: 0 }
+  );
+  assert(
+    Array.isArray(legacyFp.lots.fauxplafond.o.lignes) &&
+      (legacyFp.lots.fauxplafond.o.lignes as unknown[]).length === 0,
+    "ancien faux-plafond migré → o.lignes = [] (pas de montant orphelin)"
+  );
+  assert(
+    legacyFp.lots.fauxplafond.o.entraxe === "0.50" &&
+      legacyFp.lots.fauxplafond.o.bandes === true &&
+      legacyFp.lots.fauxplafond.o.chute === 8,
+    "migration faux-plafond : réglages lot (entraxe/bandes/chute) préservés"
+  );
+}
+
+// ─── (9) ITI — modèle segments : lignes réelles, R affiché, migration ──
+console.log("\n  [9] ITI (modèle segments) — lignes réelles, R indicatif, migration");
+{
+  const iti = createInitialEngineState({ globalSurf: 0, tvaParDefaut: 10 });
+  iti.lots.iti.on = true;
+  iti.lots.iti.m = 25;
+  iti.lots.iti.tva = 5.5;
+  iti.lots.iti.o = {
+    lignes: [
+      { id: "iseg1", type: "lr", epa: "200", membrane: true, parement: "ba13_std", m2: 25 },
+    ],
+    chute: 0,
+  };
+
+  const tots = calcEngineTotaux(iti, TAUX_HORAIRE);
+  const ltIti = tots.parLot.find((l) => l.lotId === "iti")!;
+  assert(ltIti.caLot > 0, "iti.caLot > 0 (segment produit un montant)", `caLot ${ltIti.caLot}`);
+  assert(
+    ltIti.items.length > 0 && ltIti.items.every((i) => i.groupId === "iseg1"),
+    "toutes les lignes moteur portent groupId = id du segment"
+  );
+  // L'isolant est la ligne hl, et sa clé est iti_iso_lr_200.
+  const hl = ltIti.items.find((i) => i.hl)!;
+  assert(hl?.key === "iti_iso_lr_200", "ligne hl = isolant iti_iso_lr_200", `key ${hl?.key}`);
+
+  const cli = calcClientTotaux(iti, tots);
+  assert(
+    round2(cli.parLotClientHT.iti) === round2(ltIti.caLot),
+    "HT client ITI = caLot (1 prestation adossée au montant)",
+    `${cli.parLotClientHT.iti} vs ${ltIti.caLot}`
+  );
+
+  // R affiché : LR 200 mm → 0,200 / 0,038 = 5,26 → arrondi 0,5 → "5,5", avec ≈.
+  const lignesCli = agregerLignesClient(iti, ltIti)!;
+  assert(
+    lignesCli.length === 1 && /R ≈ 5,5 m².K\/W/.test(lignesCli[0].description),
+    "description client porte le R indicatif « R ≈ 5,5 m².K/W »",
+    lignesCli[0]?.description
+  );
+  assert(
+    /Laine de roche/.test(lignesCli[0].libelleCommercial),
+    "libellé commercial = famille (Laine de roche)"
+  );
+
+  // Round-trip : segments préservés, total identique.
+  const after = normalizeEngine(JSON.parse(JSON.stringify(iti)), {
+    globalSurf: 0, tvaParDefaut: 10, remiseMode: "aucune", remiseValeur: 0,
+  });
+  assertEqJSON(
+    "iti.o.lignes préservées au round-trip",
+    iti.lots.iti.o.lignes,
+    after.lots.iti.o.lignes
+  );
+  assert(
+    after.lots.iti.tva === 5.5,
+    "iti.tva (override 5,5%) préservé"
+  );
+
+  // Migration : ANCIEN modèle ITI (config unique) → segments vides + chute.
+  const legacyIti = normalizeEngine(
+    {
+      lots: {
+        iti: {
+          on: true,
+          tva: 5.5,
+          o: { m2: 30, epa: "100", iso: "gr32", membrane: false, parement: "ba13_std", chute: 4 },
+        },
+      },
+    },
+    { globalSurf: 0, tvaParDefaut: 10, remiseMode: "aucune", remiseValeur: 0 }
+  );
+  assert(
+    Array.isArray(legacyIti.lots.iti.o.lignes) &&
+      (legacyIti.lots.iti.o.lignes as unknown[]).length === 0,
+    "ancien ITI migré → o.lignes = [] (pas de montant orphelin)"
+  );
+  assert(
+    legacyIti.lots.iti.o.chute === 4 && legacyIti.lots.iti.tva === 5.5,
+    "migration ITI : chute + override TVA préservés"
+  );
+}
 
 // ─── Verdict ────────────────────────────────────────────────────────
 console.log("\n══════════════════════════════════════════════════════════════════");

@@ -14,19 +14,20 @@
    ============================================================ */
 
 .dee-shell {
-  /* ── Tokens visuels scopés éditeur ──────────────────────────── */
-  --dee-r:        8px;   /* cards, blocs surélevés */
-  --dee-r-sm:     6px;   /* inputs, pills, boutons */
-  --dee-shadow-sm:  0 1px 2px rgba(16, 24, 40, .05), 0 1px 1px rgba(16, 24, 40, .04);
-  --dee-shadow-card: 0 1px 3px rgba(16, 24, 40, .06), 0 6px 16px rgba(16, 24, 40, .06);
-  /* Gris plus contrastés que la palette globale (pâles peu lisibles) */
-  --dee-line:       #e0e0e0;   /* bordures (vs --gray2 #e8e8e8) */
-  --dee-line-2:     #d2d2d2;   /* bordures marquées */
-  --dee-ink-3:      #8a8a8a;   /* tertiaire lisible (vs --gray3 #a3a3a3) */
-  --dee-ink-2:      #4a4a4a;   /* secondaire dense */
-  --dee-fill:       #f5f6f7;   /* fond léger zones / cards stat */
-  --dee-fill-2:     #fafbfc;
-  --dee-cfg-bg:     #eef8f2;   /* teinte verte légère — zone configurateur */
+  /* ── ALIAS temporaires → canon globals.css (langage visuel mai 2026) ──
+     Rendu identique : ces tokens pointent désormais sur la source unique.
+     À migrer vers les noms neutres puis supprimer (cf. DESIGN.md « Dette »). */
+  --dee-r:           var(--radius);
+  --dee-r-sm:        var(--radius-sm);
+  --dee-shadow-sm:   var(--shadow-sm);
+  --dee-shadow-card: var(--shadow-card);
+  --dee-line:        var(--gray-line);
+  --dee-line-2:      var(--gray-line-2);
+  --dee-ink-3:       var(--ink-3);
+  --dee-ink-2:       var(--ink-2);
+  --dee-fill:        var(--fill);
+  --dee-fill-2:      var(--fill-2);
+  --dee-cfg-bg:      var(--tint-green);
 
   min-height: 100vh;
   background: var(--gray-bg);
@@ -64,6 +65,8 @@
   color: var(--dee-ink-2);
   text-decoration: none;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: border-color .12s, color .12s, background .12s;
 }
 .dee-topbar-back:hover {
@@ -77,6 +80,8 @@
   font-weight: 500;
   letter-spacing: .02em;
   color: var(--dee-ink-3);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .dee-topbar-titre {
   flex: 1;
@@ -98,6 +103,20 @@
   outline: none;
 }
 .dee-topbar-titre::placeholder { color: var(--dee-ink-3); }
+/* Titre en lecture seule (édité à la finalisation). */
+.dee-topbar-titre-ro {
+  flex: 1;
+  min-width: 120px;
+  padding: 7px 2px;
+  font-family: var(--ff);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dee-topbar-titre-ph { font-style: italic; font-weight: 500; color: var(--dee-ink-3); }
 .dee-topbar-statut {
   padding: 4px 10px;
   border: 1px solid var(--dee-line);
@@ -109,6 +128,8 @@
   color: var(--dee-ink-2);
   text-transform: uppercase;
   letter-spacing: .1em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .dee-topbar-save {
   font-family: var(--ff);
@@ -116,6 +137,12 @@
   font-weight: 500;
   color: var(--dee-ink-3);
   letter-spacing: .01em;
+  /* Indicateur transitoire : ne doit jamais faire enfler la topbar (ce qui
+     décalerait la zone config en dessous). Largeur réservée + pas de retour
+     à la ligne → hauteur de la topbar stable quel que soit le texte. */
+  flex-shrink: 0;
+  white-space: nowrap;
+  text-align: right;
 }
 .dee-topbar-save.is-dirty { color: var(--orange); }
 .dee-topbar-save.is-saved { color: var(--green); }
@@ -248,7 +275,7 @@
 /* ── Grille 3 colonnes ──────────────────────────────────────────── */
 .dee-cols {
   display: grid;
-  grid-template-columns: 272px 1fr 344px;
+  grid-template-columns: 232px 1fr 284px;
   /* Desktop : grille clampée au viewport → la FENÊTRE ne scrolle pas
      (la chrome topbar + zone config restent fixes). Chaque colonne défile
      chez elle. */
@@ -259,13 +286,14 @@
 .dee-cols-left { overflow-y: auto; }
 .dee-cols-right { overflow-y: auto; }
 @media (max-width: 1200px) {
-  .dee-cols { grid-template-columns: 232px 1fr 308px; }
+  .dee-cols { grid-template-columns: 208px 1fr 264px; }
 }
 @media (max-width: 980px) {
   /* Mobile : 1 colonne, on rend la page scrollable normalement (pas de clamp). */
   .dee-cols { grid-template-columns: 1fr; height: auto; overflow: visible; }
   .dee-cols-left, .dee-cols-right { overflow-y: visible; border-right: none; border-left: none; border-bottom: 1px solid var(--dee-line); }
   .dee-cols-center { max-height: none; }
+  .dee-cfgzone { max-height: none; overflow-y: visible; }
   .dee-devis { overflow-y: visible; }
 }
 
@@ -274,7 +302,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 0 18px 12px;
+  padding: 0 14px 12px;
   font-family: var(--ff);
   font-size: 11px;
   font-weight: 600;
@@ -288,9 +316,9 @@
 .dee-cols-left {
   background: var(--white);
   border-right: 1px solid var(--dee-line);
-  padding: 18px 0 24px;
+  padding: 16px 0 24px;
 }
-.dee-lot-list { list-style: none; margin: 0; padding: 0 10px; }
+.dee-lot-list { list-style: none; margin: 0; padding: 0 7px; }
 .dee-lot-list > li + li { margin-top: 2px; }
 
 /* Une ligne lot = 2 zones de clic (Option B) : case + nom. */
@@ -316,7 +344,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
+  width: 28px;
   padding: 0;
   cursor: pointer;
   flex-shrink: 0;
@@ -367,8 +395,8 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px 9px 2px;
+  gap: 8px;
+  padding: 8px 8px 8px 2px;
   background: transparent;
   border: none;
   border-radius: var(--dee-r-sm);
@@ -381,15 +409,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: var(--dee-r-sm);
   background: var(--dee-fill);
   color: var(--dee-ink-3);
   flex-shrink: 0;
   transition: background .15s ease, color .15s ease;
 }
-.dee-lot-icon .ti { font-size: 16px; }
+.dee-lot-icon .ti { font-size: 15px; }
 .dee-lot-row.is-on .dee-lot-icon { color: var(--dee-ink-2); }
 .dee-lot-row.is-current .dee-lot-icon { background: var(--green); color: var(--white); }
 .dee-lot-text {
@@ -400,7 +428,7 @@
   flex: 1;
 }
 .dee-lot-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.2;
   display: block;
@@ -414,8 +442,8 @@
 .dee-lot-row.is-current .dee-lot-label { color: var(--black); font-weight: 600; }
 .dee-lot-sub {
   display: block;
-  margin-top: 2px;
-  font-size: 10.5px;
+  margin-top: 1px;
+  font-size: 11px;
   color: var(--dee-ink-3);
   line-height: 1.25;
   font-weight: 400;
@@ -428,9 +456,9 @@
 /* Sous-total à droite : vert + fondu. Affiché si caLot > 0. */
 .dee-lot-total {
   align-self: center;
-  padding-right: 12px;
+  padding-right: 9px;
   font-family: var(--num);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--green);
   white-space: nowrap;
@@ -442,8 +470,8 @@
 }
 
 .dee-lot-foot {
-  margin: 18px 12px 0;
-  padding: 14px 14px;
+  margin: 16px 9px 0;
+  padding: 13px 12px;
   border: 1px solid var(--dee-line);
   border-radius: var(--dee-r);
   background: var(--dee-fill);
@@ -459,7 +487,7 @@
 }
 .dee-lot-foot-amount {
   font-family: var(--num);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--green);
   letter-spacing: -0.01em;
@@ -477,25 +505,17 @@
 /* ZONE CONFIGURATEUR (atelier) : panneau teinté vert, séparé du devis. */
 .dee-cfgzone {
   flex-shrink: 0;
+  /* Garde-fou : un configurateur très haut (ex. élec) défile DANS sa zone au
+     lieu d'écraser/clipper le devis dessous (parent en overflow:hidden). Le
+     contrat de .dee-devis reste intact. 48vh = réglage cosmétique ajustable. */
+  max-height: 48vh;
+  overflow-y: auto;
   background: var(--dee-cfg-bg);
   border-bottom: 2px solid var(--green-b);
-  padding: 12px 28px 16px;
+  padding: 9px 28px 11px;
 }
-.dee-cfgzone-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--ff);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--green-dark);
-  margin-bottom: 8px;
-}
-.dee-cfgzone-eyebrow .ti { font-size: 14px; }
 .dee-cfgzone .dee-config-head-inline { margin: 0; }
-.dee-cfgzone .dee-cfg-box { margin-top: 10px; }
+.dee-cfgzone .dee-cfg-box { margin-top: 8px; }
 /* Devis complet : conteneur scrollable. */
 .dee-devis {
   flex: 1;
@@ -543,12 +563,24 @@
   scroll-margin-top: 8px;
 }
 .dee-sec.is-current { border-color: var(--green); box-shadow: 0 0 0 1px var(--green), var(--dee-shadow-card); }
+/* En-tête = conteneur : chevron (toggle) + zone de sélection (setCur). */
 .dee-sec-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0;
   width: 100%;
-  padding: 16px 20px;
+  padding: 0 8px 0 6px;
+  transition: background .12s;
+}
+.dee-sec.is-current .dee-sec-head { background: var(--green-light); }
+/* Bouton de sélection : occupe tout l'en-tête sauf le chevron. */
+.dee-sec-head-sel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 12px 16px 6px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -556,8 +588,8 @@
   text-align: left;
   transition: background .12s;
 }
-.dee-sec-head:hover { background: var(--dee-fill-2); }
-.dee-sec.is-current .dee-sec-head { background: var(--green-light); }
+.dee-sec-head-sel:hover { background: var(--dee-fill-2); }
+.dee-sec.is-current .dee-sec-head-sel:hover { background: transparent; }
 .dee-sec-caret { font-size: 16px; color: var(--dee-ink-3); transition: transform .15s ease; flex-shrink: 0; }
 .dee-sec:not(.is-collapsed) .dee-sec-caret { transform: rotate(90deg); color: var(--green); }
 .dee-sec-num {
@@ -584,6 +616,88 @@
   font-size: 12.5px; color: var(--dee-ink-3);
   border-top: 1px solid var(--dee-line);
 }
+
+/* ── Lot LIBRE : section neutre, en-tête avec titre éditable + retrait ──── */
+/* En-tête non-cliquable en bloc (contient un input) : le chevron sert de toggle. */
+.dee-sec-head-libre {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 12px 6px;
+  cursor: pointer;
+}
+.dee-sec-head-libre:hover { background: var(--dee-fill-2); }
+/* Lot libre = devis (neutre) : on garde l'en-tête neutre même sélectionné
+   (la bordure verte de la section suffit comme repère). */
+.dee-sec.is-current .dee-sec-head-libre { background: transparent; }
+.dee-sec-caret-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0; background: transparent; border: none;
+  border-radius: var(--dee-r-sm); cursor: pointer; flex-shrink: 0;
+  color: var(--dee-ink-3); transition: background .12s, color .12s;
+}
+.dee-sec-caret-btn:hover { background: var(--dee-fill); color: var(--dee-ink-2); }
+.dee-sec-caret-btn .ti { font-size: 16px; transition: transform .15s ease; }
+.dee-sec:not(.is-collapsed) .dee-sec-caret-btn .ti { transform: rotate(90deg); }
+.dee-sec-titre-input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  background: var(--white);
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r-sm);
+  font-family: var(--ff);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--black);
+  letter-spacing: -0.01em;
+  transition: border-color .12s, box-shadow .12s;
+}
+.dee-sec-titre-input:hover { border-color: var(--dee-line-2); }
+.dee-sec-titre-input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--green-light); }
+.dee-sec-titre-input::placeholder { color: var(--dee-ink-3); font-weight: 500; }
+.dee-sec-remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; padding: 0; background: transparent; border: none;
+  border-radius: var(--dee-r-sm); color: var(--dee-ink-3); cursor: pointer;
+  flex-shrink: 0; transition: color .12s, background .12s;
+}
+.dee-sec-remove:hover { color: var(--red); background: var(--red-bg); }
+.dee-sec-remove .ti { font-size: 17px; }
+/* Eyebrow "Lot libre" — registre neutre (gris), pas le vert du configurateur. */
+.dee-sec-eyebrow-libre {
+  padding: 6px 20px 0;
+  font-family: var(--ff);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--dee-ink-3);
+}
+
+/* ── Bouton "Ajouter un lot" — outline pointillé, pleine largeur ───────── */
+.dee-addlot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 18px;
+  background: transparent;
+  border: 1.5px dashed var(--dee-line-2);
+  border-radius: var(--dee-r);
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dee-ink-2);
+  cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.dee-addlot:hover {
+  border-color: var(--green-b);
+  color: var(--green-dark);
+  background: var(--dee-fill-2);
+}
+.dee-addlot .ti { font-size: 17px; }
 
 /* ── Cartes-prestation (sous l'en-tête de lot) ──────────────────── */
 .dee-pcs {
@@ -617,6 +731,12 @@
   color: var(--dee-ink-3); flex-shrink: 0; padding-top: 1px;
 }
 .dee-pc-title { flex: 1; font-family: var(--ff); font-size: 15px; font-weight: 500; color: var(--black); line-height: 1.3; }
+.dee-pc-title-empty { font-style: italic; font-weight: 400; color: var(--dee-ink-3); }
+/* Champ unité (texte libre) dans l'édition d'une ligne libre — aligné à gauche
+   contrairement aux champs numériques (qté/PU). */
+.dee-pc-edit-f input.dee-pc-edit-unit {
+  width: 80px; font-family: var(--ff); text-align: left;
+}
 .dee-pc-title-input {
   flex: 1; padding: 6px 9px;
   background: var(--white); border: 1px solid var(--dee-line); border-radius: var(--dee-r-sm);
@@ -633,6 +753,16 @@
 .dee-pc-act:hover { background: var(--dee-fill); color: var(--dee-ink-2); }
 .dee-pc-act.is-on { background: var(--green-light); color: var(--green-dark); }
 .dee-pc-act.is-del:hover { color: var(--red); background: var(--red-bg); }
+/* Confirmation inline : la corbeille s'élargit en « Supprimer ? » sur teinte
+   d'alerte douce (--red-bg / --red, pas de rouge plein). 2e clic = suppression. */
+.dee-pc-act.is-confirm {
+  width: auto; padding: 0 9px; gap: 5px;
+  background: var(--red-bg); color: var(--red);
+}
+.dee-pc-act.is-confirm:hover { background: var(--red-bg); color: var(--red); }
+.dee-pc-act-confirm {
+  font-family: var(--ff); font-size: 11px; font-weight: 600; white-space: nowrap;
+}
 .dee-pc-act .ti { font-size: 16px; }
 .dee-pc-desc {
   margin: 5px 0 0 30px;
@@ -653,6 +783,37 @@
 }
 .dee-pc-edit-f input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--green-light); }
 .dee-pc-edit-u { font-family: var(--num); font-size: 11px; color: var(--dee-ink-3); text-transform: none; }
+/* Badge « modifié » + Réinitialiser — copie EXACTE du look élec (.dee-pl-modif /
+   .dee-pl-reset) pour aligner les cartes de segments sur le standard. UI éditeur
+   uniquement (jamais rendu dans le document client). */
+.dee-pc-modif {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--green);
+  font-family: var(--ff);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--white);
+  vertical-align: middle;
+}
+.dee-pc-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--dee-line);
+  border-radius: 6px;
+  background: var(--white);
+  font-family: var(--ff);
+  font-size: 11px;
+  color: var(--dee-ink-2);
+  cursor: pointer;
+}
+.dee-pc-reset:hover { border-color: var(--green); color: var(--green-dark); }
+.dee-pc-reset .ti { font-size: 14px; }
 /* Pied de carte : méta gauche (TVA, qté, PU) + total droite. */
 .dee-pc-foot {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -721,24 +882,48 @@
 .dee-line-addlibre .ti { font-size: 15px; }
 
 /* En-tête compact : nom du lot + réglages inline. */
+/* Compact : titre + réglages sur une ligne, sans séparateur (la rangée
+   « Prix du lot » et la box ont leurs propres bordures). */
 .dee-config-head-inline {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 14px 20px;
-  padding: 6px 0 16px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--dee-line);
+  gap: 8px 18px;
+  padding: 0;
 }
+/* Nom du lot = eyebrow « Configurer » fusionné inline avec le libellé. */
 .dee-config-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
   margin: 0;
   font-family: var(--ff);
-  font-size: 17px;
+  font-size: 15px;
+  line-height: 1.2;
   font-weight: 600;
   color: var(--black);
   letter-spacing: -0.01em;
   flex-shrink: 0;
 }
+.dee-config-name-ic {
+  font-size: 14px;
+  color: var(--green-dark);
+  align-self: center;
+}
+.dee-config-name-pre {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--green-dark);
+}
+.dee-config-name-pre::after {
+  content: "·";
+  margin-left: 8px;
+  color: var(--green-b);
+  font-weight: 600;
+}
+.dee-config-name-lot { font-size: 15px; }
 .dee-config-controls {
   display: inline-flex;
   align-items: baseline;
@@ -782,41 +967,7 @@
   color: var(--dee-line-2);
 }
 
-/* Gamme inline (pills). */
-.dee-quality-inline {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-left: auto;
-  font-family: var(--ff);
-  font-size: 11px;
-  color: var(--dee-ink-2);
-}
-.dee-quality-inline-label {
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  font-weight: 600;
-  margin-right: 4px;
-}
-.dee-quality-pill {
-  padding: 4px 11px;
-  background: var(--white);
-  border: 1px solid var(--dee-line);
-  border-radius: 999px;
-  font-family: var(--ff);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--dee-ink-2);
-  cursor: pointer;
-  transition: border-color .15s ease, background .15s ease, color .15s ease;
-}
-.dee-quality-pill:hover { border-color: var(--green-b); color: var(--black); }
-.dee-quality-pill.is-active {
-  border-color: var(--green);
-  background: var(--green-light);
-  color: var(--green-dark);
-  font-weight: 600;
-}
+/* (Pills de gamme supprimées — plus de gammes, décision produit juin 2026.) */
 
 /* Bloc principal : lignes du devis pour le lot courant. */
 .dee-engine-items {
@@ -1051,6 +1202,20 @@
 }
 .dee-cfg-box-caret { font-size: 16px; color: var(--white); }
 .dee-cfg-box-body { padding: 14px 16px; }
+/* Réglages partagés (surface/marge/MO/revient/gamme) intégrés EN TÊTE du corps
+   de la box lot, séparés du configurateur par un filet. */
+.dee-reglages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--dee-line);
+}
+/* Corps du configurateur dé-chrome-isé (Segment / Elec sans wrapper ni en-tête
+   propre — le repli est porté par la box lot). Pas de padding : la box fournit. */
+.dee-cfg-body { display: block; }
+.dee-cfg-body > .dee-cfg-box-grid + .dee-cfg-box-action { margin-top: 12px; }
 .dee-cfg-box-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1346,18 +1511,24 @@
 .dee-cols-right {
   background: var(--white);
   border-left: 1px solid var(--dee-line);
-  padding: 18px 20px 24px;
+  padding: 16px 16px 22px;
 }
 
-/* Cards KPI (Total HT / Total TTC). */
+/* Cards KPI (Total HT / Total TTC) — EMPILÉES verticalement (colonne étroite).
+   Chaque carte = libellé à gauche, montant à droite (compact en hauteur).
+   Le TTC reste l'élément dominant (primaire, vert, plus gros). */
 .dee-stat-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 2px 0 18px;
+  grid-template-columns: 1fr;
+  gap: 9px;
+  margin: 2px 0 16px;
 }
 .dee-stat-card {
-  padding: 14px 14px 16px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
   background: var(--dee-fill);
   border: 1px solid var(--dee-line);
   border-radius: var(--dee-r);
@@ -1369,23 +1540,24 @@
 }
 .dee-stat-label {
   font-family: var(--ff);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--dee-ink-2);
   text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 8px;
+  letter-spacing: .09em;
+  flex-shrink: 0;
 }
 .dee-stat-card.is-primary .dee-stat-label { color: var(--green-dark); }
 .dee-stat-value {
   font-family: var(--num);
-  font-size: 25px;
+  font-size: 20px;
   font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.015em;
   color: var(--black);
+  text-align: right;
 }
-.dee-stat-card.is-primary .dee-stat-value { color: var(--green); }
+.dee-stat-card.is-primary .dee-stat-value { color: var(--green); font-size: 26px; }
 
 .dee-recap-list {
   display: grid;
@@ -1490,3 +1662,340 @@
 }
 .dee-modal h3 .ti { color: var(--green); font-size: 19px; }
 .dee-modal-actions { margin-top: 18px; display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ── ConfigBox ÉLEC (lot à points) — 3 zones, charte artisan ───────── */
+.dee-elec-zone { padding: 4px 0 2px; }
+.dee-elec-zone + .dee-elec-zone {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dee-line);
+}
+.dee-elec-zone-t {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--ff);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--dee-ink-3);
+}
+/* Catégories pliables */
+/* Nav horizontale par catégorie (1 visible à la fois) + badge compteur */
+.dee-elec-catnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.dee-elec-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  background: var(--white);
+  border: 1px solid var(--dee-line);
+  border-radius: 999px;
+  font-family: var(--ff);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dee-ink-2);
+  cursor: pointer;
+  transition: border-color .12s, background .12s, color .12s;
+}
+.dee-elec-tab:hover { border-color: var(--green-b); color: var(--black); }
+.dee-elec-tab.is-active {
+  border-color: var(--green);
+  background: var(--green-light);
+  color: var(--green-dark);
+  font-weight: 600;
+}
+.dee-elec-tab-badge {
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--dee-line);
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dee-ink-3);
+  text-align: center;
+}
+.dee-elec-tab-badge.is-on { background: var(--green); color: var(--white); }
+.dee-elec-tab.is-active .dee-elec-tab-badge.is-on { background: var(--green-dark); }
+
+/* Grille compacte des prestations (2 colonnes si la largeur le permet) */
+.dee-elec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+}
+.dee-elec-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r);
+  background: var(--white);
+}
+.dee-elec-cell.is-on { border-color: var(--green-b); background: var(--green-light); }
+.dee-elec-cell-lbl {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--ff);
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--dee-ink-2);
+}
+.dee-elec-qty {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dee-elec-cbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--dee-line);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--dee-ink-2);
+  cursor: pointer;
+  transition: border-color .12s, background .12s, color .12s;
+}
+.dee-elec-cbtn:hover:not(:disabled) { border-color: var(--green); color: var(--green-dark); }
+.dee-elec-cbtn:disabled { color: var(--dee-line); cursor: not-allowed; }
+.dee-elec-cbtn .ti { font-size: 14px; }
+.dee-elec-qty-input {
+  width: 38px;
+  height: 24px;
+  text-align: center;
+  border: 1px solid var(--dee-line);
+  border-radius: 6px;
+  background: var(--white);
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--green-dark);
+  -moz-appearance: textfield;
+}
+.dee-elec-qty-input::-webkit-outer-spin-button,
+.dee-elec-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dee-elec-qty-input:focus { outline: none; border-color: var(--green); }
+/* Réseau : rappel montant chiffré + indicatif */
+.dee-elec-reseau-hint {
+  margin-top: 10px;
+  padding: 8px 11px;
+  background: var(--green-light);
+  border: 1px solid var(--green-b);
+  border-radius: var(--dee-r);
+  font-family: var(--ff);
+  font-size: 12.5px;
+  color: var(--dee-ink-1, var(--black));
+}
+.dee-elec-reseau-hint .num { font-family: var(--num); font-variant-numeric: tabular-nums; }
+.dee-elec-reseau-hint strong { color: var(--green-dark); }
+/* Prix réseau €/m² ÉDITABLE inline dans le rappel chiffré. */
+.dee-elec-reseau-prix { margin: 0 4px; }
+.dee-elec-reseau-prix input {
+  width: 56px;
+  height: 24px;
+  text-align: right;
+  border: 1px solid var(--green-b);
+  border-radius: 6px;
+  background: var(--white);
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  color: var(--green-dark);
+  -moz-appearance: textfield;
+}
+.dee-elec-reseau-prix input::-webkit-outer-spin-button,
+.dee-elec-reseau-prix input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dee-elec-reseau-prix input:focus { outline: none; border-color: var(--green); }
+.dee-elec-indic {
+  font-style: italic;
+  font-size: 11px;
+  color: var(--dee-ink-3);
+}
+.dee-elec-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.dee-elec-row .dee-cfg-flabel { margin: 0; }
+.dee-elec-help {
+  margin: 8px 0 0;
+  font-family: var(--ff);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--dee-ink-3);
+}
+
+/* ── PointsLignesView (lot à points, lecture seule) — sous-titre cat. + F/P ── */
+.dee-pl { display: flex; flex-direction: column; }
+.dee-pl-cat {
+  margin: 12px 0 4px;
+  font-family: var(--ff);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--green-dark);
+}
+.dee-pl-cat:first-child { margin-top: 2px; }
+.dee-pl-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--dee-line);
+}
+.dee-pl-num {
+  flex-shrink: 0;
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+  color: var(--dee-ink-3);
+  min-width: 28px;
+}
+.dee-pl-body { flex: 1; min-width: 0; }
+.dee-pl-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.dee-pl-lbl {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--ff);
+  font-size: 12.5px;
+  color: var(--black);
+  line-height: 1.3;
+}
+.dee-pl-qty {
+  flex-shrink: 0;
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--dee-ink-3);
+}
+.dee-pl-total {
+  flex-shrink: 0;
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--black);
+  min-width: 84px;
+  text-align: right;
+}
+.dee-pl-desc {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--dee-ink-3);
+  line-height: 1.35;
+}
+.dee-pl-fp {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--dee-ink-2);
+}
+/* B2 : édition inline override prix/libellé d'un point */
+.dee-pl-row.is-editing { background: var(--green-light); border-radius: 7px; }
+.dee-pl-act {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--dee-line);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--dee-ink-3);
+  cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.dee-pl-act:hover { border-color: var(--green); color: var(--green-dark); }
+.dee-pl-act.is-on { background: var(--green); border-color: var(--green); color: var(--white); }
+.dee-pl-act .ti { font-size: 14px; }
+.dee-pl-lbl-input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--green-b);
+  border-radius: 6px;
+  background: var(--white);
+  font-family: var(--ff);
+  font-size: 12.5px;
+  color: var(--black);
+}
+.dee-pl-lbl-input:focus { outline: none; border-color: var(--green); }
+.dee-pl-modif {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--green);
+  font-family: var(--ff);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--white);
+  vertical-align: middle;
+}
+.dee-pl-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 7px;
+}
+.dee-pl-edit-f {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff);
+  font-size: 11px;
+  color: var(--dee-ink-3);
+}
+.dee-pl-edit-f input {
+  width: 72px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--green-b);
+  border-radius: 6px;
+  background: var(--white);
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  color: var(--green-dark);
+  -moz-appearance: textfield;
+}
+.dee-pl-edit-f input::-webkit-outer-spin-button,
+.dee-pl-edit-f input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dee-pl-edit-f input:focus { outline: none; border-color: var(--green); }
+.dee-pl-edit-u { font-family: var(--num); font-size: 11px; color: var(--dee-ink-3); }
+.dee-pl-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--dee-line);
+  border-radius: 6px;
+  background: var(--white);
+  font-family: var(--ff);
+  font-size: 11px;
+  color: var(--dee-ink-2);
+  cursor: pointer;
+}
+.dee-pl-reset:hover { border-color: var(--green); color: var(--green-dark); }
+.dee-pl-reset .ti { font-size: 14px; }

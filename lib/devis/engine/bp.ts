@@ -11,10 +11,15 @@
 export const BP: Record<string, number> = {
   // ─── ITI ───
   iti_oss: 8.5, iti_appuis: 1.8,
-  iti_gr32_80: 5.5, iti_gr32_100: 7.0, iti_gr32_120: 10.0, iti_gr32_140: 12.5, iti_gr32_160: 15.0,
-  iti_steico_60: 12.0, iti_steico_80: 15.0, iti_steico_100: 18.0, iti_steico_120: 22.0, iti_steico_140: 26.0,
   iti_vario: 5.0, iti_scotch: 0.55, iti_pastilles: 0.5,
   iti_ba13_std: 4.5, iti_ba13_hydro: 7.0,
+  // Isolant ITI — 4 familles (lv/lr/fb/pse) × 7 épaisseurs (80→200 mm).
+  // ⚠️ PRIX INDICATIFS (€/m² fourniture, marché 2026) — À REMPLACER par des
+  //    relevés terrain via la future bibliothèque de prix.
+  iti_iso_lv_80: 5.0, iti_iso_lv_100: 6.5, iti_iso_lv_120: 8.0, iti_iso_lv_145: 10.0, iti_iso_lv_160: 11.5, iti_iso_lv_180: 13.5, iti_iso_lv_200: 15.0,
+  iti_iso_lr_80: 7.0, iti_iso_lr_100: 9.0, iti_iso_lr_120: 11.0, iti_iso_lr_145: 13.5, iti_iso_lr_160: 15.0, iti_iso_lr_180: 17.5, iti_iso_lr_200: 19.5,
+  iti_iso_fb_80: 15.0, iti_iso_fb_100: 18.0, iti_iso_fb_120: 22.0, iti_iso_fb_145: 27.0, iti_iso_fb_160: 30.0, iti_iso_fb_180: 34.0, iti_iso_fb_200: 38.0,
+  iti_iso_pse_80: 8.0, iti_iso_pse_100: 10.0, iti_iso_pse_120: 12.0, iti_iso_pse_145: 14.5, iti_iso_pse_160: 16.0, iti_iso_pse_180: 18.0, iti_iso_pse_200: 20.0,
 
   // ─── Cloisons ───
   rail_r48: 1.2, rail_r70: 1.5, rail_r90: 1.8,
@@ -35,32 +40,36 @@ export const BP: Record<string, number> = {
   elec_consuel: 195,
   elec_terre: 320,
   elec_vmc_sf: 450, elec_vmc_df: 1500,
+  elec_reseau_m2: 20, // PRIX INDICATIF — à valider temps 2 (réseau élec €/m²)
   // Les 31 points élec (prise, va-et-vient, spot, etc.) sont dans catalogue-elec.ts,
   // pas dans BP, car ce sont des prix de vente finaux (prixEstFinal=true).
 
-  // ─── Peinture ───
+  // ─── Peinture (legacy zone-based — conservé, plus utilisé par le moteur) ───
   enduit_pate: 1.2, impression: 0.8,
   peinture_mat: 0.9, peinture_velours: 1.4, peinture_satin: 2.0,
   toile_treillis: 2.80,
 
+  // ─── Peinture — modèle segments (briques déboursé €/m²) ───
+  // PRIX INDICATIF — à remplacer par relevés terrain (passe prix temps 2).
+  // Base support = préparation + mise en peinture (finition mat de référence).
+  peint_base_mur_ancien: 9.0, // PRIX INDICATIF — passe prix temps 2
+  peint_base_mur_ba13: 7.0, // PRIX INDICATIF — passe prix temps 2
+  peint_base_plafond_ancien: 11.0, // PRIX INDICATIF — passe prix temps 2
+  peint_base_plafond_ba13: 9.0, // PRIX INDICATIF — passe prix temps 2
+  peint_passe_enduit: 4.0, // PRIX INDICATIF — coût d'UNE passe d'enduit/m²
+  peint_toile: 5.5, // PRIX INDICATIF — surcoût toile à enduire/m²
+  // deltaFinition : mat = 0 (référence, pas de ligne), velours/satine = surcoût.
+  peint_fin_velours: 2.5, // PRIX INDICATIF — surcoût finition velours/m²
+  peint_fin_satine: 4.0, // PRIX INDICATIF — surcoût finition satinée/m²
+
   // ─── Plomberie ───
   reseau_mc: 12, reseau_cu: 24, evac_pvc: 6,
-  // équipements génériques (legacy ChiffReno, conservés pour compat)
+  // équipements MONO-PRIX (plus de gammes — valeurs = ancienne gamme std)
   wc_complet: 130, bati_support: 185, wc_suspendu_cuvette: 145, plaque_declenchement: 48,
   receveur_90: 110, receveur_carreler: 95, bonde_design: 58, kit_etanche_douche: 8.5,
   mitigeur_douche: 55, mitigeur_cuisine: 42, mitigeur_lavabo: 38,
-  baignoire_std: 180, mitigeur_bain: 62,
+  baignoire: 180, mitigeur_bain: 62,
   ce_elec_100: 220, ce_elec_150: 295, ce_thermo: 1100,
-  // équipements par qualité
-  wc_complet_std: 130, wc_complet_mid: 200, wc_complet_prm: 380,
-  wc_suspendu_cuvette_std: 145, wc_suspendu_cuvette_mid: 250, wc_suspendu_cuvette_prm: 450,
-  plaque_declenchement_std: 48, plaque_declenchement_mid: 85, plaque_declenchement_prm: 160,
-  receveur_90_std: 110, receveur_90_mid: 180, receveur_90_prm: 320,
-  mitigeur_douche_std: 55, mitigeur_douche_mid: 100, mitigeur_douche_prm: 200,
-  mitigeur_cuisine_std: 42, mitigeur_cuisine_mid: 75, mitigeur_cuisine_prm: 150,
-  mitigeur_lavabo_std: 38, mitigeur_lavabo_mid: 65, mitigeur_lavabo_prm: 130,
-  baignoire_mid: 320, baignoire_prm: 600,
-  mitigeur_bain_std: 62, mitigeur_bain_mid: 110, mitigeur_bain_prm: 220,
 
   // ─── Revêtements sol ───
   parquet_strat: 15, parquet_contre: 48, parquet_massif: 70,
