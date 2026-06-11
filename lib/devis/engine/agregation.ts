@@ -18,6 +18,7 @@
 // ============================================================
 
 import type {
+  CarrelageSegment,
   CloisonSegment,
   EngineLigne,
   EngineState,
@@ -119,24 +120,42 @@ function agregerSegments(
   const segments = Array.isArray(o.lignes)
     ? (o.lignes as SegmentBase[])
     : [];
+
+  // 1er passage : prix ventilé NATUREL par segment (round2 par segment).
+  const rows = segments
+    .map((seg) => {
+      const groupe = items.filter((l) => l.groupId === seg.id);
+      if (groupe.length === 0) return null;
+      const hl = groupe.find((l) => l.hl) ?? groupe[0];
+      const isLibre = seg.type === "libre";
+      const ventile = round2(
+        groupe.reduce((acc, l) => acc + lineClientCA(l, ctx), 0)
+      );
+      const override =
+        !isLibre && typeof seg.puOverride === "number" && seg.puOverride >= 0;
+      return { seg, groupe, hl, isLibre, ventile, override };
+    })
+    .filter((r) => r !== null);
+
+  // Arrondir CHAQUE segment puis sommer peut dériver de quelques centimes vs
+  // round2(caLot) (l'invariant « Σ lignes == HT lot »). Le reliquat est absorbé
+  // par le PREMIER segment ventilé non-libre (même principe que l'infra élec).
+  // Porteur STABLE, indépendant des overrides : si le porteur est overridé son
+  // ventilé est remplacé à l'affichage (le reliquat s'éteint) et les totaux
+  // client sont recomposés depuis les unités (chemin hasOverride) — les autres
+  // segments ne bougent JAMAIS d'un centime quand on pose/retire un override.
+  const sommeNaturals = round2(rows.reduce((a, r) => a + r.ventile, 0));
+  const reliquat = round2(round2(lt.caLot) - sommeNaturals);
+  if (reliquat !== 0) {
+    const porteur = rows.find((r) => !r.isLibre);
+    if (porteur) porteur.ventile = round2(porteur.ventile + reliquat);
+  }
+
   const out: LigneClient[] = [];
-
-  for (const seg of segments) {
-    const groupe = items.filter((l) => l.groupId === seg.id);
-    if (groupe.length === 0) continue;
-
-    const hl = groupe.find((l) => l.hl) ?? groupe[0];
-    const isLibre = seg.type === "libre";
+  for (const { seg, groupe, hl, isLibre, ventile, override } of rows) {
     const qty = Number(seg.m2) || hl.qty;
-    // Prix ventilé (sans override) = Σ lineClientCA → garantit Σ lignes = caLot
-    // tant qu'aucun puOverride n'est posé.
-    const ventile = round2(
-      groupe.reduce((acc, l) => acc + lineClientCA(l, ctx), 0)
-    );
     // Override-aware : un PU surchargé remplace le prix ventilé (sauf `libre`,
     // dont le prix ferme est déjà porté par la ligne moteur).
-    const override =
-      !isLibre && typeof seg.puOverride === "number" && seg.puOverride >= 0;
     const prixClient = override ? round2(seg.puOverride! * qty) : ventile;
 
     // libelleOverride (renommage commercial) prend le pas sur le généré.
@@ -397,6 +416,63 @@ function agregerParquet(state: EngineState, lt: LotTotaux): LigneClient[] {
   });
 }
 
+// ─── Carrelage : étiquetage spécifique (type / plinthes / étanchéité) ─
+const CARRELAGE_TYPE_LABEL: Record<string, string> = {
+  ceram: "céramique standard",
+  gres: "grès cérame rectifié",
+  gf: "grand format",
+};
+const CARRELAGE_EYEBROW: Record<string, string> = {
+  ceram: "Carrelage céramique",
+  gres: "Grès cérame",
+  gf: "Grand format",
+  plinthes: "Plinthes",
+  etancheite: "Étanchéité",
+};
+const CARRELAGE_COLLE_LABEL: Record<string, string> = {
+  c2: "colle C2 standard",
+  c2s: "colle C2S1 flex",
+};
+
+/** Description d'une option étanchéité (partagée carrelage / faïence). */
+function descriptionEtancheite(mode: string | undefined, support: string): string {
+  return (mode || "liquide") === "liquide"
+    ? `Étanchéité liquide (SEL) sous ${support}, 2 couches croisées, angles et points singuliers traités.`
+    : `Natte d'étanchéité sous ${support}, lés jointoyés et angles traités.`;
+}
+
+/** Description client d'un segment carrelage (affichage seul). */
+export function descriptionCarrelage(seg: CarrelageSegment): string {
+  if (seg.type === "libre") return "";
+  if (seg.type === "plinthes")
+    return "Plinthes carrelées assorties, coupes, collage et joints compris.";
+  if (seg.type === "etancheite")
+    return descriptionEtancheite(seg.mode, "carrelage");
+  const t = CARRELAGE_TYPE_LABEL[seg.type] ?? "";
+  const dim = seg.dim ? ` ${seg.dim.replace("x", "×")}` : "";
+  const colle = seg.colle ? `, ${CARRELAGE_COLLE_LABEL[seg.colle] ?? ""}` : "";
+  return `Carrelage ${t}${dim}, pose droite${colle}, joints et coupes compris.`;
+}
+
+function agregerCarrelage(state: EngineState, lt: LotTotaux): LigneClient[] {
+  return agregerSegments(state, lt, {
+    eyebrow: (s) => CARRELAGE_EYEBROW[s.type] ?? "Carrelage",
+    libelle: (s) =>
+      s.type === "plinthes"
+        ? "Fourniture et pose de plinthes carrelées"
+        : s.type === "etancheite"
+          ? `Étanchéité sous carrelage — ${
+              ((s as CarrelageSegment).mode || "liquide") === "liquide"
+                ? "membrane liquide (SEL)"
+                : "natte"
+            }`
+          : `Fourniture et pose de carrelage ${
+              CARRELAGE_TYPE_LABEL[s.type] ?? ""
+            }`.trim(),
+    describe: (s) => descriptionCarrelage(s as CarrelageSegment),
+  });
+}
+
 // ─── Élec : agrégateur (lot à points + infrastructure) — DÉTAIL par appareillage ─
 // PAS un lot à segments : infrastructure (déboursé) + points catalogue (prix
 // ferme). UNE ligne client par prestation (qty>0), groupée par catégorie via
@@ -543,6 +619,7 @@ const STRATEGIES: Partial<
   iti: agregerIti,
   peinture: agregerPeinture,
   parquet: agregerParquet,
+  carrelage: agregerCarrelage,
   elec: agregerElec,
 };
 

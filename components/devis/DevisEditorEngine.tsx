@@ -36,6 +36,7 @@ import {
   LOTS_NO_SURF,
   createInitialEngineState,
 } from "@/lib/devis/engine/lots";
+import CarrelageConfigBox from "./configurateurs/CarrelageConfigBox";
 import CloisonsConfigBox from "./configurateurs/CloisonsConfigBox";
 import FauxPlafondConfigBox from "./configurateurs/FauxPlafondConfigBox";
 import ItiConfigBox from "./configurateurs/ItiConfigBox";
@@ -87,6 +88,7 @@ const SEGMENT_LOTS: Partial<
   iti: { ConfigBox: ItiConfigBox },
   peinture: { ConfigBox: PeintureConfigBox },
   parquet: { ConfigBox: ParquetConfigBox },
+  carrelage: { ConfigBox: CarrelageConfigBox },
 };
 
 type SaveStatus = "idle" | "saving" | "saved" | "dirty";

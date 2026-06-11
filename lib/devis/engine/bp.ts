@@ -76,6 +76,7 @@ export const BP: Record<string, number> = {
   sous_couche: 2.5, sous_couche_liege: 4.90, colle_parquet: 9.60,
   parquet_plinthes: 4.5, // INDICATIF — à valider : plinthe assortie + fixation, €/ml
   carrelage_std: 18, gres_cerame: 28, grand_format: 52, colle_carrelage: 1.20,
+  carrelage_plinthes: 6.0, // INDICATIF — à valider : plinthe carrelée assortie + colle, €/ml
 
   // ─── Ragréage ───
   primaire_ragreage: 0.8, bande_resiliente: 1.2,

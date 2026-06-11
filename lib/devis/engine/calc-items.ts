@@ -24,6 +24,7 @@ import type {
   FauxPlafondSegment,
   ItiEpa,
   ItiSegment,
+  CarrelageSegment,
   LotId,
   ParquetSegment,
   PeintureFinition,
@@ -678,30 +679,71 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
     }
 
     case "carrelage": {
-      const typeLbl: Record<string, string> = {
-        carrelage_std: "Carrelage céramique standard",
-        gres_cerame: "Grès cérame rectifié",
-        grand_format: "Grand format 60×120",
+      // Modèle "segments" (patron peinture/parquet) : une prestation par
+      // segment de o.lignes. Carreau = ligne hl (brut +chute%), colle dérivée
+      // de la DIMENSION (peigne — kg/m² à valider). "plinthes" (ml) et
+      // "etancheite" (mode liquide/natte, UNE ligne) = segments dédiés.
+      const lignes = Array.isArray(o.lignes)
+        ? (o.lignes as CarrelageSegment[])
+        : [];
+      if (lignes.length === 0) return [];
+      const tvaLot = state.lots[lotId].tva ?? state.tvaParDefaut;
+      const chute = Number(o.chute) || 0;
+      const TYPE_KEY: Record<string, string> = {
+        ceram: "carrelage_std",
+        gres: "gres_cerame",
+        gf: "grand_format",
       };
-      const PEIGNE_KG: Record<string, number> = { v3: 2, v4: 3, b10: 5, b12: 7 };
-      const PEIGNE_LBL: Record<string, string> = { v3: "V3 3mm", v4: "V4 4mm", b10: "B10 10mm", b12: "B12 12mm" };
-      const zones = [1, 2, 3]
-        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
-        .map((n) => ({
-          n,
-          m2: Number(o[`z${n}_m2`]) || 0,
-          type: String(o[`z${n}_type`] || "carrelage_std"),
-          peigne: String(o[`z${n}_peigne`] || "b10"),
-          chute: Number(o[`z${n}_chute`]) || 0,
-        }));
-      if (zones.length === 0) return [];
+      const TYPE_LBL: Record<string, string> = {
+        ceram: "Carrelage céramique standard",
+        gres: "Grès cérame rectifié",
+        gf: "Grand format",
+      };
+      // kg de colle / m² selon dimension (peigne) — INDICATIF, à valider.
+      const DIM_KG: Record<string, number> = { "30x30": 3, "60x60": 5, "60x120": 7 };
       const items: EngineLigne[] = [];
-      for (const z of zones) {
-        const brut = chuted(z.m2, z.chute);
-        const kg_m2 = PEIGNE_KG[z.peigne] || 5;
-        const kg = Math.ceil(z.m2 * kg_m2);
-        items.push(_hrow(z.type, brut, `${typeLbl[z.type] || z.type} — Zone ${z.n}`, "m²", `Brut : ${brut} m² (+${z.chute}% chute, net ${z.m2} m²)`));
-        items.push(_row("colle_carrelage", kg, `Colle C2 peigne ${PEIGNE_LBL[z.peigne] || z.peigne} (${kg_m2} kg/m²) — Zone ${z.n}`, "kg"));
+      for (const seg of lignes) {
+        const q = Number(seg.m2) || 0;
+        if (q <= 0) continue;
+        if (seg.type === "libre") {
+          items.push(segmentLibreItem(lotId, seg, tvaLot));
+          continue;
+        }
+        if (seg.type === "plinthes") {
+          const pl = _hrow("carrelage_plinthes", q, `Plinthes carrelées assorties — ${q} ml`, "ml", "Coupes + collage + joints");
+          pl.groupId = seg.id;
+          items.push(pl);
+          continue;
+        }
+        if (seg.type === "etancheite") {
+          const liquide = (seg.mode || "liquide") === "liquide";
+          const et = _hrow(
+            liquide ? "etanche_liquide" : "natte_etanche",
+            q,
+            liquide
+              ? "Étanchéité liquide (SEL) sous carrelage"
+              : "Natte d'étanchéité sous carrelage",
+            "m²",
+            liquide ? "2 couches croisées" : "Type KERDI / Wedi, joints traités"
+          );
+          et.groupId = seg.id;
+          items.push(et);
+          continue;
+        }
+        const brut = chuted(q, chute);
+        const dim = seg.dim || "60x60";
+        const kg = Math.ceil(q * (DIM_KG[dim] || 5));
+        const zoneItems: EngineLigne[] = [
+          _hrow(TYPE_KEY[seg.type] || "carrelage_std", brut, `${TYPE_LBL[seg.type] || "Carrelage"} ${dim.replace("x", "×")} × ${q} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute, net ${q} m²)`),
+          _row(
+            seg.colle === "c2s" ? "colle_c2s" : "colle_carrelage",
+            kg,
+            `Colle ${seg.colle === "c2s" ? "C2S1 flex" : "C2 standard"} (${DIM_KG[dim] || 5} kg/m²)`,
+            "kg"
+          ),
+        ];
+        for (const it of zoneItems) it.groupId = seg.id;
+        items.push(...zoneItems);
       }
       return items;
     }

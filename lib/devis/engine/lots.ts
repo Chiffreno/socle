@@ -106,7 +106,9 @@ export function createInitialLotStates(): Record<LotId, LotState> {
     // PARQUET — modèle "segments" (patron peinture) : prestations dans
     // o.lignes ; chute = réglage niveau lot. Plinthes = segment dédié (ml).
     parquet: lotEmpty({ lignes: [], chute: 0 }),
-    carrelage: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "gres_cerame", z1_peigne: "b10", z1_chute: 0, z2_on: false, z2_m2: 0, z2_type: "grand_format", z2_peigne: "b10", z2_chute: 0, z3_on: false, z3_m2: 0, z3_type: "carrelage_std", z3_peigne: "b10", z3_chute: 0 }),
+    // CARRELAGE — modèle "segments" : prestations dans o.lignes ; chute =
+    // réglage lot. Plinthes (ml) et étanchéité (liquide/natte) = segments dédiés.
+    carrelage: lotEmpty({ lignes: [], chute: 0 }),
     faience: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "gres_mural", z1_peigne: "v4", z1_profiles_ml: 0, z1_chute: 0, z2_on: false, z2_m2: 0, z2_type: "faience_std", z2_peigne: "v4", z2_profiles_ml: 0, z2_chute: 0, z3_on: false, z3_m2: 0, z3_type: "gf_mural", z3_peigne: "v4", z3_profiles_ml: 0, z3_chute: 0 }),
     ragreage: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "ragreage_simple", z1_epa_mm: 0, z2_on: false, z2_m2: 0, z2_type: "ragreage_fibre", z2_epa_mm: 0, z3_on: false, z3_m2: 0, z3_type: "ragreage_simple", z3_epa_mm: 0, primaire: false, bandes: false, ml_bandes: 0 }),
     menus: lotEmpty({ nb_portes: 0, type_porte: "porte_mid", m_plinthes: 0, type_plinthe: "plinthe_mdf", nb_seuils: 0 }),

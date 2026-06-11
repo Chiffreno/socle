@@ -263,6 +263,38 @@ export interface ParquetSegment {
   unit?: string;
 }
 
+// ─── Carrelage : modèle "segments" (o.lignes), patron peinture ───────
+// Axes (listes PLAUSIBLES métier — à valider Benjamin) :
+//   • type : céramique standard / grès cérame / grand format (clés BP) ;
+//   • dimension : pilote la consommation de colle (peigne) — 30×30 → 3 kg/m²,
+//     60×60 → 5 kg/m², 60×120 → 7 kg/m² (à valider) ;
+//   • colle : C2 standard / C2S1 flex. PAS de sous-couche (décision produit).
+// PLINTHES : segment dédié au ml (comme parquet).
+// ÉTANCHÉITÉ (ex-lot supprimé) : OPTION matérialisée par une CARD — segment
+// dédié type "etancheite", mode liquide (SEL) / natte, prix au m² INDICATIFS
+// distincts (clés BP conservées du lot supprimé). Carte normale : éditable,
+// supprimable, badge/reset acquis.
+export type CarrelageType = "ceram" | "gres" | "gf";
+export type CarrelageDim = "30x30" | "60x60" | "60x120";
+export type CarrelageColle = "c2" | "c2s";
+/** Mode d'étanchéité (option carrelage/faïence) : liquide (SEL) ou natte. */
+export type EtancheiteMode = "liquide" | "natte";
+export interface CarrelageSegment {
+  id: string;
+  /** Type de carreau, ou "plinthes" (ml), "etancheite" (m²), "libre". */
+  type: CarrelageType | "plinthes" | "etancheite" | "libre";
+  dim?: CarrelageDim;
+  colle?: CarrelageColle;
+  /** "etancheite" uniquement. */
+  mode?: EtancheiteMode;
+  /** Quantité : m² (pose / étanchéité) ou ml (plinthes). */
+  m2: number;
+  puOverride?: number;
+  libelleOverride?: string;
+  lbl?: string;
+  unit?: string;
+}
+
 // ─── Base commune à tout segment (cloison, faux-plafond, …) ──────────
 /** Champs partagés par tous les segments — socle du composant de cartes
  *  générique (SegmentCards) et de l'agrégation segments (agregerSegments).
