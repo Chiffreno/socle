@@ -6,7 +6,8 @@
 
 import type { TauxTVA, Unite } from "../types";
 
-/** Les 15 lots du moteur (porté de ChiffReno v8). */
+/** Les 14 lots du moteur (porté de ChiffReno v8 ; lot étanchéité supprimé
+ *  juin 2026 — l'étanchéité devient une OPTION des lots carrelage/faïence). */
 export type LotId =
   | "demolition"
   | "iti"
@@ -16,7 +17,6 @@ export type LotId =
   | "plombs"
   | "peinture"
   | "ragreage"
-  | "etancheite"
   | "parquet"
   | "carrelage"
   | "faience"

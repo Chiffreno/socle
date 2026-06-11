@@ -625,26 +625,9 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
       return items;
     }
 
-    case "etancheite": {
-      const mode = String(o.mode || "liquide");
-      const ml_b = Number(o.ml_bandes) || 0;
-      const m2 = Number(o.m2) || 0;
-      const items: EngineLigne[] = [];
-      if (o.primaire) items.push(_row("primaire_etanche", m2, "Primaire d'accrochage étanchéité", "m²", "Pénétration / consolidation support"));
-      if (mode === "natte_e") {
-        items.push(_hrow("natte_etanche", m2, "Natte d'étanchéité — KERDI / Wedi", "m²", "Zones humides"));
-        items.push(_row("colle_c2s", Math.round(m2 * 3), "Colle C2S — spatule 3×3 mm", "kg", "~3 kg/m²"));
-        if (ml_b > 0) items.push(_row("bande_natte", ml_b, `Bandes de rives — ${ml_b} ml`, "ml", "Raccord natte / mur"));
-      } else if (mode === "natte_d" || mode === "natte") {
-        items.push(_hrow("natte_desoli", m2, "Natte de désolidarisation — DITRA", "m²", "Découplage + drainage"));
-        items.push(_row("colle_c2s", Math.round(m2 * 5), "Colle C2S — spatule 10×10 mm", "kg", "~5 kg/m²"));
-        if (ml_b > 0) items.push(_row("bande_natte", ml_b, `Bandes de rives — ${ml_b} ml`, "ml", "Raccord natte / mur"));
-      } else {
-        items.push(_hrow("etanche_liquide", m2, "Membrane étanchéité liquide — Sika Level-01 / Knauf", "m²", "2 couches croisées"));
-        if (ml_b > 0) items.push(_row("bande_etanche", ml_b, `Bandes armature tissu — ${ml_b} ml`, "ml", "Angles et périmètre"));
-      }
-      return items;
-    }
+    // (Lot "etancheite" supprimé juin 2026 — l'étanchéité devient une OPTION
+    //  des lots carrelage/faïence : modes liquide (SEL) / natte, mêmes clés BP
+    //  etanche_liquide / natte_etanche / bande_etanche / colle_c2s.)
 
     case "parquet": {
       const typeLbl: Record<string, string> = {

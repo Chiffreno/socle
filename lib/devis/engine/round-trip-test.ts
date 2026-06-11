@@ -189,6 +189,20 @@ console.log("══════════════════════�
 const serialized = JSON.stringify(devisBefore);
 const parsed = JSON.parse(serialized) as typeof devisBefore;
 
+// Lot SUPPRIMÉ (étanchéité, juin 2026) : un devis sérialisé AVANT la
+// suppression peut encore porter ce lot → normalize doit le PURGER
+// silencieusement (le devis charge sans erreur, le lot disparaît).
+(parsed.engine.lots as unknown as Record<string, unknown>).etancheite = {
+  on: true,
+  surf: null,
+  m: 20,
+  tempsMoHeures: 4,
+  o: { m2: 12, mode: "liquide", primaire: true, ml_bandes: 18 },
+  cp: {},
+  custom: [],
+  lignesLibres: [],
+};
+
 // Reproduit fidèlement le passage par le repository : normalizeEngine ré-hydrate
 // les lots avec les défauts du moteur (clés manquantes / nouveaux lots), tout
 // le reste du Devis (header) est copié tel quel.
@@ -238,6 +252,11 @@ assertEqJSON(
 assert(
   devisAfter.engine.lots.plombs.coutRevientPoints === undefined,
   "plombs.coutRevientPoints reste === undefined (pas 0 ni null) après round-trip"
+);
+// Lot étanchéité supprimé : purgé silencieusement par normalize.
+assert(
+  !("etancheite" in (devisAfter.engine.lots as unknown as Record<string, unknown>)),
+  "lot etancheite (legacy) PURGÉ par normalize — devis charge sans erreur"
 );
 // Migration gammes : `q` purgé, cp gammé remappé (std → unique, mid/prm tombent).
 assert(

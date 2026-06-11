@@ -17,7 +17,8 @@ export interface LotMeta {
   icon: string;
 }
 
-/** 15 lots, ordre d'affichage sidebar. */
+/** 14 lots, ordre d'affichage sidebar. (Étanchéité supprimé en tant que lot —
+ *  devient une option des lots carrelage/faïence.) */
 export const LM: readonly LotMeta[] = [
   { id: "demolition", label: "Démolition & Protection", sub: "Bennes + protections chantier", icon: "hammer" },
   { id: "iti", label: "Isolation ITI", sub: "Système Optima Isover", icon: "temperature-snow" },
@@ -27,7 +28,6 @@ export const LM: readonly LotMeta[] = [
   { id: "plombs", label: "Plomberie", sub: "Réseau multicouche", icon: "droplet" },
   { id: "peinture", label: "Enduit & Peinture", sub: "Finition murs / plafonds", icon: "brush" },
   { id: "ragreage", label: "Ragréage", sub: "Préparation support sol", icon: "trowel" },
-  { id: "etancheite", label: "Étanchéité", sub: "Sol & mur — liquide / natte", icon: "umbrella" },
   { id: "parquet", label: "Parquet", sub: "Pose flottante / collée", icon: "wood" },
   { id: "carrelage", label: "Carrelage", sub: "Sol grès / céramique", icon: "grid-4x4" },
   { id: "faience", label: "Faïence", sub: "Revêtement mural", icon: "grid-pattern" },
@@ -40,7 +40,7 @@ export const LM: readonly LotMeta[] = [
 export const CORPS: readonly { label: string; ids: readonly LotId[] }[] = [
   { label: "Isolation & Structure", ids: ["iti", "fauxplafond", "cloisons"] },
   { label: "Second œuvre", ids: ["elec", "plombs"] },
-  { label: "Revêtements", ids: ["ragreage", "etancheite", "parquet", "carrelage", "faience", "peinture"] },
+  { label: "Revêtements", ids: ["ragreage", "parquet", "carrelage", "faience", "peinture"] },
   { label: "Menuiseries", ids: ["menus", "menuext"] },
   { label: "Équipements", ids: ["cuisine"] },
 ];
@@ -75,7 +75,6 @@ export const LOTS_NO_SURF: ReadonlySet<LotId> = new Set<LotId>([
   "cloisons",
   "fauxplafond",
   "peinture",
-  "etancheite",
   "parquet",
   "carrelage",
   "faience",
@@ -90,7 +89,7 @@ function lotEmpty(o: Record<string, unknown>): LotState {
   return { on: false, surf: null, m: 0, tempsMoHeures: 0, o, cp: {}, custom: [], lignesLibres: [] };
 }
 
-/** Construit l'état initial des 15 lots. */
+/** Construit l'état initial des 14 lots. */
 export function createInitialLotStates(): Record<LotId, LotState> {
   return {
     // DÉMOLITION — nouvelle forme SOCLE : 100% postes à prix ferme (catalogue-demolition.ts).
@@ -108,7 +107,6 @@ export function createInitialLotStates(): Record<LotId, LotState> {
     carrelage: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "gres_cerame", z1_peigne: "b10", z1_chute: 0, z2_on: false, z2_m2: 0, z2_type: "grand_format", z2_peigne: "b10", z2_chute: 0, z3_on: false, z3_m2: 0, z3_type: "carrelage_std", z3_peigne: "b10", z3_chute: 0 }),
     faience: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "gres_mural", z1_peigne: "v4", z1_profiles_ml: 0, z1_chute: 0, z2_on: false, z2_m2: 0, z2_type: "faience_std", z2_peigne: "v4", z2_profiles_ml: 0, z2_chute: 0, z3_on: false, z3_m2: 0, z3_type: "gf_mural", z3_peigne: "v4", z3_profiles_ml: 0, z3_chute: 0 }),
     ragreage: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "ragreage_simple", z1_epa_mm: 0, z2_on: false, z2_m2: 0, z2_type: "ragreage_fibre", z2_epa_mm: 0, z3_on: false, z3_m2: 0, z3_type: "ragreage_simple", z3_epa_mm: 0, primaire: false, bandes: false, ml_bandes: 0 }),
-    etancheite: lotEmpty({ m2: 0, mode: "liquide", primaire: false, ml_bandes: 0 }),
     menus: lotEmpty({ nb_portes: 0, type_porte: "porte_mid", m_plinthes: 0, type_plinthe: "plinthe_mdf", nb_seuils: 0 }),
     menuext: lotEmpty({ type_fen: "fenetre_pvc", nb_fen: 0, type_pf: "pf_pvc", nb_pf: 0, type_vol: "volet_bat_pvc", nb_vol: 0, porte_entree: "porte_entree_std", nb_porte_entree: 0, nb_seuils_ext: 0 }),
     cuisine: lotEmpty({ ml_bas: 0, ml_haut: 0, type_pt: "plan_travail", ml_pt: 0, m2_cred: 0, four: false, plaques: false, hotte: false, lave_vaisselle: false, evier: false }),
