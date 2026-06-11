@@ -441,7 +441,8 @@ export default function DevisEditorEngine({ devisId }: Props) {
         remiseMode: draft.remiseMode,
         remiseValeur: draft.remiseValeur,
       },
-      entreprise?.tauxHoraire ?? 0
+      entreprise?.tauxHoraire ?? 0,
+      draft.regimeTVA ?? "tva"
     );
   }, [
     draft.engine,
@@ -449,6 +450,7 @@ export default function DevisEditorEngine({ devisId }: Props) {
     draft.tvaParDefaut,
     draft.remiseMode,
     draft.remiseValeur,
+    draft.regimeTVA,
     entreprise,
   ]);
 

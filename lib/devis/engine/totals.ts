@@ -38,6 +38,7 @@
 import { calcItems } from "./calc-items";
 import { LM } from "./lots";
 import type { EngineLigne, EngineState, LotId, RemiseMode } from "./types";
+import type { RegimeTVA } from "../types";
 
 export function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
@@ -156,7 +157,8 @@ export function calcLotTotaux(
 
 export function calcEngineTotaux(
   state: EngineState,
-  tauxHoraire: number = 0
+  tauxHoraire: number = 0,
+  regimeTVA: RegimeTVA = "tva"
 ): DevisTotaux {
   const parLot = LM.map((meta) => calcLotTotaux(state, meta.id, tauxHoraire));
   const activeLots = parLot.filter((l) => l.active);
@@ -168,41 +170,51 @@ export function calcEngineTotaux(
   const totalHT = round2(subTotalHT - remiseHT);
   const ratio = subTotalHT > 0 ? totalHT / subTotalHT : 1;
 
-  // Ventilation TVA par taux, après distribution marge+MO puis remise.
-  const ventilationAcc: Record<number, number> = {};
-
-  for (const lt of activeLots) {
-    const { deboursé, caDeboursé, items } = lt;
-    // coefficient pour distribuer caDeboursé sur les lignes déboursé du lot.
-    const coefDeboursé = deboursé > 0 ? caDeboursé / deboursé : 0;
-    // surplus orphan (MO+marge sans aucune ligne déboursé pour le porter)
-    const orphanCA = deboursé === 0 ? caDeboursé : 0;
-
-    for (const item of items) {
-      const tva = item.tva ?? state.tvaParDefaut;
-      const lineCABeforeRemise = item.prixEstFinal
-        ? item.total
-        : item.total * coefDeboursé;
-      const lineCAAfterRemise = lineCABeforeRemise * ratio;
-      const lineTVA = lineCAAfterRemise * (tva / 100);
-      ventilationAcc[tva] = (ventilationAcc[tva] || 0) + lineTVA;
-    }
-
-    if (orphanCA > 0) {
-      const tva = state.tvaParDefaut;
-      const lineTVA = orphanCA * ratio * (tva / 100);
-      ventilationAcc[tva] = (ventilationAcc[tva] || 0) + lineTVA;
-    }
-  }
+  // La TVA n'est calculée qu'en régime 'tva'. En franchise (293 B) et en
+  // autoliquidation (283-2 nonies), aucune TVA n'est facturée : la boucle de
+  // ventilation est court-circuitée, ventilationTVA reste vide (sémantique
+  // « aucune ventilation à afficher », ≠ TVA à 0%) et totalTVA = 0. Le HT
+  // (subTotalHT, remiseHT, totalHT, ratio) est intact dans tous les cas.
+  const tvaApplicable = regimeTVA === "tva";
 
   const ventilationTVA: Record<number, number> = {};
   let totalTVA = 0;
-  for (const [taux, montant] of Object.entries(ventilationAcc)) {
-    const r = round2(montant);
-    ventilationTVA[Number(taux)] = r;
-    totalTVA += r;
+
+  if (tvaApplicable) {
+    // Ventilation TVA par taux, après distribution marge+MO puis remise.
+    const ventilationAcc: Record<number, number> = {};
+
+    for (const lt of activeLots) {
+      const { deboursé, caDeboursé, items } = lt;
+      // coefficient pour distribuer caDeboursé sur les lignes déboursé du lot.
+      const coefDeboursé = deboursé > 0 ? caDeboursé / deboursé : 0;
+      // surplus orphan (MO+marge sans aucune ligne déboursé pour le porter)
+      const orphanCA = deboursé === 0 ? caDeboursé : 0;
+
+      for (const item of items) {
+        const tva = item.tva ?? state.tvaParDefaut;
+        const lineCABeforeRemise = item.prixEstFinal
+          ? item.total
+          : item.total * coefDeboursé;
+        const lineCAAfterRemise = lineCABeforeRemise * ratio;
+        const lineTVA = lineCAAfterRemise * (tva / 100);
+        ventilationAcc[tva] = (ventilationAcc[tva] || 0) + lineTVA;
+      }
+
+      if (orphanCA > 0) {
+        const tva = state.tvaParDefaut;
+        const lineTVA = orphanCA * ratio * (tva / 100);
+        ventilationAcc[tva] = (ventilationAcc[tva] || 0) + lineTVA;
+      }
+    }
+
+    for (const [taux, montant] of Object.entries(ventilationAcc)) {
+      const r = round2(montant);
+      ventilationTVA[Number(taux)] = r;
+      totalTVA += r;
+    }
+    totalTVA = round2(totalTVA);
   }
-  totalTVA = round2(totalTVA);
 
   // Récap interne
   const totalDeboursé = round2(activeLots.reduce((a, l) => a + l.deboursé, 0));

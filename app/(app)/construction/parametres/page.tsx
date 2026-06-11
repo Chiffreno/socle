@@ -14,6 +14,7 @@ const DEFAULT_FORM: EntrepriseInput = {
   siren: "",
   siret: "",
   tvaIntracom: "",
+  assujettiTVA: false,
   capital: null,
   adresse: "",
   codePostal: "",

@@ -16,6 +16,7 @@
 import { calcEngineTotaux } from "./engine/totals";
 import { createInitialEngineState } from "./engine/lots";
 import { normalizeEngine } from "./engine/normalize";
+import { regimeParDefaut } from "./regime";
 import type { EngineState } from "./engine/types";
 import { allocateNumero } from "./numerotation";
 import type {
@@ -31,9 +32,11 @@ import type {
   Facture,
   FactureInput,
   Lot,
+  RegimeTVA,
   RemiseMode,
   TauxTVA,
 } from "./types";
+import { REGIMES_TVA } from "./types";
 
 // ─── Contrats ───
 export interface CrudRepository<T, TInput> {
@@ -172,6 +175,19 @@ function normalizeDevis(raw: unknown): Devis {
       ? (r.tvaParDefaut as TauxTVA)
       : 10;
 
+  // ─── Régime de TVA ───
+  // Chemin retenu : entreprise ACCESSIBLE. `readJSON` est synchrone et
+  // normalizeDevis tourne côté client, donc on lit le singleton entreprise
+  // pour défauter via `regimeParDefaut(assujettiTVA)`. Valeur stockée valide →
+  // conservée ; sinon défaut selon l'assujettissement ; entreprise non
+  // configurée → fallback 'tva' (cf. décision étape A-bis).
+  const entreprise = readJSON<Entreprise | null>(KEY_ENTREPRISE, null);
+  const regimeTVA: RegimeTVA = REGIMES_TVA.includes(r.regimeTVA as RegimeTVA)
+    ? (r.regimeTVA as RegimeTVA)
+    : entreprise
+      ? regimeParDefaut(entreprise.assujettiTVA)
+      : "tva";
+
   // ─── Engine (source de vérité chiffrage P2) ───
   // Migration C1 → P2 : `lots` ligne-par-ligne est vidé, l'engine est init.
   // Si déjà migré (engine présent), on le re-normalise pour garantir toutes
@@ -208,6 +224,7 @@ function normalizeDevis(raw: unknown): Devis {
     chantierId: asString(r.chantierId),
     globalSurf,
     tvaParDefaut,
+    regimeTVA,
     engine,
     lots,
     acomptePct: asNumber(r.acomptePct, 30),
@@ -231,7 +248,12 @@ function normalizeDevis(raw: unknown): Devis {
 async function withTotaux<
   T extends Pick<
     Devis,
-    "engine" | "globalSurf" | "tvaParDefaut" | "remiseMode" | "remiseValeur"
+    | "engine"
+    | "globalSurf"
+    | "tvaParDefaut"
+    | "remiseMode"
+    | "remiseValeur"
+    | "regimeTVA"
   >,
 >(
   devis: T
@@ -255,7 +277,7 @@ async function withTotaux<
     remiseMode: devis.remiseMode,
     remiseValeur: devis.remiseValeur,
   };
-  const t = calcEngineTotaux(engineSynced, tauxHoraire);
+  const t = calcEngineTotaux(engineSynced, tauxHoraire, devis.regimeTVA);
   return {
     ...devis,
     engine: engineSynced,

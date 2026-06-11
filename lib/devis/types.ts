@@ -27,6 +27,14 @@ export type RemiseMode = "aucune" | "pourcent" | "euros";
 
 export type TauxTVA = 5.5 | 10 | 20;
 
+/** Régime de TVA applicable à un devis. Trois cas mutuellement exclusifs :
+ *  - `franchise`     : franchise en base (art. 293 B CGI) — pas de TVA facturée.
+ *  - `tva`           : TVA normale, multi-taux (comportement actuel du moteur).
+ *  - `autoliquidation` : autoliquidation sous-traitance BTP (art. 283-2 nonies).
+ *  Le régime est porté par le Devis, surplombe le calcul, et conditionne les
+ *  mentions légales (posées à une étape ultérieure). */
+export type RegimeTVA = "franchise" | "tva" | "autoliquidation";
+
 export type Unite =
   | "u"
   | "m"
@@ -40,6 +48,12 @@ export type Unite =
 
 /** Valeurs autorisées, pour alimenter les selects de l'UI. */
 export const TAUX_TVA: readonly TauxTVA[] = [5.5, 10, 20];
+/** Régimes de TVA, pour alimenter les futurs selects. */
+export const REGIMES_TVA: readonly RegimeTVA[] = [
+  "franchise",
+  "tva",
+  "autoliquidation",
+];
 export const UNITES: readonly Unite[] = [
   "u",
   "m",
@@ -71,6 +85,11 @@ export interface Entreprise {
   siren: string;
   siret: string;
   tvaIntracom: string;
+  /** Assujettissement à la TVA de l'entreprise.
+   *  - `true`  : assujetti → accès aux régimes `tva` / `autoliquidation`.
+   *  - `false` : non assujetti → franchise en base (régime `franchise`).
+   *  Détermine les régimes autorisés sur les devis (cf. `regimesAutorises`). */
+  assujettiTVA: boolean;
   capital: number | null;
   adresse: string;
   codePostal: string;
@@ -224,6 +243,11 @@ export interface Devis {
   /** TVA appliquée par défaut aux lignes du moteur. Sync'd vers
    *  `engine.tvaParDefaut`. */
   tvaParDefaut: TauxTVA;
+  /** Régime de TVA du devis. Porté par le devis, surplombe le calcul : il
+   *  conditionne la façon dont les taux sont appliqués (franchise = aucun,
+   *  autoliquidation = TVA due par le preneur). Il ne vit PAS dans
+   *  `EngineState` — l'engine le reçoit en paramètre d'entrée. */
+  regimeTVA: RegimeTVA;
   /** P2 — Source de vérité du chiffrage : lots ChiffReno, leur config,
    *  custom, MO, marge, coutRevientPoints, override TVA par lot. */
   engine: EngineState;
@@ -273,5 +297,11 @@ export type DevisInput = Omit<
   | "tvaParDefaut"
   | "engine"
   | "chantierId"
+  | "regimeTVA"
 > &
-  Partial<Pick<Devis, "globalSurf" | "tvaParDefaut" | "engine" | "chantierId">>;
+  Partial<
+    Pick<
+      Devis,
+      "globalSurf" | "tvaParDefaut" | "engine" | "chantierId" | "regimeTVA"
+    >
+  >;
