@@ -96,6 +96,16 @@ function migratePeintureO(o: Record<string, unknown>): Record<string, unknown> {
   return { lignes: [] };
 }
 
+// ─── Migration parquet : ancien modèle zones (z1..z3) → o.lignes ─────
+// Idem peinture : pas de reconstruction dimensionnée fidèle (chute par zone →
+// chute lot, axes redéfinis), on repart sur des lignes vides. Les lignes
+// LIBRES du lot (LotState.lignesLibres) sont préservées par le chemin commun.
+// Idempotent (skip si o.lignes déjà un tableau).
+function migrateParquetO(o: Record<string, unknown>): Record<string, unknown> {
+  if (Array.isArray(o.lignes)) return o;
+  return { lignes: [], chute: 0 };
+}
+
 // ─── Migration gammes (suppression du concept, juin 2026) ───────────
 // 1. Le champ legacy `q` ("std"|"mid"|"prm") est purgé de chaque lot (il
 //    n'existe plus dans LotState ; les barèmes sont mono-prix).
@@ -182,6 +192,10 @@ export function normalizeEngine(
       // Migration peinture : ancien modèle zones → modèle segments.
       if (lid === "peinture") {
         lots[lid].o = migratePeintureO(lots[lid].o);
+      }
+      // Migration parquet : ancien modèle zones → modèle segments.
+      if (lid === "parquet") {
+        lots[lid].o = migrateParquetO(lots[lid].o);
       }
       // Migration plombs : remap des overrides cp gammés (X_std → X).
       if (lid === "plombs") {

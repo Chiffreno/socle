@@ -231,6 +231,38 @@ export interface PeintureSegment {
   unit?: string;
 }
 
+// ─── Parquet : modèle "segments" (o.lignes), patron peinture ─────────
+// Axes (listes PLAUSIBLES métier — à valider Benjamin) :
+//   • matériau : stratifié / contrecollé / massif (clés BP existantes) ;
+//   • dimension (largeur de lame) : descriptif UNIQUEMENT, aucun impact prix
+//     (à valider — un delta prix par largeur viendra en passe prix) ;
+//   • colle : non (pose flottante) / MS polymère (pose collée) ;
+//   • sous-couche : aucune / mousse / liège.
+// PLINTHES : famille séparée du ConfigBox → segment DÉDIÉ type "plinthes"
+// (carte normale, éditable/supprimable, badge/reset acquis), quantité en ml.
+// Choix "ligne dédiée" (vs attribut du segment pose) : symétrique de la
+// famille Menuiseries du pilote peinture et de l'option Étanchéité
+// carrelage/faïence — une prestation visible = une carte.
+export type ParquetMateriau = "strat" | "contre" | "massif";
+/** Largeur de lame — descriptif (à valider Benjamin). */
+export type ParquetDim = "etroite" | "std" | "large";
+export type ParquetColle = "non" | "ms";
+export type ParquetSousCouche = "non" | "mousse" | "liege";
+export interface ParquetSegment {
+  id: string;
+  /** Matériau, ou "plinthes" (ml), ou "libre". */
+  type: ParquetMateriau | "plinthes" | "libre";
+  dim?: ParquetDim;
+  colle?: ParquetColle;
+  sc?: ParquetSousCouche;
+  /** Quantité : m² (pose) ou ml (plinthes). */
+  m2: number;
+  puOverride?: number;
+  libelleOverride?: string;
+  lbl?: string;
+  unit?: string;
+}
+
 // ─── Base commune à tout segment (cloison, faux-plafond, …) ──────────
 /** Champs partagés par tous les segments — socle du composant de cartes
  *  générique (SegmentCards) et de l'agrégation segments (agregerSegments).

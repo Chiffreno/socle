@@ -103,7 +103,9 @@ export function createInitialLotStates(): Record<LotId, LotState> {
     elec: lotEmpty({ tableau_rangees: 0, gtl: false, consuel: false, terre: false, vmc: "non", points: {} as Record<string, number> }),
     peinture: lotEmpty({ z1_on: false, z1_m2: 0, z1_passes: "2", z1_fin: "velours", z1_imp: false, z1_treillis: false, z2_on: false, z2_m2: 0, z2_passes: "1", z2_fin: "mat", z2_imp: false, z2_treillis: false, z3_on: false, z3_m2: 0, z3_passes: "2", z3_fin: "satin", z3_imp: false, z3_treillis: false, z4_on: false, z4_m2: 0, z4_passes: "3", z4_fin: "satin", z4_imp: false, z4_treillis: false }),
     plombs: lotEmpty({ pts: { douche: 0, cuisine: 0, lavabo: 0, bain: 0 }, wc_sol: 0, wc_susp: 0, reseau_type: "mc", douche_type: "receveur", douche_carreler: false, ce: "ce_elec_150" }),
-    parquet: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "parquet_contre", z1_pose: "colle", z1_sc: "std", z1_chute: 0, z2_on: false, z2_m2: 0, z2_type: "parquet_massif", z2_pose: "colle", z2_sc: "std", z2_chute: 0, z3_on: false, z3_m2: 0, z3_type: "parquet_strat", z3_pose: "flottant", z3_sc: "std", z3_chute: 0 }),
+    // PARQUET — modèle "segments" (patron peinture) : prestations dans
+    // o.lignes ; chute = réglage niveau lot. Plinthes = segment dédié (ml).
+    parquet: lotEmpty({ lignes: [], chute: 0 }),
     carrelage: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "gres_cerame", z1_peigne: "b10", z1_chute: 0, z2_on: false, z2_m2: 0, z2_type: "grand_format", z2_peigne: "b10", z2_chute: 0, z3_on: false, z3_m2: 0, z3_type: "carrelage_std", z3_peigne: "b10", z3_chute: 0 }),
     faience: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "gres_mural", z1_peigne: "v4", z1_profiles_ml: 0, z1_chute: 0, z2_on: false, z2_m2: 0, z2_type: "faience_std", z2_peigne: "v4", z2_profiles_ml: 0, z2_chute: 0, z3_on: false, z3_m2: 0, z3_type: "gf_mural", z3_peigne: "v4", z3_profiles_ml: 0, z3_chute: 0 }),
     ragreage: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "ragreage_simple", z1_epa_mm: 0, z2_on: false, z2_m2: 0, z2_type: "ragreage_fibre", z2_epa_mm: 0, z3_on: false, z3_m2: 0, z3_type: "ragreage_simple", z3_epa_mm: 0, primaire: false, bandes: false, ml_bandes: 0 }),

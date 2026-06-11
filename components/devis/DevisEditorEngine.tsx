@@ -39,6 +39,7 @@ import {
 import CloisonsConfigBox from "./configurateurs/CloisonsConfigBox";
 import FauxPlafondConfigBox from "./configurateurs/FauxPlafondConfigBox";
 import ItiConfigBox from "./configurateurs/ItiConfigBox";
+import ParquetConfigBox from "./configurateurs/ParquetConfigBox";
 import PeintureConfigBox from "./configurateurs/PeintureConfigBox";
 import ElecConfigBox from "./configurateurs/ElecConfigBox";
 import SegmentCards from "./configurateurs/SegmentCards";
@@ -85,6 +86,7 @@ const SEGMENT_LOTS: Partial<
   fauxplafond: { ConfigBox: FauxPlafondConfigBox },
   iti: { ConfigBox: ItiConfigBox },
   peinture: { ConfigBox: PeintureConfigBox },
+  parquet: { ConfigBox: ParquetConfigBox },
 };
 
 type SaveStatus = "idle" | "saving" | "saved" | "dirty";

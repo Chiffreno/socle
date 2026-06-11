@@ -74,6 +74,7 @@ export const BP: Record<string, number> = {
   // ─── Revêtements sol ───
   parquet_strat: 15, parquet_contre: 48, parquet_massif: 70,
   sous_couche: 2.5, sous_couche_liege: 4.90, colle_parquet: 9.60,
+  parquet_plinthes: 4.5, // INDICATIF — à valider : plinthe assortie + fixation, €/ml
   carrelage_std: 18, gres_cerame: 28, grand_format: 52, colle_carrelage: 1.20,
 
   // ─── Ragréage ───

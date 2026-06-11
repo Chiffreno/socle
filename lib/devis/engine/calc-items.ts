@@ -25,6 +25,7 @@ import type {
   ItiEpa,
   ItiSegment,
   LotId,
+  ParquetSegment,
   PeintureFinition,
   PeintureNature,
   PeintureSegment,
@@ -630,34 +631,48 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
     //  etanche_liquide / natte_etanche / bande_etanche / colle_c2s.)
 
     case "parquet": {
-      const typeLbl: Record<string, string> = {
-        parquet_strat: "Parquet stratifié 8mm",
-        parquet_contre: "Parquet contrecollé 14mm",
-        parquet_massif: "Parquet massif 20mm",
+      // Modèle "segments" (patron peinture) : une prestation par segment de
+      // o.lignes. Matériau = ligne hl (brut +chute%) ; sous-couche / colle =
+      // consommables du groupe. "plinthes" = segment dédié (ml). groupId = seg.id.
+      const lignes = Array.isArray(o.lignes)
+        ? (o.lignes as ParquetSegment[])
+        : [];
+      if (lignes.length === 0) return [];
+      const tvaLot = state.lots[lotId].tva ?? state.tvaParDefaut;
+      const chute = Number(o.chute) || 0;
+      const MAT_LBL: Record<string, string> = {
+        strat: "Parquet stratifié 8 mm",
+        contre: "Parquet contrecollé 14 mm",
+        massif: "Parquet massif 20 mm",
       };
-      const zones = [1, 2, 3]
-        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
-        .map((n) => ({
-          n,
-          m2: Number(o[`z${n}_m2`]) || 0,
-          type: String(o[`z${n}_type`] || "parquet_strat"),
-          pose: String(o[`z${n}_pose`] || "flottant"),
-          sc: String(o[`z${n}_sc`] || "std"),
-          chute: Number(o[`z${n}_chute`]) || 0,
-        }));
-      if (zones.length === 0) return [];
+      const MAT_KEY: Record<string, string> = {
+        strat: "parquet_strat",
+        contre: "parquet_contre",
+        massif: "parquet_massif",
+      };
       const items: EngineLigne[] = [];
-      for (const z of zones) {
-        const brut = chuted(z.m2, z.chute);
-        items.push(_hrow(z.type, brut, `${typeLbl[z.type] || z.type} — Zone ${z.n}`, "m²", `Brut : ${brut} m² (+${z.chute}% chute, net ${z.m2} m²)`));
-        if (z.pose === "flottant") {
-          const scKey = z.sc === "liege" ? "sous_couche_liege" : "sous_couche";
-          const scLbl = z.sc === "liege" ? "Sous-couche liège 2 mm" : "Sous-couche mousse";
-          items.push(_row(scKey, z.m2, `${scLbl} — Zone ${z.n}`, "m²"));
-        } else {
-          if (z.sc === "liege") items.push(_row("sous_couche_liege", z.m2, `Sous-couche liège 2 mm — Zone ${z.n}`, "m²"));
-          items.push(_row("colle_parquet", z.m2, `Colle MS polymère — Zone ${z.n}`, "m²", "1,2 kg/m² × 8 €/kg"));
+      for (const seg of lignes) {
+        const q = Number(seg.m2) || 0;
+        if (q <= 0) continue;
+        if (seg.type === "libre") {
+          items.push(segmentLibreItem(lotId, seg, tvaLot));
+          continue;
         }
+        if (seg.type === "plinthes") {
+          const pl = _hrow("parquet_plinthes", q, `Plinthes assorties — ${q} ml`, "ml", "Coupes + fixation");
+          pl.groupId = seg.id;
+          items.push(pl);
+          continue;
+        }
+        const brut = chuted(q, chute);
+        const zoneItems: EngineLigne[] = [
+          _hrow(MAT_KEY[seg.type] || "parquet_strat", brut, `${MAT_LBL[seg.type] || "Parquet"} × ${q} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute, net ${q} m²)`),
+        ];
+        if (seg.sc === "mousse") zoneItems.push(_row("sous_couche", q, "Sous-couche mousse", "m²"));
+        else if (seg.sc === "liege") zoneItems.push(_row("sous_couche_liege", q, "Sous-couche liège 2 mm", "m²"));
+        if (seg.colle === "ms") zoneItems.push(_row("colle_parquet", q, "Colle MS polymère", "m²", "1,2 kg/m² × 8 €/kg"));
+        for (const it of zoneItems) it.groupId = seg.id;
+        items.push(...zoneItems);
       }
       return items;
     }
