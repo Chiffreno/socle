@@ -22,6 +22,7 @@ import type {
   CloisonSegment,
   EngineLigne,
   EngineState,
+  FaienceSegment,
   FauxPlafondSegment,
   ItiIso,
   ItiSegment,
@@ -473,6 +474,51 @@ function agregerCarrelage(state: EngineState, lt: LotTotaux): LigneClient[] {
   });
 }
 
+// ─── Faïence : étiquetage spécifique (type / étanchéité — pas de plinthes) ─
+const FAIENCE_TYPE_LABEL: Record<string, string> = {
+  fai: "standard",
+  gres: "grès cérame mural rectifié",
+  gf: "grand format mural",
+};
+const FAIENCE_EYEBROW: Record<string, string> = {
+  fai: "Faïence standard",
+  gres: "Grès cérame mural",
+  gf: "Grand format mural",
+  etancheite: "Étanchéité",
+};
+
+/** Description client d'un segment faïence (affichage seul). */
+export function descriptionFaience(seg: FaienceSegment): string {
+  if (seg.type === "libre") return "";
+  if (seg.type === "etancheite")
+    return descriptionEtancheite(seg.mode, "faïence");
+  const t = FAIENCE_TYPE_LABEL[seg.type] ?? "";
+  const dim = seg.dim ? ` ${seg.dim.replace("x", "×")}` : "";
+  const colle = seg.colle
+    ? `, ${CARRELAGE_COLLE_LABEL[seg.colle] ?? ""}`
+    : "";
+  const prim =
+    seg.sc === "primaire" ? ", primaire d'accrochage" : "";
+  return `Faïence ${t}${dim}, pose murale droite${colle}${prim}, joints et coupes compris.`;
+}
+
+function agregerFaience(state: EngineState, lt: LotTotaux): LigneClient[] {
+  return agregerSegments(state, lt, {
+    eyebrow: (s) => FAIENCE_EYEBROW[s.type] ?? "Faïence",
+    libelle: (s) =>
+      s.type === "etancheite"
+        ? `Étanchéité sous faïence — ${
+            ((s as FaienceSegment).mode || "liquide") === "liquide"
+              ? "membrane liquide (SEL)"
+              : "natte"
+          }`
+        : `Fourniture et pose de faïence ${
+            FAIENCE_TYPE_LABEL[s.type] ?? ""
+          }`.trim(),
+    describe: (s) => descriptionFaience(s as FaienceSegment),
+  });
+}
+
 // ─── Élec : agrégateur (lot à points + infrastructure) — DÉTAIL par appareillage ─
 // PAS un lot à segments : infrastructure (déboursé) + points catalogue (prix
 // ferme). UNE ligne client par prestation (qty>0), groupée par catégorie via
@@ -620,6 +666,7 @@ const STRATEGIES: Partial<
   peinture: agregerPeinture,
   parquet: agregerParquet,
   carrelage: agregerCarrelage,
+  faience: agregerFaience,
   elec: agregerElec,
 };
 

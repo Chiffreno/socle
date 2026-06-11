@@ -109,7 +109,9 @@ export function createInitialLotStates(): Record<LotId, LotState> {
     // CARRELAGE — modèle "segments" : prestations dans o.lignes ; chute =
     // réglage lot. Plinthes (ml) et étanchéité (liquide/natte) = segments dédiés.
     carrelage: lotEmpty({ lignes: [], chute: 0 }),
-    faience: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "gres_mural", z1_peigne: "v4", z1_profiles_ml: 0, z1_chute: 0, z2_on: false, z2_m2: 0, z2_type: "faience_std", z2_peigne: "v4", z2_profiles_ml: 0, z2_chute: 0, z3_on: false, z3_m2: 0, z3_type: "gf_mural", z3_peigne: "v4", z3_profiles_ml: 0, z3_chute: 0 }),
+    // FAÏENCE — modèle "segments" : prestations dans o.lignes ; chute =
+    // réglage lot. Étanchéité = segment dédié (pas de plinthes).
+    faience: lotEmpty({ lignes: [], chute: 0 }),
     ragreage: lotEmpty({ z1_on: false, z1_m2: 0, z1_type: "ragreage_simple", z1_epa_mm: 0, z2_on: false, z2_m2: 0, z2_type: "ragreage_fibre", z2_epa_mm: 0, z3_on: false, z3_m2: 0, z3_type: "ragreage_simple", z3_epa_mm: 0, primaire: false, bandes: false, ml_bandes: 0 }),
     menus: lotEmpty({ nb_portes: 0, type_porte: "porte_mid", m_plinthes: 0, type_plinthe: "plinthe_mdf", nb_seuils: 0 }),
     menuext: lotEmpty({ type_fen: "fenetre_pvc", nb_fen: 0, type_pf: "pf_pvc", nb_pf: 0, type_vol: "volet_bat_pvc", nb_vol: 0, porte_entree: "porte_entree_std", nb_porte_entree: 0, nb_seuils_ext: 0 }),

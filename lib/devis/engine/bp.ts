@@ -88,6 +88,7 @@ export const BP: Record<string, number> = {
 
   // ─── Faïence ───
   faience_std: 18, gres_mural: 30, gf_mural: 55, colle_faience: 1.00, profiles_alu: 4,
+  primaire_accrochage: 1.5, // INDICATIF — à valider : primaire d'accrochage mural, €/m²
 
   // ─── Menuiseries int ───
   porte_std: 200, porte_mid: 320, porte_prm: 550,

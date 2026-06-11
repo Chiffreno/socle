@@ -25,6 +25,7 @@ import type {
   ItiEpa,
   ItiSegment,
   CarrelageSegment,
+  FaienceSegment,
   LotId,
   ParquetSegment,
   PeintureFinition,
@@ -749,32 +750,68 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
     }
 
     case "faience": {
-      const typeLbl: Record<string, string> = {
-        faience_std: "Faïence standard 20×30",
-        gres_mural: "Grès cérame mural rectifié",
-        gf_mural: "Grand format mural 60×120",
+      // Modèle "segments" (patron peinture/carrelage) : une prestation par
+      // segment de o.lignes. Carreau = ligne hl (brut +chute%), colle dérivée
+      // de la DIMENSION (kg/m² à valider), sous-couche = primaire d'accrochage.
+      // "etancheite" (liquide/natte, UNE ligne) = segment dédié. PAS de plinthes.
+      const lignes = Array.isArray(o.lignes)
+        ? (o.lignes as FaienceSegment[])
+        : [];
+      if (lignes.length === 0) return [];
+      const tvaLot = state.lots[lotId].tva ?? state.tvaParDefaut;
+      const chute = Number(o.chute) || 0;
+      const TYPE_KEY: Record<string, string> = {
+        fai: "faience_std",
+        gres: "gres_mural",
+        gf: "gf_mural",
       };
-      const PEIGNE_KG: Record<string, number> = { v3: 2, v4: 3, b10: 5, b12: 7 };
-      const PEIGNE_LBL: Record<string, string> = { v3: "V3 3mm", v4: "V4 4mm", b10: "B10 10mm", b12: "B12 12mm" };
-      const zones = [1, 2, 3]
-        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
-        .map((n) => ({
-          n,
-          m2: Number(o[`z${n}_m2`]) || 0,
-          type: String(o[`z${n}_type`] || "faience_std"),
-          peigne: String(o[`z${n}_peigne`] || "v4"),
-          profiles_ml: Number(o[`z${n}_profiles_ml`]) || 0,
-          chute: Number(o[`z${n}_chute`]) || 0,
-        }));
-      if (zones.length === 0) return [];
+      const TYPE_LBL: Record<string, string> = {
+        fai: "Faïence standard",
+        gres: "Grès cérame mural rectifié",
+        gf: "Grand format mural",
+      };
+      // kg de colle / m² selon dimension (peigne mural) — INDICATIF, à valider.
+      const DIM_KG: Record<string, number> = { "20x30": 3, "30x60": 4, "60x120": 6 };
       const items: EngineLigne[] = [];
-      for (const z of zones) {
-        const brut = chuted(z.m2, z.chute);
-        const kg_m2 = PEIGNE_KG[z.peigne] || 3;
-        const kg = Math.ceil(z.m2 * kg_m2);
-        items.push(_hrow(z.type, brut, `${typeLbl[z.type] || z.type} — Zone ${z.n}`, "m²", `Brut : ${brut} m² (+${z.chute}% chute, net ${z.m2} m²)`));
-        items.push(_row("colle_faience", kg, `Colle C2S1 peigne ${PEIGNE_LBL[z.peigne] || z.peigne} (${kg_m2} kg/m²) — Zone ${z.n}`, "kg"));
-        if (z.profiles_ml > 0) items.push(_row("profiles_alu", z.profiles_ml, `Profilés alu — Zone ${z.n} — ${z.profiles_ml} ml`, "ml", "Nez de carreau / jonction"));
+      for (const seg of lignes) {
+        const q = Number(seg.m2) || 0;
+        if (q <= 0) continue;
+        if (seg.type === "libre") {
+          items.push(segmentLibreItem(lotId, seg, tvaLot));
+          continue;
+        }
+        if (seg.type === "etancheite") {
+          const liquide = (seg.mode || "liquide") === "liquide";
+          const et = _hrow(
+            liquide ? "etanche_liquide" : "natte_etanche",
+            q,
+            liquide
+              ? "Étanchéité liquide (SEL) sous faïence"
+              : "Natte d'étanchéité sous faïence",
+            "m²",
+            liquide ? "2 couches croisées" : "Type KERDI / Wedi, joints traités"
+          );
+          et.groupId = seg.id;
+          items.push(et);
+          continue;
+        }
+        const brut = chuted(q, chute);
+        const dim = seg.dim || "30x60";
+        const kg = Math.ceil(q * (DIM_KG[dim] || 4));
+        const zoneItems: EngineLigne[] = [
+          _hrow(TYPE_KEY[seg.type] || "faience_std", brut, `${TYPE_LBL[seg.type] || "Faïence"} ${dim.replace("x", "×")} × ${q} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute, net ${q} m²)`),
+          _row(
+            seg.colle === "c2s" ? "colle_c2s" : "colle_faience",
+            kg,
+            `Colle ${seg.colle === "c2s" ? "C2S1 flex" : "C2 standard"} (${DIM_KG[dim] || 4} kg/m²)`,
+            "kg"
+          ),
+        ];
+        if (seg.sc === "primaire") {
+          zoneItems.push(_row("primaire_accrochage", q, "Primaire d'accrochage", "m²", "Consolidation support mural"));
+        }
+        for (const it of zoneItems) it.groupId = seg.id;
+        items.push(...zoneItems);
       }
       return items;
     }

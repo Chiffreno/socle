@@ -295,6 +295,34 @@ export interface CarrelageSegment {
   unit?: string;
 }
 
+// ─── Faïence : modèle "segments" (o.lignes), patron peinture ─────────
+// Axes (listes PLAUSIBLES métier — à valider Benjamin) :
+//   • type : faïence standard / grès cérame mural / grand format mural ;
+//   • dimension : pilote la consommation de colle (peigne, kg/m², à valider) ;
+//   • colle : C2 standard / C2S1 flex ;
+//   • sous-couche : aucune / primaire d'accrochage (interprétation métier de
+//     la « sous-couche » murale — à valider Benjamin).
+// ÉTANCHÉITÉ : option card (comme carrelage). PAS de plinthes (décision).
+// (Les profilés alu de l'ancien modèle ne sont plus un axe — à valider.)
+export type FaienceType = "fai" | "gres" | "gf";
+export type FaienceDim = "20x30" | "30x60" | "60x120";
+export type FaienceSousCouche = "non" | "primaire";
+export interface FaienceSegment {
+  id: string;
+  /** Type de carreau, ou "etancheite" (m²), ou "libre". */
+  type: FaienceType | "etancheite" | "libre";
+  dim?: FaienceDim;
+  colle?: CarrelageColle;
+  sc?: FaienceSousCouche;
+  /** "etancheite" uniquement. */
+  mode?: EtancheiteMode;
+  m2: number;
+  puOverride?: number;
+  libelleOverride?: string;
+  lbl?: string;
+  unit?: string;
+}
+
 // ─── Base commune à tout segment (cloison, faux-plafond, …) ──────────
 /** Champs partagés par tous les segments — socle du composant de cartes
  *  générique (SegmentCards) et de l'agrégation segments (agregerSegments).
