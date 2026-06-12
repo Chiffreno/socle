@@ -91,6 +91,11 @@ export default function RentabilitePage() {
   const [fgOpen, setFgOpen] = useState(false);
   const [fgCh, setFgCh] = useState(DEFAULTS.fg_ch);
   const [fgCa, setFgCa] = useState(DEFAULTS.fg_ca);
+  // cfgRaw appartient-il au calculateur FG ? Si oui, l'édition des inputs FG
+  // resynchronise cfgRaw (évite un coef périmé après correction des hypothèses).
+  // La saisie directe du coef libère cette propriété : on n'écrase jamais une
+  // valeur tapée à la main.
+  const [cfgFromFg, setCfgFromFg] = useState(false);
 
   // ─── Coefficient FG calculé (cf. coeffOf) ───
   // fgInvalid : charges ≥ CA → coef neutralisé à 1 + alerte (faux-fond évité).
@@ -99,6 +104,7 @@ export default function RentabilitePage() {
 
   function calcFG() {
     setCfgRaw(parseFloat(fgCoeff.toFixed(3)));
+    setCfgFromFg(true);
   }
   function togFG() {
     setFgOpen((o) => !o);
@@ -108,6 +114,17 @@ export default function RentabilitePage() {
     setFgCh(ch);
     setFgCa(ca);
     setCfgRaw(parseFloat(coeffOf(ch, ca).toFixed(3)));
+    setCfgFromFg(true);
+  }
+  // Édition des inputs FG : met à jour l'input ET resync cfgRaw si l'accordéon
+  // possède la valeur (sinon on laisse intacte une saisie manuelle du coef).
+  function editFgCh(v: number) {
+    setFgCh(v);
+    if (cfgFromFg) setCfgRaw(parseFloat(coeffOf(v, fgCa).toFixed(3)));
+  }
+  function editFgCa(v: number) {
+    setFgCa(v);
+    if (cfgFromFg) setCfgRaw(parseFloat(coeffOf(fgCh, v).toFixed(3)));
   }
 
   function reset() {
@@ -130,6 +147,7 @@ export default function RentabilitePage() {
     setFBen(DEFAULTS.f_ben);
     setFSt(DEFAULTS.f_st);
     setCfgRaw(DEFAULTS.cfg);
+    setCfgFromFg(false);
     setMarge(DEFAULTS.marge);
     setTva(DEFAULTS.tva);
     setMode("c");
@@ -526,7 +544,7 @@ export default function RentabilitePage() {
           <div className="g2">
             <div className="field">
               <label>Coefficient frais généraux</label>
-              <input type="number" value={cfgRaw} min={1} max={2} step={0.01} onChange={(e) => setCfgRaw(num(e.target.value))} />
+              <input type="number" value={cfgRaw} min={1} max={2} step={0.01} onChange={(e) => { setCfgRaw(num(e.target.value)); setCfgFromFg(false); }} />
               <div className="hint">1,305 standard · 1,25 micro-entreprise</div>
               <div style={{ marginTop: 10 }}>
                 <button className="acc-btn" onClick={togFG}>
@@ -538,7 +556,7 @@ export default function RentabilitePage() {
                     <div className="field" style={{ marginBottom: 0 }}>
                       <label>Charges fixes annuelles</label>
                       <div className="iu">
-                        <input type="number" value={fgCh} min={0} step={500} onChange={(e) => setFgCh(num(e.target.value))} />
+                        <input type="number" value={fgCh} min={0} step={500} onChange={(e) => editFgCh(num(e.target.value))} />
                         <span className="u">€</span>
                       </div>
                       <div className="hint">Assurances, véhicule, comptable…</div>
@@ -546,7 +564,7 @@ export default function RentabilitePage() {
                     <div className="field" style={{ marginBottom: 0 }}>
                       <label>CA annuel estimé</label>
                       <div className="iu">
-                        <input type="number" value={fgCa} min={1} step={1000} onChange={(e) => setFgCa(num(e.target.value))} />
+                        <input type="number" value={fgCa} min={1} step={1000} onChange={(e) => editFgCa(num(e.target.value))} />
                         <span className="u">€</span>
                       </div>
                     </div>
