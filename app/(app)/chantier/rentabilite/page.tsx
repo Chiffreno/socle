@@ -16,6 +16,13 @@ function p(n: number): string {
   return n.toFixed(1) + " %";
 }
 
+// Coefficient de frais généraux gardé : 1 + charges/(CA - charges).
+// Neutralisé à 1 (pas de majoration) si charges ≥ CA — sinon le coef
+// divergerait (÷0) ou deviendrait négatif. Garde factorisée et unique.
+function coeffOf(ch: number, ca: number): number {
+  return ca <= ch ? 1 : 1 + ch / (ca - ch);
+}
+
 type Mode = "c" | "i";
 
 const DEFAULTS = {
@@ -85,8 +92,10 @@ export default function RentabilitePage() {
   const [fgCh, setFgCh] = useState(DEFAULTS.fg_ch);
   const [fgCa, setFgCa] = useState(DEFAULTS.fg_ca);
 
-  // ─── Coefficient FG calculé (1 + charges/(CA - charges)) ───
-  const fgCoeff = 1 + fgCh / ((fgCa || 1) - fgCh);
+  // ─── Coefficient FG calculé (cf. coeffOf) ───
+  // fgInvalid : charges ≥ CA → coef neutralisé à 1 + alerte (faux-fond évité).
+  const fgInvalid = fgCa <= fgCh;
+  const fgCoeff = coeffOf(fgCh, fgCa);
 
   function calcFG() {
     setCfgRaw(parseFloat(fgCoeff.toFixed(3)));
@@ -98,8 +107,7 @@ export default function RentabilitePage() {
   function setFG(ch: number, ca: number) {
     setFgCh(ch);
     setFgCa(ca);
-    const coeff = 1 + ch / ((ca || 1) - ch);
-    setCfgRaw(parseFloat(coeff.toFixed(3)));
+    setCfgRaw(parseFloat(coeffOf(ch, ca).toFixed(3)));
   }
 
   function reset() {
@@ -262,7 +270,10 @@ export default function RentabilitePage() {
   // Verdict principal
   let verdictClass: string;
   let verdictText: string;
-  if (mr >= 25) {
+  if (fgInvalid) {
+    verdictClass = "verdict nok";
+    verdictText = "Calcul indisponible — corrigez vos charges / CA annuel estimé.";
+  } else if (mr >= 25) {
     verdictClass = "verdict ok";
     verdictText = "✓ Chantier rentable — marge de " + p(mr) + ". Objectif de " + mobj + "% atteint.";
   } else if (mr >= 15) {
@@ -520,7 +531,7 @@ export default function RentabilitePage() {
               <div style={{ marginTop: 10 }}>
                 <button className="acc-btn" onClick={togFG}>
                   <span>Calculer mon coefficient ▸</span>
-                  <span style={{ fontWeight: 700, color: "var(--green)" }}>{fgOpen ? "→ " + fgCoeff.toFixed(3) : ""}</span>
+                  <span style={{ fontWeight: 700, color: "var(--green)" }}>{fgOpen && !fgInvalid ? "→ " + fgCoeff.toFixed(3) : ""}</span>
                 </button>
                 <div className={"acc-body" + (fgOpen ? " open" : "")}>
                   <div className="g2" style={{ marginBottom: 8 }}>
@@ -540,6 +551,23 @@ export default function RentabilitePage() {
                       </div>
                     </div>
                   </div>
+                  {fgInvalid && (
+                    <div
+                      style={{
+                        marginBottom: 8,
+                        padding: "8px 10px",
+                        background: "var(--red-bg)",
+                        color: "var(--red)",
+                        borderRadius: "var(--radius-sm)",
+                        fontSize: 13,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      ⚠ Vos charges fixes dépassent ou égalent votre CA annuel
+                      estimé — le coefficient ne peut pas être calculé de façon
+                      fiable. Vérifiez vos hypothèses.
+                    </div>
+                  )}
                   <div className="tpl-btns">
                     <button className="tpl-btn" onClick={() => setFG(12000, 55000)}>Artisan solo</button>
                     <button className="tpl-btn" onClick={() => setFG(25000, 110000)}>TPE 2–3 pers.</button>
@@ -596,6 +624,25 @@ export default function RentabilitePage() {
           </div>
         )}
 
+        {fgInvalid && (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: "12px 16px",
+              background: "var(--red-bg)",
+              color: "var(--red)",
+              borderRadius: "var(--radius-sm)",
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: 1.4,
+            }}
+          >
+            ⚠ Vos charges fixes dépassent ou égalent votre CA annuel estimé. Le
+            coefficient de frais généraux ne peut pas être calculé — le prix de
+            revient et le prix de vente conseillé sont indisponibles tant que
+            ces hypothèses ne sont pas corrigées.
+          </div>
+        )}
         <div className="mg4">
           <div className="metric">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -608,9 +655,9 @@ export default function RentabilitePage() {
           <div className="metric">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <div className="ml">Prix de revient</div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--gray3)", background: "var(--gray-bg)", borderRadius: 0, padding: "2px 8px" }}>{ppr.toFixed(1)}%</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--gray3)", background: "var(--gray-bg)", borderRadius: 0, padding: "2px 8px" }}>{fgInvalid ? "—" : ppr.toFixed(1) + "%"}</span>
             </div>
-            <div className="mv">{f(pr, 0)}</div>
+            <div className="mv">{fgInvalid ? "—" : f(pr, 0)}</div>
             <div className="ms">Après frais généraux</div>
           </div>
           <div className="metric">
@@ -618,7 +665,7 @@ export default function RentabilitePage() {
               <div className="ml">{lblPv}</div>
               <span style={{ fontSize: 12, fontWeight: 600, color: "var(--green)", background: "var(--green-light)", borderRadius: 0, padding: "2px 8px" }}>100 %</span>
             </div>
-            <div className="mv" style={{ color: "var(--green)" }}>{f(pv, 0)}</div>
+            <div className="mv" style={{ color: "var(--green)" }}>{fgInvalid && mode === "c" ? "—" : f(pv, 0)}</div>
             <div className="ms">{subPv}</div>
           </div>
           <div className="metric">
