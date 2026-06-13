@@ -2,7 +2,7 @@
 // SOCLE — Moteur Devis — Génération des lignes (calcItems)
 // Porté de ChiffReno v8 (_calcItemsCore : grand switch par lot).
 //
-// Paquet 1 : helpers (px, lsurf, chuted, pxRag, row, hrow, calcItems shell).
+// Paquet 1 : helpers (px, lsurf, chuted, row, hrow, calcItems shell).
 // Le switch _calcItemsCore est complété par paquets 2 → 5 (5 lots à la fois).
 // ============================================================
 
@@ -32,6 +32,7 @@ import type {
   PeintureNature,
   PeintureSegment,
   PeintureSupport,
+  RagreageSegment,
   SegmentBase,
 } from "./types";
 import type { TauxTVA } from "../types";
@@ -86,26 +87,6 @@ export function px(state: EngineState, lotId: LotId, key: string): number {
 /** true si la clé a un prix overridé par l'artisan pour ce lot. */
 export function isMod(state: EngineState, lotId: LotId, key: string): boolean {
   return state.lots[lotId].cp[key] !== undefined;
-}
-
-/** Référence d'épaisseur pour le scaling prix ragréage. */
-const REF_EPA: Record<string, number> = {
-  ragreage_simple: 5,
-  ragreage_fibre: 8,
-};
-
-/** Prix ragréage scalé proportionnellement à l'épaisseur réelle (n'applique pas globalCoeff). */
-export function pxRag(
-  state: EngineState,
-  lotId: LotId,
-  key: string,
-  epa: number
-): number {
-  const custom = state.lots[lotId].cp[key];
-  if (custom !== undefined) return custom;
-  const base = BP[key];
-  if (base === undefined) return 0;
-  return base * (epa / (REF_EPA[key] || 5));
 }
 
 // ─── Surface & chute ─────────────────────────────────────────────────
@@ -591,39 +572,55 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
     }
 
     case "ragreage": {
-      const zones = [1, 2, 3]
-        .filter((n) => o[`z${n}_on`] && Number(o[`z${n}_m2`]) > 0)
-        .map((n) => ({
-          n,
-          m2: Number(o[`z${n}_m2`]) || 0,
-          type: String(o[`z${n}_type`] || "ragreage_simple"),
-          epa: Number(o[`z${n}_epa_mm`]) || 5,
-        }));
-      if (zones.length === 0) return [];
+      // Modèle "segments" (patron carrelage) : une prestation par segment de
+      // o.lignes. Produit = ligne hl DOSÉE À L'ÉPAISSEUR : la quantité est en kg,
+      // 1,6 kg/m²/mm × épaisseur × surface (chute incluse, surface brute), prix
+      // au kg (bp.ragreage_simple / ragreage_fibre, €/kg). Primaire = consommable
+      // au m² net. "libre" = ligne libre. groupId = seg.id.
+      const lignes = Array.isArray(o.lignes)
+        ? (o.lignes as RagreageSegment[])
+        : [];
+      if (lignes.length === 0) return [];
+      const tvaLot = state.lots[lotId].tva ?? state.tvaParDefaut;
+      const chute = Number(o.chute) || 0;
+      // Dose matière — kg/m²/mm INDICATIF (à valider), standard ET fibré.
+      const DOSE_KG_M2_MM = 1.6;
+      const TYPE_KEY: Record<string, string> = {
+        standard: "ragreage_simple",
+        fibre: "ragreage_fibre",
+      };
+      const TYPE_LBL: Record<string, string> = {
+        standard: "Ragréage autonivelant classique",
+        fibre: "Ragréage fibré autonivelant",
+      };
       const items: EngineLigne[] = [];
-      const S_total = zones.reduce((a, z) => a + z.m2, 0);
-      if (o.primaire) items.push(_row("primaire_ragreage", S_total, "Primaire d'accrochage", "m²", "Favorise adhérence ragréage"));
-      const ml_b = Number(o.ml_bandes) || 0;
-      if (o.bandes && ml_b > 0) items.push(_row("bande_resiliente", ml_b, `Bandes résilientes périphériques — ${ml_b} ml`, "ml", "Désolidarisation phonique"));
-      for (const z of zones) {
-        const p = pxRag(state, lotId, z.type, z.epa);
-        const lbl = z.type === "ragreage_fibre" ? "Ragréage fibré autonivelant" : "Ragréage autonivelant classique";
-        // Item construit manuellement pour porter `epa` (utilisé par la liste d'achat).
-        items.push({
-          key: z.type,
-          lotId,
-          qty: z.m2,
-          lbl: `${lbl} — Zone ${z.n}`,
-          unit: "m²",
-          note: `${z.epa} mm — ${z.m2} m²`,
-          p,
-          total: z.m2 * p,
-          hl: true,
-          prixEstFinal: false,
-          afficheFourniture: false, // ragreage = consommable
-          epa: z.epa,
-          tva: state.lots[lotId].tva ?? state.tvaParDefaut,
-        });
+      for (const seg of lignes) {
+        const q = Number(seg.m2) || 0;
+        if (q <= 0) continue;
+        if (seg.type === "libre") {
+          items.push(segmentLibreItem(lotId, seg, tvaLot));
+          continue;
+        }
+        const epa = Number(seg.epa) || 0;
+        if (epa <= 0) continue; // pas d'épaisseur → pas de produit (cas vide)
+        const brut = chuted(q, chute);
+        const kg = Math.ceil(brut * epa * DOSE_KG_M2_MM);
+        const prod = _hrow(
+          TYPE_KEY[seg.type] || "ragreage_simple",
+          kg,
+          `${TYPE_LBL[seg.type] || "Ragréage"} ${epa} mm × ${q} m²`,
+          "kg",
+          `${String(DOSE_KG_M2_MM).replace(".", ",")} kg/m²/mm × ${epa} mm (+${chute}% chute)`
+        );
+        prod.epa = epa; // porté pour la liste d'achat
+        prod.groupId = seg.id;
+        const zoneItems: EngineLigne[] = [prod];
+        if (seg.primaire) {
+          const pr = _row("primaire_ragreage", q, "Primaire d'accrochage", "m²", "Favorise adhérence ragréage");
+          pr.groupId = seg.id;
+          zoneItems.push(pr);
+        }
+        items.push(...zoneItems);
       }
       return items;
     }

@@ -80,7 +80,13 @@ export const BP: Record<string, number> = {
 
   // ─── Ragréage ───
   primaire_ragreage: 0.8, bande_resiliente: 1.2,
-  ragreage_simple: 4.5, ragreage_fibre: 9.6,
+  // ⚠ CHANGEMENT DE SÉMANTIQUE (juin 2026) : ragreage_simple/ragreage_fibre sont
+  // désormais des €/KG (matière), plus des €/m². Le moteur dose le produit à
+  // 1,6 kg/m²/mm × épaisseur × surface (modèle segments). Valeurs INDICATIF — à
+  // valider, calées sur l'ancien déboursé (ex-€/m² ÷ (réf_mm × 1,6)) → zéro dérive :
+  //   ancien ragreage_simple 4,5 €/m² @ réf 5 mm → 4,5 / (5×1,6) = 0,5625 €/kg
+  //   ancien ragreage_fibre  9,6 €/m² @ réf 8 mm → 9,6 / (8×1,6) = 0,75   €/kg
+  ragreage_simple: 0.5625, ragreage_fibre: 0.75,
 
   // ─── Étanchéité ───
   primaire_etanche: 1.5, etanche_liquide: 8.0, bande_etanche: 2.5,

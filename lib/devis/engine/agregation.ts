@@ -31,6 +31,7 @@ import type {
   LotLibre,
   ParquetSegment,
   PeintureSegment,
+  RagreageSegment,
   RemiseMode,
   SegmentBase,
 } from "./types";
@@ -508,6 +509,33 @@ function agregerFaience(state: EngineState, lt: LotTotaux): LigneClient[] {
   });
 }
 
+// ─── Ragréage : étiquetage spécifique (standard / fibré) ─────────────
+const RAGREAGE_EYEBROW: Record<string, string> = {
+  standard: "Ragréage",
+  fibre: "Ragréage fibré",
+};
+
+/** Description client d'un segment ragréage (affichage seul). */
+export function descriptionRagreage(seg: RagreageSegment): string {
+  if (seg.type === "libre") return "";
+  const t = seg.type === "fibre" ? "fibré" : "classique";
+  const epa = Number(seg.epa) || 0;
+  const ep = epa > 0 ? `, épaisseur ${epa} mm` : "";
+  const prim = seg.primaire ? ", primaire d'accrochage" : "";
+  return `Ragréage autonivelant ${t}${ep}${prim}, surface dressée prête à recevoir le revêtement.`;
+}
+
+function agregerRagreage(state: EngineState, lt: LotTotaux): LigneClient[] {
+  return agregerSegments(state, lt, {
+    eyebrow: (s) => RAGREAGE_EYEBROW[s.type] ?? "Ragréage",
+    libelle: (s) =>
+      `Fourniture et pose de ragréage ${
+        s.type === "fibre" ? "fibré" : "autonivelant"
+      }`,
+    describe: (s) => descriptionRagreage(s as RagreageSegment),
+  });
+}
+
 // ─── Élec : agrégateur (lot à points + infrastructure) — DÉTAIL par appareillage ─
 // PAS un lot à segments : infrastructure (déboursé) + points catalogue (prix
 // ferme). UNE ligne client par prestation (qty>0), groupée par catégorie via
@@ -656,6 +684,7 @@ const STRATEGIES: Partial<
   parquet: agregerParquet,
   carrelage: agregerCarrelage,
   faience: agregerFaience,
+  ragreage: agregerRagreage,
   elec: agregerElec,
 };
 

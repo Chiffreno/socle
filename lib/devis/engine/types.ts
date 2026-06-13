@@ -329,6 +329,30 @@ export interface FaienceSegment {
   unit?: string;
 }
 
+// ─── Ragréage : modèle "segments" (o.lignes), patron carrelage ───────
+// UNE seule famille (pas d'onglet). Axes :
+//   • type : standard / fibré (clés BP ragreage_simple / ragreage_fibre) ;
+//   • épaisseur (mm) : champ NUMÉRIQUE libre qui PILOTE la dose produit
+//     (contrairement à la dimension carrelage : ici l'épaisseur reste au calcul) —
+//     quantité produit (kg) = 1,6 kg/m²/mm × épaisseur × surface (chute incluse) ;
+//   • primaire d'accrochage : option oui/non (consommable au m² net).
+// PAS de bandes périphériques (hors périmètre). PAS de plinthes.
+export type RagreageType = "standard" | "fibre";
+export interface RagreageSegment {
+  id: string;
+  /** Type de ragréage, ou "libre". */
+  type: RagreageType | "libre";
+  /** Épaisseur en mm — pilote la dose produit (kg). */
+  epa?: number;
+  /** Primaire d'accrochage (consommable au m²). */
+  primaire?: boolean;
+  m2: number;
+  puOverride?: number;
+  libelleOverride?: string;
+  lbl?: string;
+  unit?: string;
+}
+
 // ─── Base commune à tout segment (cloison, faux-plafond, …) ──────────
 /** Champs partagés par tous les segments — socle du composant de cartes
  *  générique (SegmentCards) et de l'agrégation segments (agregerSegments).

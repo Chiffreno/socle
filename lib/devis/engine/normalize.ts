@@ -120,6 +120,15 @@ function migrateFaienceO(o: Record<string, unknown>): Record<string, unknown> {
   return { lignes: [], chute: 0 };
 }
 
+// ─── Migration ragréage : ancien modèle zones (z1..z3) → o.lignes ────
+// Idem carrelage : lignes vides, lignes libres préservées. L'ancien modèle
+// facturait €/m² scalé par épaisseur ; le nouveau dose le produit au kg → pas
+// de reconstruction fidèle, on repart sur lignes vides. Idempotent.
+function migrateRagreageO(o: Record<string, unknown>): Record<string, unknown> {
+  if (Array.isArray(o.lignes)) return o;
+  return { lignes: [], chute: 0 };
+}
+
 // ─── Migration gammes (suppression du concept, juin 2026) ───────────
 // 1. Le champ legacy `q` ("std"|"mid"|"prm") est purgé de chaque lot (il
 //    n'existe plus dans LotState ; les barèmes sont mono-prix).
@@ -218,6 +227,10 @@ export function normalizeEngine(
       // Migration faïence : ancien modèle zones → modèle segments.
       if (lid === "faience") {
         lots[lid].o = migrateFaienceO(lots[lid].o);
+      }
+      // Migration ragréage : ancien modèle zones → modèle segments.
+      if (lid === "ragreage") {
+        lots[lid].o = migrateRagreageO(lots[lid].o);
       }
       // Migration plombs : remap des overrides cp gammés (X_std → X).
       if (lid === "plombs") {

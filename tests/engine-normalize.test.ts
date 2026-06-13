@@ -156,17 +156,27 @@ describe("normalizeEngine — migrations legacy", () => {
     expect(s.lots.fauxplafond.o.chute).toBe(10);
   });
 
-  it("peinture/parquet/carrelage/faïence : anciens modèles zones → lignes vides", () => {
+  it("peinture/parquet/carrelage/faïence/ragréage : anciens modèles zones → lignes vides", () => {
     const raw = {
       lots: {
         peinture: { on: true, o: { z1_on: true, z1_m2: 30 } },
         parquet: { on: true, o: { z1_on: true, z1_m2: 18 } },
         carrelage: { on: true, o: { z1_on: true, z1_m2: 9 } },
         faience: { on: true, o: { z1_on: true, z1_m2: 6 } },
+        ragreage: {
+          on: true,
+          o: { z1_on: true, z1_m2: 14, z1_type: "ragreage_simple", z1_epa_mm: 8 },
+        },
       },
     };
     const s = normalizeEngine(raw, HEADER);
-    for (const lid of ["peinture", "parquet", "carrelage", "faience"] as const) {
+    for (const lid of [
+      "peinture",
+      "parquet",
+      "carrelage",
+      "faience",
+      "ragreage",
+    ] as const) {
       expect(s.lots[lid].o.lignes).toEqual([]);
     }
   });

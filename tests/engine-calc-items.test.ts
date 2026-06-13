@@ -1,11 +1,11 @@
 // ============================================================
 // SOCLE — Tests — lib/devis/engine/calc-items.ts
 //
-// Couvre les helpers de prix (px, pxRag, lsurf, chuted) et la génération
+// Couvre les helpers de prix (px, lsurf, chuted) et la génération
 // des lignes par lot (segments cloisons/ITI/faux-plafond/peinture/parquet/
-// carrelage/faïence, points démolition/élec, zones ragréage, lots à
-// quantités simples). Les prix attendus sont calculés à partir de BP
-// importé : on teste les FORMULES, pas les valeurs de barème.
+// carrelage/faïence/ragréage, points démolition/élec, lots à quantités
+// simples). Les prix attendus sont calculés à partir de BP importé : on teste
+// les FORMULES, pas les valeurs de barème.
 // ============================================================
 
 import { describe, expect, it } from "vitest";
@@ -16,7 +16,6 @@ import {
   isMod,
   lsurf,
   px,
-  pxRag,
 } from "../lib/devis/engine/calc-items";
 import type {
   CarrelageSegment,
@@ -27,6 +26,7 @@ import type {
   ItiSegment,
   ParquetSegment,
   PeintureSegment,
+  RagreageSegment,
 } from "../lib/devis/engine/types";
 import { makeState } from "./helpers";
 
@@ -65,33 +65,6 @@ describe("px — prix unitaire matériau", () => {
     const state = makeState();
     state.lots.cloisons.cp.ba13_std = 99;
     expect(px(state, "fauxplafond", "ba13_std")).toBe(BP.ba13_std);
-  });
-});
-
-describe("pxRag — prix ragréage scalé par l'épaisseur", () => {
-  it("scale proportionnellement à l'épaisseur de référence (simple : 5 mm)", () => {
-    const state = makeState();
-    expect(pxRag(state, "ragreage", "ragreage_simple", 5)).toBe(
-      BP.ragreage_simple
-    );
-    expect(pxRag(state, "ragreage", "ragreage_simple", 10)).toBeCloseTo(
-      BP.ragreage_simple * 2,
-      10
-    );
-  });
-
-  it("référence fibré : 8 mm", () => {
-    const state = makeState();
-    expect(pxRag(state, "ragreage", "ragreage_fibre", 8)).toBeCloseTo(
-      BP.ragreage_fibre,
-      10
-    );
-  });
-
-  it("l'override artisan court-circuite le scaling", () => {
-    const state = makeState();
-    state.lots.ragreage.cp.ragreage_simple = 7;
-    expect(pxRag(state, "ragreage", "ragreage_simple", 10)).toBe(7);
   });
 });
 
@@ -531,32 +504,89 @@ describe("calcItems — parquet / carrelage / faïence (modèle segments)", () =
   });
 });
 
-describe("calcItems — ragréage (zones)", () => {
-  it("zone simple 12 m² / 10 mm : prix scalé, epa porté par la ligne", () => {
+describe("calcItems — ragréage (modèle segments, dose à l'épaisseur)", () => {
+  it("standard 12 m² / 10 mm / primaire : produit dosé au kg, primaire au m²", () => {
     const state = makeState();
     state.lots.ragreage.on = true;
     Object.assign(state.lots.ragreage.o, {
-      z1_on: true,
-      z1_m2: 12,
-      z1_type: "ragreage_simple",
-      z1_epa_mm: 10,
-      primaire: true,
-      bandes: true,
-      ml_bandes: 8,
+      chute: 0,
+      lignes: [
+        {
+          id: "r1",
+          type: "standard",
+          epa: 10,
+          primaire: true,
+          m2: 12,
+        } satisfies RagreageSegment,
+      ],
     });
     const items = calcItems(state, "ragreage");
     const rag = ligne(items, "ragreage_simple");
-    expect(rag.qty).toBe(12);
-    expect(rag.p).toBeCloseTo(BP.ragreage_simple * 2, 10); // 10 mm vs réf 5 mm
+    // dose 1,6 kg/m²/mm × 10 mm × 12 m² = 192 kg, prix au kg
+    expect(rag.qty).toBe(192);
+    expect(rag.unit).toBe("kg");
+    expect(rag.p).toBeCloseTo(BP.ragreage_simple, 10);
     expect(rag.epa).toBe(10);
-    expect(ligne(items, "primaire_ragreage").qty).toBe(12);
-    expect(ligne(items, "bande_resiliente").qty).toBe(8);
+    expect(rag.groupId).toBe("r1");
+    expect(ligne(items, "primaire_ragreage").qty).toBe(12); // m² net
   });
 
-  it("aucune zone active → aucune ligne (même si primaire coché)", () => {
+  it("fibré : clé BP distincte, même dose 1,6", () => {
     const state = makeState();
     state.lots.ragreage.on = true;
-    Object.assign(state.lots.ragreage.o, { primaire: true });
+    Object.assign(state.lots.ragreage.o, {
+      chute: 0,
+      lignes: [
+        { id: "r2", type: "fibre", epa: 8, m2: 10 } satisfies RagreageSegment,
+      ],
+    });
+    const rag = ligne(calcItems(state, "ragreage"), "ragreage_fibre");
+    expect(rag.qty).toBe(128); // 1,6 × 8 × 10
+    expect(rag.p).toBeCloseTo(BP.ragreage_fibre, 10);
+  });
+
+  it("la chute gonfle le kg produit, le primaire reste au m² net", () => {
+    const state = makeState();
+    state.lots.ragreage.on = true;
+    Object.assign(state.lots.ragreage.o, {
+      chute: 10,
+      lignes: [
+        {
+          id: "r3",
+          type: "standard",
+          epa: 5,
+          primaire: true,
+          m2: 10,
+        } satisfies RagreageSegment,
+      ],
+    });
+    const items = calcItems(state, "ragreage");
+    // brut = 10 × 1,1 = 11 → kg = ceil(11 × 5 × 1,6) = 88
+    expect(ligne(items, "ragreage_simple").qty).toBe(88);
+    expect(ligne(items, "primaire_ragreage").qty).toBe(10); // net, sans chute
+  });
+
+  it("épaisseur 0 → aucune ligne (segment ignoré, pas de primaire orphelin)", () => {
+    const state = makeState();
+    state.lots.ragreage.on = true;
+    Object.assign(state.lots.ragreage.o, {
+      lignes: [
+        {
+          id: "r4",
+          type: "standard",
+          epa: 0,
+          primaire: true,
+          m2: 12,
+        } satisfies RagreageSegment,
+      ],
+    });
+    expect(calcItems(state, "ragreage")).toHaveLength(0);
+  });
+
+  it("aucun segment → aucune ligne", () => {
+    const state = makeState();
+    state.lots.ragreage.on = true;
+    Object.assign(state.lots.ragreage.o, { lignes: [] });
     expect(calcItems(state, "ragreage")).toHaveLength(0);
   });
 });

@@ -43,6 +43,7 @@ import FauxPlafondConfigBox from "./configurateurs/FauxPlafondConfigBox";
 import ItiConfigBox from "./configurateurs/ItiConfigBox";
 import ParquetConfigBox from "./configurateurs/ParquetConfigBox";
 import PeintureConfigBox from "./configurateurs/PeintureConfigBox";
+import RagreageConfigBox from "./configurateurs/RagreageConfigBox";
 import ElecConfigBox from "./configurateurs/ElecConfigBox";
 import SegmentCards from "./configurateurs/SegmentCards";
 import PointsLignesView from "./configurateurs/PointsLignesView";
@@ -91,6 +92,7 @@ const SEGMENT_LOTS: Partial<
   parquet: { ConfigBox: ParquetConfigBox },
   carrelage: { ConfigBox: CarrelageConfigBox },
   faience: { ConfigBox: FaienceConfigBox },
+  ragreage: { ConfigBox: RagreageConfigBox },
 };
 
 type SaveStatus = "idle" | "saving" | "saved" | "dirty";
