@@ -78,18 +78,17 @@ Object.assign(state.lots.cloisons.o, {
   chute: 5,
 });
 
-// LOT 3 — ITI (consommable, déboursé, TVA 5,5% rénovation énergétique)
+// LOT 3 — ITI (modèle segments, déboursé, TVA 5,5% rénovation énergétique)
 state.lots.iti.on = true;
 state.lots.iti.m = 25;
 state.lots.iti.tempsMoHeures = 8;
 state.lots.iti.tva = 5.5; // OVERRIDE TVA réduite
-Object.assign(state.lots.iti.o, {
-  m2: 30,
-  epa: "100",
-  iso: "gr32",
-  membrane: false,
-  parement: "ba13_std",
-});
+state.lots.iti.o = {
+  lignes: [
+    { id: "iseg1", type: "lv", epa: "100", membrane: false, parement: "ba13_std", m2: 30 },
+  ],
+  chute: 0,
+};
 
 // LOT 4 — CARRELAGE (produit-fini, déboursé)
 state.lots.carrelage.on = true;
