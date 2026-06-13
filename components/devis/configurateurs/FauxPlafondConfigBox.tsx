@@ -1,66 +1,66 @@
 "use client";
 
 // ============================================================
-// SOCLE — Box de configuration CLOISONS (patron segments / vue globale)
+// SOCLE — Box de configuration FAUX-PLAFOND (patron segments)
 //
-// Box d'AJOUT (pills Type/Ossature/Isolant/Peaux + doublés + surface + chute
-// + « Ajouter au devis » avec cumul). Collapsable, en-tête VERT. La LISTE des
-// segments vit dans la vue devis (SegmentCards). Implémente le contrat
-// uniforme SegmentConfigBoxProps (lu/branché par l'éditeur via le registre).
+// Calque du configurateur cloisons. Pills Plaque / Isolant / Peaux + réglages
+// niveau lot (entraxe, bandes à joint, chute) + surface + « Ajouter au devis »
+// (cumul géré côté éditeur). Pas de paramètre suspente (toujours à ressort).
+// Implémente le contrat uniforme SegmentConfigBoxProps.
 // ============================================================
 
 import { useState } from "react";
 import type {
-  CloisonIso,
-  CloisonOss,
-  CloisonType,
+  FauxPlafondIso,
+  FauxPlafondType,
 } from "@/lib/devis/engine/types";
 import ConfigPills from "./ConfigPills";
 import type { SegmentConfigBoxProps } from "./segment-config";
 
 interface DraftCfg {
-  type: Exclude<CloisonType, "libre">;
-  oss: CloisonOss;
-  isolant: CloisonIso;
-  peaux: "2" | "4";
-  dbl: boolean;
+  type: Exclude<FauxPlafondType, "libre">;
+  isolant: FauxPlafondIso;
+  peaux: "1" | "2";
   m2: number;
 }
 
 const TYPES: ReadonlyArray<{ v: DraftCfg["type"]; l: string }> = [
   { v: "std", l: "Standard" },
   { v: "hydro", l: "Hydrofuge" },
-  { v: "hd", l: "Haute dureté" },
   { v: "feu", l: "Coupe-feu" },
+  { v: "phon", l: "Phonique" },
 ];
-const OSS: ReadonlyArray<{ v: CloisonOss; l: string }> = [
-  { v: "m48", l: "M48" },
-  { v: "m70", l: "M70" },
-  { v: "m90", l: "M90" },
-];
-const ISO: ReadonlyArray<{ v: CloisonIso; l: string }> = [
+const ISO: ReadonlyArray<{ v: FauxPlafondIso; l: string }> = [
   { v: "non", l: "Aucun" },
-  { v: "lv", l: "Laine verre" },
-  { v: "lr", l: "Laine roche" },
+  { v: "lv45", l: "LV 45" },
+  { v: "lr45", l: "LR 45" },
+  { v: "lv100", l: "LV 100" },
+  { v: "lr100", l: "LR 100" },
+  { v: "ouate", l: "Ouate" },
 ];
-const PEAUX: ReadonlyArray<{ v: "2" | "4"; l: string }> = [
-  { v: "2", l: "Simple" },
-  { v: "4", l: "Double" },
+const PEAUX: ReadonlyArray<{ v: "1" | "2"; l: string }> = [
+  { v: "1", l: "Simple" },
+  { v: "2", l: "Double" },
 ];
-const OSS_EPA: Record<CloisonOss, string> = { m48: "45", m70: "70", m90: "90" };
+const ENTRAXE: ReadonlyArray<{ v: "0.50" | "0.60"; l: string }> = [
+  { v: "0.60", l: "0,60 m" },
+  { v: "0.50", l: "0,50 m" },
+];
 
-export default function CloisonsConfigBox({
+export default function FauxPlafondConfigBox({
   o,
   onAdd,
   onPatchO,
 }: SegmentConfigBoxProps) {
   const chute = Number(o.chute) || 0;
+  const entraxe = (String(o.entraxe || "0.60") === "0.50" ? "0.50" : "0.60") as
+    | "0.50"
+    | "0.60";
+  const bandes = !!o.bandes;
   const [draft, setDraft] = useState<DraftCfg>({
     type: "std",
-    oss: "m48",
     isolant: "non",
-    peaux: "2",
-    dbl: false,
+    peaux: "1",
     m2: 0,
   });
 
@@ -73,26 +73,20 @@ export default function CloisonsConfigBox({
   return (
     <div className="dee-cfg-body">
           <div className="dee-cfg-box-grid">
-            <ConfigPills label="Type" options={TYPES} value={draft.type} onChange={(v) => setDraft((d) => ({ ...d, type: v }))} />
-            <ConfigPills label="Ossature" options={OSS} value={draft.oss} onChange={(v) => setDraft((d) => ({ ...d, oss: v }))} />
-            <ConfigPills
-              label="Isolant"
-              hint={`épaisseur ${OSS_EPA[draft.oss]}mm`}
-              options={ISO}
-              value={draft.isolant}
-              onChange={(v) => setDraft((d) => ({ ...d, isolant: v }))}
-            />
+            <ConfigPills label="Plaque" options={TYPES} value={draft.type} onChange={(v) => setDraft((d) => ({ ...d, type: v }))} />
+            <ConfigPills label="Isolant" options={ISO} value={draft.isolant} onChange={(v) => setDraft((d) => ({ ...d, isolant: v }))} />
             <ConfigPills label="Peaux" options={PEAUX} value={draft.peaux} onChange={(v) => setDraft((d) => ({ ...d, peaux: v }))} />
+            <ConfigPills label="Entraxe fourrures" options={ENTRAXE} value={entraxe} onChange={(v) => onPatchO({ entraxe: v })} />
           </div>
           <div className="dee-cfg-box-action">
             <label className="dee-cfg-check">
               <input
                 type="checkbox"
-                checked={draft.dbl}
-                onChange={(e) => setDraft((d) => ({ ...d, dbl: e.target.checked }))}
+                checked={bandes}
+                onChange={(e) => onPatchO({ bandes: e.target.checked })}
               />
               <span className="dee-cfg-check-box" aria-hidden="true" />
-              Montants doublés
+              Bandes à joint
             </label>
             <span className="dee-cfg-surf">
               <input
@@ -114,7 +108,7 @@ export default function CloisonsConfigBox({
                 min={0}
                 step={1}
                 value={chute || ""}
-                placeholder="5"
+                placeholder="0"
                 onChange={(e) => onPatchO({ chute: Number(e.target.value) || 0 })}
               />
               <span className="dee-cfg-unit">%</span>

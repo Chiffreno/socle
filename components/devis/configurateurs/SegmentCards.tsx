@@ -1,36 +1,31 @@
 "use client";
 
 // ============================================================
-// SOCLE — Lignes cloisons en CARTES-PRESTATION (vue globale, style Héméa)
+// SOCLE — SegmentCards : lignes d'un lot à SEGMENTS en cartes-prestation
 //
-// Chaque prestation = carte blanche (ombre douce, radius) : eyebrow catégorie
-// (fond orange pâle) + numérotation "1.1" + titre + description client + pied
-// (badge TVA, qté, prix unitaire, total). Crayon = éditer (titre/qté/PU inline),
-// corbeille = supprimer. Aucun détail interne affiché. + ligne libre.
+// Généralisation de l'ancien CloisonsLignes → composant lot-agnostique pour
+// tout lot à segments (cloisons, faux-plafond, ITI…). Chaque prestation = carte
+// blanche : eyebrow (catégorie, portée par la LigneClient), numérotation, titre
+// (libelleOverride / lbl libre), description client générée (auto, non éditable),
+// pied (TVA, qté, PU, total). Crayon = éditer (titre/qté/PU inline), corbeille =
+// supprimer. + ligne libre. Ne touche QUE les champs communs du segment.
 // ============================================================
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatEuro } from "@/lib/devis/format";
-import type { CloisonSegment } from "@/lib/devis/engine/types";
+import type { SegmentBase } from "@/lib/devis/engine/types";
 import type { LigneClient } from "@/lib/devis/engine/agregation";
 
 interface Props {
   lotIndex: number;
-  segments: CloisonSegment[];
+  segments: SegmentBase[];
   lignesClient: LigneClient[];
-  onUpdate: (id: string, patch: Partial<CloisonSegment>) => void;
+  onUpdate: (id: string, patch: Partial<SegmentBase>) => void;
   onRemove: (id: string) => void;
   onAddLibre: () => void;
 }
 
-const EYEBROW: Record<string, string> = {
-  std: "BA13 standard",
-  hydro: "BA13 hydrofuge",
-  hd: "BA13 haute dureté",
-  feu: "BA13 coupe-feu",
-};
-
-export default function CloisonsLignes({
+export default function SegmentCards({
   lotIndex,
   segments,
   lignesClient,
@@ -40,6 +35,30 @@ export default function CloisonsLignes({
 }: Props) {
   const segById = new Map(segments.map((s) => [s.id, s]));
   const [editId, setEditId] = useState<string | null>(null);
+  // Confirmation INLINE de suppression (anti-accident, pas de modale). 1 seule
+  // ligne en attente à la fois ; auto-réarmement après ~3 s sans 2e clic.
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    },
+    []
+  );
+  function clearConfirm() {
+    if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    setConfirmId(null);
+  }
+  function handleDelete(id: string) {
+    if (confirmId === id) {
+      clearConfirm();
+      onRemove(id); // appel existant inchangé
+    } else {
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+      setConfirmId(id);
+      confirmTimer.current = setTimeout(() => setConfirmId(null), 3000);
+    }
+  }
 
   return (
     <div className="dee-pcs">
@@ -48,7 +67,14 @@ export default function CloisonsLignes({
         if (!seg) return null;
         const isLibre = seg.type === "libre";
         const editing = editId === seg.id;
-        const eyebrow = isLibre ? "Ligne libre" : EYEBROW[seg.type] ?? "Cloison";
+        // Override actif (segments NON-libre uniquement) : prix surchargé ou
+        // libellé renommé. Pour un segment `libre`, le prix/libellé SONT le
+        // contenu (pas un override d'une baseline) → ni badge ni reset.
+        const overridden =
+          !isLibre &&
+          (typeof seg.puOverride === "number" ||
+            !!seg.libelleOverride?.trim());
+        const eyebrow = lc.categorie || (isLibre ? "Ligne libre" : "Prestation");
         return (
           <div className={`dee-pc${editing ? " is-editing" : ""}`} key={seg.id}>
             <div className="dee-pc-eyebrow">{eyebrow}</div>
@@ -60,9 +86,7 @@ export default function CloisonsLignes({
                 {editing ? (
                   <input
                     className="dee-pc-title-input"
-                    value={
-                      isLibre ? seg.lbl ?? "" : seg.libelleOverride ?? ""
-                    }
+                    value={isLibre ? seg.lbl ?? "" : seg.libelleOverride ?? ""}
                     placeholder={
                       isLibre ? "Libellé de la prestation" : lc.libelleTechnique
                     }
@@ -76,13 +100,21 @@ export default function CloisonsLignes({
                     }
                   />
                 ) : (
-                  <span className="dee-pc-title">{lc.libelleCommercial}</span>
+                  <span className="dee-pc-title">
+                    {lc.libelleCommercial}
+                    {overridden && (
+                      <span className="dee-pc-modif">modifié</span>
+                    )}
+                  </span>
                 )}
                 <span className="dee-pc-actions">
                   <button
                     type="button"
                     className={`dee-pc-act${editing ? " is-on" : ""}`}
-                    onClick={() => setEditId(editing ? null : seg.id)}
+                    onClick={() => {
+                      clearConfirm();
+                      setEditId(editing ? null : seg.id);
+                    }}
                     title={editing ? "Terminer" : "Éditer"}
                   >
                     <i
@@ -92,11 +124,20 @@ export default function CloisonsLignes({
                   </button>
                   <button
                     type="button"
-                    className="dee-pc-act is-del"
-                    onClick={() => onRemove(seg.id)}
-                    title="Supprimer"
+                    className={`dee-pc-act is-del${
+                      confirmId === seg.id ? " is-confirm" : ""
+                    }`}
+                    onClick={() => handleDelete(seg.id)}
+                    title={
+                      confirmId === seg.id
+                        ? "Confirmer la suppression"
+                        : "Supprimer"
+                    }
                   >
                     <i className="ti ti-trash" aria-hidden="true" />
+                    {confirmId === seg.id && (
+                      <span className="dee-pc-act-confirm">Supprimer&nbsp;?</span>
+                    )}
                   </button>
                 </span>
               </div>
@@ -142,9 +183,25 @@ export default function CloisonsLignes({
                       }
                     />
                     <span className="dee-pc-edit-u">
-                      {isLibre ? "€" : "€/m²"}
+                      {isLibre ? "€" : `€/${lc.unit}`}
                     </span>
                   </label>
+                  {overridden && (
+                    <button
+                      type="button"
+                      className="dee-pc-reset"
+                      onClick={() =>
+                        onUpdate(seg.id, {
+                          puOverride: undefined,
+                          libelleOverride: undefined,
+                        })
+                      }
+                      title="Revenir au prix et au libellé générés"
+                    >
+                      <i className="ti ti-rotate-2" aria-hidden="true" />{" "}
+                      Réinitialiser
+                    </button>
+                  )}
                 </div>
               )}
 
