@@ -1,0 +1,84 @@
+/* ── SignaturePad — DA SOCLE (langage visuel mai 2026) ── */
+.sigpad {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.sigpad-label {
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.sigpad-frame {
+  position: relative;
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* Ligne de base discrète (sous le canvas transparent). */
+.sigpad-baseline {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 30px;
+  border-bottom: 1px solid var(--gray-line-2);
+  z-index: 0;
+}
+
+.sigpad-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--ink-3);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sigpad-canvas {
+  display: block;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  /* Empêche le scroll/zoom pendant la signature au doigt (piège mobile). */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  cursor: crosshair;
+}
+
+.sigpad-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sigpad-clear {
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--ink-2);
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.sigpad-clear:hover:not(:disabled) {
+  border-color: var(--gray-line-2);
+  color: var(--black);
+}
+.sigpad-clear:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

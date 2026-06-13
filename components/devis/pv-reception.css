@@ -1,0 +1,798 @@
+/* ── PV de réception — éditeur terrain (mobile-first) ── */
+.pv-tool {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px 16px 56px;
+  font-family: var(--ff);
+  color: var(--black);
+}
+
+.pv-loading {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 14px;
+}
+
+/* ── Retour ── */
+.pv-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-2);
+  text-decoration: none;
+  margin-bottom: 16px;
+}
+.pv-back:hover {
+  color: var(--black);
+}
+.pv-back .ti {
+  font-size: 16px;
+}
+
+/* ── En-tête ── */
+.pv-head {
+  margin-bottom: 24px;
+}
+.pv-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+.pv-title {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+.pv-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pv-meta-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.pv-meta-row .ti {
+  font-size: 15px;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+/* ── Sections ── */
+.pv-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.pv-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+  margin: 0;
+}
+.pv-count {
+  font-family: var(--num);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+  background: var(--green-light);
+  border: 1px solid var(--green-b);
+  border-radius: 999px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pv-notice {
+  padding: 20px 16px;
+  background: var(--fill);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+/* ── Indicateur de progression (discret) ── */
+.pv-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.pv-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--fill);
+  border: 1px solid var(--gray-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pv-progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+.pv-progress-txt {
+  font-family: var(--num);
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ── Cards de lots ── */
+.pv-lot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pv-lot-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease;
+}
+/* Accent d'état — DÉRIVÉ du PVVerdict (classe v-<verdict>), source unique. */
+.pv-lot-card.v-valide {
+  border-color: var(--green-b);
+}
+.pv-lot-card.v-reserve {
+  border-color: var(--orange-b);
+}
+.pv-lot-card.v-refus {
+  border-color: var(--red-b);
+}
+
+.pv-lot-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.pv-lot-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: var(--fill);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+}
+.pv-lot-ic .ti {
+  font-size: 20px;
+}
+.pv-lot-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.pv-lot-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--black);
+}
+.pv-lot-sub {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.pv-lot-todo {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  background: var(--fill);
+  border: 1px solid var(--gray-line);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+/* ── Boutons de verdict ── */
+.pv-verdicts {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 0 14px 12px;
+}
+.pv-vbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 6px 4px;
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius-sm);
+  font-family: var(--ff);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.15;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.pv-vbtn .ti {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.pv-vbtn-valide:hover:not(.is-active) {
+  border-color: var(--green-b);
+  color: var(--green-dark);
+}
+.pv-vbtn-reserve:hover:not(.is-active) {
+  border-color: var(--orange-b);
+  color: var(--orange);
+}
+.pv-vbtn-refus:hover:not(.is-active) {
+  border-color: var(--red-b);
+  color: var(--red);
+}
+.pv-vbtn.is-active.pv-vbtn-valide {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.pv-vbtn.is-active.pv-vbtn-reserve {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+}
+.pv-vbtn.is-active.pv-vbtn-refus {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+/* ── Réserves d'un lot (D3) ── */
+.pv-reserves {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 14px 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-line);
+}
+.pv-reserve {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--fill-2);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius-sm);
+}
+.pv-reserve-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pv-reserve-num {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+.pv-reserve-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+.pv-reserve-del:hover {
+  color: var(--red);
+  background: var(--red-bg);
+}
+.pv-reserve-del .ti {
+  font-size: 18px;
+}
+
+.pv-reserve-text {
+  width: 100%;
+  min-height: 56px;
+  max-height: 220px;
+  padding: 9px 11px;
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius-sm);
+  font-family: var(--ff);
+  font-size: 14px;
+  color: var(--black);
+  resize: vertical;
+  line-height: 1.4;
+}
+.pv-reserve-text:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-light);
+}
+.pv-reserve-text::placeholder {
+  color: var(--ink-3);
+}
+
+/* ── Photos : grille compacte de miniatures ── */
+.pv-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.pv-thumb {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--fill);
+  border: 1px solid var(--gray-line);
+  flex-shrink: 0;
+}
+.pv-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pv-thumb-loading,
+.pv-thumb-broken {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--ink-3);
+  font-size: 20px;
+}
+.pv-thumb-del {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: rgba(10, 10, 10, 0.62);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+}
+.pv-thumb-del .ti {
+  font-size: 14px;
+}
+
+.pv-add-photo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 64px;
+  height: 64px;
+  padding: 4px;
+  background: var(--white);
+  border: 1px dashed var(--gray-line-2);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  font-family: var(--ff);
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.1;
+  text-align: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.12s, color 0.12s;
+}
+.pv-add-photo:hover:not(:disabled) {
+  border-color: var(--green-b);
+  color: var(--green-dark);
+}
+.pv-add-photo:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.pv-add-photo .ti {
+  font-size: 18px;
+}
+.pv-file-input {
+  display: none;
+}
+.pv-photo-err {
+  font-size: 12px;
+  color: var(--red);
+}
+
+.pv-add-reserve {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 14px;
+  background: var(--white);
+  border: 1px dashed var(--gray-line-2);
+  border-radius: var(--radius-sm);
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+.pv-add-reserve:hover {
+  border-color: var(--green-b);
+  color: var(--green-dark);
+  background: var(--green-light);
+}
+.pv-add-reserve .ti {
+  font-size: 16px;
+}
+
+/* Spinner (compression/chargement). */
+.pv-spin {
+  animation: pv-spin 0.8s linear infinite;
+}
+@keyframes pv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   D3.5 — Navigation maître-détail responsive.
+   Base = mobile (mono-colonne) : le détail REMPLACE le sommaire quand un
+   lot est ouvert (.has-selection). Desktop (≥900px, plus bas) : deux
+   colonnes côte à côte. Un seul markup, le CSS décide.
+   ════════════════════════════════════════════════════════════════════ */
+.pv-summary {
+  display: block;
+}
+.pv-detail-col {
+  display: none;
+}
+.pv-board.has-selection .pv-summary {
+  display: none;
+}
+.pv-board.has-selection .pv-detail-col {
+  display: block;
+}
+
+/* ── Sommaire ── */
+.pv-sum-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.pv-sumlist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pv-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.pv-row:hover {
+  border-color: var(--green-b);
+}
+.pv-row.is-active {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+.pv-row-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  background: var(--fill);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+}
+.pv-row-ic .ti {
+  font-size: 18px;
+}
+.pv-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.pv-row-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pv-row-sub {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* ── Pastilles d'état (sommaire) ── */
+.pv-pill {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--gray-line);
+  background: var(--fill);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.pv-pill.v-valide {
+  color: var(--green-dark);
+  background: var(--green-light);
+  border-color: var(--green-b);
+}
+.pv-pill.v-reserve {
+  color: var(--orange);
+  background: var(--orange-bg);
+  border-color: var(--orange-b);
+}
+.pv-pill.v-refus {
+  color: var(--red);
+  background: var(--red-bg);
+  border-color: var(--red-b);
+}
+
+/* ── En-tête du détail ── */
+.pv-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.pv-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  font-family: var(--ff);
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.pv-detail-back:hover {
+  color: var(--black);
+}
+.pv-detail-back .ti {
+  font-size: 16px;
+}
+.pv-detail-pos {
+  flex: 1;
+  font-family: var(--num);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.pv-detail-nav {
+  display: flex;
+  gap: 6px;
+}
+.pv-detail-nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+.pv-detail-nav button:hover:not(:disabled) {
+  border-color: var(--green-b);
+  color: var(--green-dark);
+}
+.pv-detail-nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pv-detail-nav .ti {
+  font-size: 18px;
+}
+.pv-detail-empty {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 14px;
+  border: 1px dashed var(--gray-line-2);
+  border-radius: var(--radius);
+}
+
+/* ════════════════════ DESKTOP (≥900px) : maître-détail ════════════════════ */
+@media (min-width: 900px) {
+  .pv-tool {
+    max-width: 1100px;
+    padding: 28px 32px 64px;
+  }
+  .pv-board {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+  /* Les deux colonnes toujours visibles (override des règles mobile). */
+  .pv-summary,
+  .pv-board.has-selection .pv-summary {
+    display: block;
+    position: sticky;
+    top: 24px;
+  }
+  .pv-detail-col,
+  .pv-board.has-selection .pv-detail-col {
+    display: block;
+  }
+  /* Sommaire déjà visible → le retour n'a pas de sens sur desktop. */
+  .pv-detail-back {
+    display: none;
+  }
+  /* Un peu plus d'air dans le détail. */
+  .pv-detail .pv-lot-card {
+    border-radius: var(--radius);
+  }
+}
+
+/* ── Sélecteur de lots (cas B) ── */
+.pv-selector-intro {
+  font-size: 14px;
+  color: var(--ink-2);
+  margin-bottom: 16px;
+}
+.pv-pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.pv-pick-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.pv-pick-card:hover {
+  border-color: var(--green-b);
+}
+.pv-pick-card.is-selected {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+.pv-pick-card.is-selected .pv-lot-ic {
+  border-color: var(--green-b);
+  color: var(--green-dark);
+}
+.pv-pick-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--gray-line-2);
+  border-radius: 50%;
+  color: #fff;
+}
+.pv-pick-card.is-selected .pv-pick-check {
+  background: var(--green);
+  border-color: var(--green);
+}
+.pv-pick-check .ti {
+  font-size: 15px;
+}
+
+/* ── Bouton primaire ── */
+.pv-start-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 18px;
+  background: var(--green);
+  color: #fff;
+  border: 1px solid var(--green);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--ff);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.pv-start-btn:hover:not(:disabled) {
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+}
+.pv-start-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Chantier introuvable ── */
+.pv-empty {
+  text-align: center;
+  padding: 56px 16px;
+}
+.pv-empty-ic {
+  font-size: 40px;
+  color: var(--gray-line-2);
+}
+.pv-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 12px;
+}
+.pv-empty-sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
