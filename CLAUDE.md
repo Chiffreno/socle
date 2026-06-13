@@ -4,25 +4,55 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-**Estimateur BTP** is a French construction materials cost estimator (BTP = Bâtiment et Travaux Publics). It estimates supply costs (fournitures HT) for renovation projects across 15 trade sections (lots). The current production version is `estimateur_btp_v8_39.html`.
+**SOCLE** is a French web tool suite for construction (BTP) entrepreneurs who are starting out. It covers the artisan lifecycle: business launch → price building → quotes/invoicing → end of site (acceptance, DTU). Former name: **ChiffReno** (some legacy files still use it).
 
-## File location
+The product is now a **Next.js 15 / React 19 / TypeScript** application — that migration is **done and is the core of the product today**. Its most developed module is the **Devis** (quotes): a full quoting tool built on a pricing engine ported from the historical estimateur (14 trade sections / lots — the étanchéité lot was removed in June 2026 and folded into the carrelage/faïence lots). The other tools (hourly-rate simulator, first-year forecast, site profitability, decennial-insurance simulator, PV de réception, CGV, checklist, DTU library) now exist as Next.js pages — some rewritten natively, some still embedding their original HTML prototype via `LegacyTool` (see below).
 
-Versions are stored in `/Users/benjamingomes/Documents/CHIFFRENO/VERSIONS/`.
+The original **Estimateur BTP** (materials cost estimator, ~15 lots) survives as a standalone HTML file at the repo root and is embedded in the app at `/chantier/materiaux` via `LegacyTool`. It is the ancestor of the Next.js pricing engine.
+
+See `ARCHITECTURE.md` for the full architecture of the Next.js app (modules, data flow, sensitive zones) and `ANALYSE_OUTILS_SOCLE.md` for a tool-by-tool breakdown.
+
+## File location & repo state
+
+This repo (`SOCLE/SOCLE`) mixes three layers:
+
+- **The Next.js app (primary, most mature)**: `app/` (App Router pages), `components/` (React UI), `lib/` (all business logic — the pricing engine lives in `lib/devis/engine/`). This is where active development happens. Config: `package.json`, `tsconfig.json`, `next.config.ts`. Tests: `tests/` (Vitest). See `ARCHITECTURE.md`.
+- **Legacy HTML tools**: `estimateur_btp_v8_65_1.html` (latest) and `estimateur_btp_v8_64.html` at the root — standalone HTML, still embedded in the app for the materials estimator. The `_legacy/` folder holds the source HTML prototypes (landing, dashboard, hourly rate, forecast, profitability, decennial, acceptance PV, CGV, checklist, plus an older estimateur copy `chiffrage matériaux.html`); five Next.js pages currently embed these via `LegacyTool` (dashboard, prévisionnel, décennale, PV réception, prix matériaux).
+- **Migration artifacts**: `lib/devis/schema.sql` (target Postgres schema) and the async repository interface anticipate a later move from localStorage to Supabase — not started.
+
+The current reference version of the standalone estimateur is **`estimateur_btp_v8_65_1.html`**.
 
 ## Running the app
 
-No build step, no server, no dependencies. Open the HTML file directly in a browser:
+**The Next.js app** (the product):
 
 ```
-open /Users/benjamingomes/Documents/CHIFFRENO/VERSIONS/estimateur_btp_v8_39.html
+npm install
+npm run dev        # http://localhost:3000
+npm test           # Vitest suite (tests/)
+npx tsc --noEmit   # type-check (preferred over `next build` in offline envs:
+                   # the build fetches Google Fonts over the network)
 ```
 
-Reload the page after edits. State is persisted automatically to `localStorage` under key `btp_v8d`.
+App state is persisted to the browser's `localStorage` (keys `socle_*`) and IndexedDB (PV photos). No server, no database, no account — 100% local for now.
 
-## Architecture
+**The standalone legacy estimateur** (`estimateur_btp_v8_65_1.html`): no build step, open the file directly in a browser:
 
-The entire app is a **single self-contained HTML file** (~1300 lines) with embedded CSS and JavaScript. No framework, no npm, no modules.
+```
+open /Users/benjamingomes/Documents/SOCLE/SOCLE/estimateur_btp_v8_65_1.html
+```
+
+Reload the page after edits. Its state is persisted to `localStorage` under key `btp_v8d`.
+
+## Architecture of the Next.js app
+
+**For the current product (the Next.js app), see `ARCHITECTURE.md`** — it covers the module map, the saisie → calcul → agrégation → affichage → PDF data flow, the architecture choices, and the sensitive zones. That is the entry point for understanding the live codebase.
+
+The rest of this section documents the **legacy standalone estimateur HTML** (`estimateur_btp_v8_65_1.html`) — the ancestor of the Next.js pricing engine, still embedded at `/chantier/materiaux`. Useful when touching that file or tracing where the engine's pricing logic came from.
+
+## Architecture of the legacy estimateur HTML
+
+This tool is a **single self-contained HTML file** (~1300 lines) with embedded CSS and JavaScript. No framework, no npm, no modules.
 
 ### State model
 

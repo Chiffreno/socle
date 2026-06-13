@@ -366,6 +366,6 @@ export interface EngineState {
   globalCoeff: number;
   lots: Record<LotId, LotState>;
   /** Lots libres (titre + lignes manuelles, prix ferme). Additif : n'impacte
-   *  pas le calcul des 15 lots moteur. Défaut []. */
+   *  pas le calcul des 14 lots moteur. Défaut []. */
   lotsLibres: LotLibre[];
 }

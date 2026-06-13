@@ -5,7 +5,7 @@
 //
 // Shell 3 colonnes autour du moteur engine (P1+P2). Aucun configurateur
 // détaillé par lot (ça vient en P4) : ici on rend :
-//   - Colonne gauche : 15 lots cliquables (clic = active+sélectionne).
+//   - Colonne gauche : 14 lots cliquables (clic = active+sélectionne).
 //   - Colonne centre : réglages communs du lot courant (surface/marge/MO/
 //     coutRevientPoints/TVA) + placeholder P4 + <details> debug
 //     listant les lignes auto-générées par calcItems.
@@ -214,7 +214,7 @@ export default function DevisEditorEngine({ devisId }: Props) {
   const [clients, setClients] = useState<Client[]>([]);
   const [loaded, setLoaded] = useState(false);
   // `cur` = sélection courante. String (pas LotId strict) : peut porter l'id
-  // d'un lot LIBRE en plus des 15 lots moteur (sélection bidirectionnelle).
+  // d'un lot LIBRE en plus des 14 lots moteur (sélection bidirectionnelle).
   const [cur, setCur] = useState<string>("demolition");
   const [enteteModal, setEnteteModal] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("idle");
@@ -977,7 +977,7 @@ export default function DevisEditorEngine({ devisId }: Props) {
       )}
 
       <main className="dee-cols">
-        {/* ── COLONNE GAUCHE : 15 lots (Option B : check + nom) ──── */}
+        {/* ── COLONNE GAUCHE : 14 lots (Option B : check + nom) ──── */}
         <aside className="dee-cols-left">
           <div className="dee-col-head">
             <i className="ti ti-layout-list" aria-hidden="true" />
