@@ -1,5 +1,19 @@
 "use client";
 
+// ============================================================
+// SOCLE — État replié/déployé de la sidebar (hook partagé)
+//
+// Persisté en localStorage (`socle_sidebar_collapsed`) et synchronisé entre
+// toutes les instances montées (Sidebar, AppShell, EditorShell) via un event
+// custom + l'event `storage` (synchro inter-onglets). Entrées/sorties :
+// `useSidebarCollapsed()` → [état, setter] ; `initSidebarCollapsedOnce()`
+// replie la sidebar à la PREMIÈRE entrée dans l'éditeur seulement, puis
+// respecte le choix utilisateur.
+//
+// Invariant SSR : premier rendu toujours `false` (déployé) pour que serveur
+// et client rendent la même chose ; la vraie valeur est lue après montage.
+// ============================================================
+
 import { useEffect, useState } from "react";
 
 const KEY = "socle_sidebar_collapsed";

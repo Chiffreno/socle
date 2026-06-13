@@ -1,3 +1,23 @@
+// ============================================================
+// SOCLE — Extraction des outils HTML legacy (_legacy/) vers Next.js
+//
+// Permet d'embarquer un prototype HTML autonome dans une page Next sans le
+// réécrire : `loadLegacy(fichier, scopeId, options)` lit le fichier dans
+// _legacy/, en extrait le markup principal, le CSS et le script inline.
+// Consommé par les pages via <LegacyTool> (qui injecte markup + CSS et
+// rejoue le script côté client).
+//
+// Sorties / garanties :
+//   - CSS scopé sous `#scopeId` via la règle native @scope : les styles du
+//     prototype ne fuient jamais sur le reste de l'app (et inversement).
+//   - Design system appliqué mécaniquement : box-shadow supprimés,
+//     border-radius neutralisés (sauf 50 % sémantique), polices littérales
+//     remplacées par les variables next/font (--ff / --mono).
+//   - `:root` legacy → `:scope` (les custom properties restent locales).
+//
+// Côté serveur uniquement (import "server-only") : lit le disque au build.
+// ============================================================
+
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";

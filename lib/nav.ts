@@ -1,3 +1,13 @@
+// ============================================================
+// SOCLE — Navigation de la sidebar (données statiques)
+//
+// Source unique des entrées de navigation, consommée par Sidebar.tsx.
+// Trois groupes : Dashboard/Chantiers (sans eyebrow), Construction, Après —
+// plus les entrées du bas (Paramètres, Déconnexion). Aucune logique ici :
+// ajouter/retirer une page de la sidebar = éditer ces tableaux.
+// Les icônes sont des suffixes Tabler ("checklist" → classe `ti ti-checklist`).
+// ============================================================
+
 export type NavItem = {
   label: string;
   href: string;
