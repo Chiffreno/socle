@@ -146,7 +146,7 @@ function agregerSegments(
   // client sont recomposés depuis les unités (chemin hasOverride) — les autres
   // segments ne bougent JAMAIS d'un centime quand on pose/retire un override.
   const sommeNaturals = round2(rows.reduce((a, r) => a + r.ventile, 0));
-  const reliquat = round2(round2(lt.caLot) - sommeNaturals);
+  const reliquat = round2(lt.caLot - sommeNaturals);
   if (reliquat !== 0) {
     const porteur = rows.find((r) => !r.isLibre);
     if (porteur) porteur.ventile = round2(porteur.ventile + reliquat);
@@ -586,7 +586,7 @@ function agregerElec(state: EngineState, lt: LotTotaux): LigneClient[] {
   if (infra.length > 0) {
     const infraCAs = infra.map((it) => round2(lineClientCA(it, ctx)));
     const sommeInfra = round2(infraCAs.reduce((a, c) => a + c, 0));
-    const reliquat = round2(round2(lt.caDeboursé) - sommeInfra);
+    const reliquat = round2(lt.caDeboursé - sommeInfra);
     infra.forEach((it, i) => {
       const naturalCA = i === 0 ? round2(infraCAs[i] + reliquat) : infraCAs[i];
       const ov = overrides[it.key];
