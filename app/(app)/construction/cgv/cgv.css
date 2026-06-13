@@ -3,6 +3,11 @@
    Préfixe .cgv-tool · zéro border-radius (sauf 50% dot) · zéro box-shadow · zéro gradient
    ============================================================ */
 
+/* PLEINE LARGEUR — neutralise le wrapper 860px de l'app shell pour la seule
+   route CGV (scopé à .cgv-tool, n'affecte pas les autres pages app). */
+.main-inner:has(> .cgv-tool) { max-width: none; margin: 0; }
+.cgv-tool > .main { margin-left: 0; max-width: none; padding: 0; }
+
 /* MAIN / HEADER */
 .cgv-tool .page-eyebrow { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--green); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
 .cgv-tool .page-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--green); }
