@@ -234,9 +234,10 @@ export interface PeintureSegment {
 // ─── Parquet : modèle "segments" (o.lignes), patron peinture ─────────
 // Axes (listes PLAUSIBLES métier — à valider Benjamin) :
 //   • matériau : stratifié / contrecollé / massif (clés BP existantes) ;
-//   • dimension (largeur de lame) : descriptif UNIQUEMENT, aucun impact prix
-//     (à valider — un delta prix par largeur viendra en passe prix) ;
-//   • colle : non (pose flottante) / MS polymère (pose collée) ;
+//   • dimension (largeur de lame) : TEXTE LIBRE descriptif, aucun impact prix —
+//     affichée telle quelle dans le descriptif client ;
+//   • colle : non (pose flottante) / MS polymère (pose collée) — vrai choix
+//     métier (mode de pose), conservé ;
 //   • sous-couche : aucune / mousse / liège.
 // PLINTHES : famille séparée du ConfigBox → segment DÉDIÉ type "plinthes"
 // (carte normale, éditable/supprimable, badge/reset acquis), quantité en ml.
@@ -244,15 +245,14 @@ export interface PeintureSegment {
 // famille Menuiseries du pilote peinture et de l'option Étanchéité
 // carrelage/faïence — une prestation visible = une carte.
 export type ParquetMateriau = "strat" | "contre" | "massif";
-/** Largeur de lame — descriptif (à valider Benjamin). */
-export type ParquetDim = "etroite" | "std" | "large";
 export type ParquetColle = "non" | "ms";
 export type ParquetSousCouche = "non" | "mousse" | "liege";
 export interface ParquetSegment {
   id: string;
   /** Matériau, ou "plinthes" (ml), ou "libre". */
   type: ParquetMateriau | "plinthes" | "libre";
-  dim?: ParquetDim;
+  /** Largeur de lame — texte libre descriptif (aucun impact prix). */
+  dim?: string;
   colle?: ParquetColle;
   sc?: ParquetSousCouche;
   /** Quantité : m² (pose) ou ml (plinthes). */
@@ -266,16 +266,18 @@ export interface ParquetSegment {
 // ─── Carrelage : modèle "segments" (o.lignes), patron peinture ───────
 // Axes (listes PLAUSIBLES métier — à valider Benjamin) :
 //   • type : céramique standard / grès cérame / grand format (clés BP) ;
-//   • dimension : pilote la consommation de colle (peigne) — 30×30 → 3 kg/m²,
-//     60×60 → 5 kg/m², 60×120 → 7 kg/m² (à valider) ;
-//   • colle : C2 standard / C2S1 flex. PAS de sous-couche (décision produit).
+//   • dimension : TEXTE LIBRE descriptif — affichée au descriptif client, ne
+//     pilote PLUS le calcul ;
+//   • colle : FORFAITAIRE (5 kg/m², C2 standard) — plus de choix C2/C2S1 en UI.
+//     PAS de sous-couche (décision produit).
 // PLINTHES : segment dédié au ml (comme parquet).
 // ÉTANCHÉITÉ (ex-lot supprimé) : OPTION matérialisée par une CARD — segment
 // dédié type "etancheite", mode liquide (SEL) / natte, prix au m² INDICATIFS
 // distincts (clés BP conservées du lot supprimé). Carte normale : éditable,
 // supprimable, badge/reset acquis.
 export type CarrelageType = "ceram" | "gres" | "gf";
-export type CarrelageDim = "30x30" | "60x60" | "60x120";
+/** Grade de colle — legacy : conservé sur le segment (toléré), plus exposé en
+ *  UI ni lu par le moteur (colle forfaitaire C2 standard). */
 export type CarrelageColle = "c2" | "c2s";
 /** Mode d'étanchéité (option carrelage/faïence) : liquide (SEL) ou natte. */
 export type EtancheiteMode = "liquide" | "natte";
@@ -283,7 +285,9 @@ export interface CarrelageSegment {
   id: string;
   /** Type de carreau, ou "plinthes" (ml), "etancheite" (m²), "libre". */
   type: CarrelageType | "plinthes" | "etancheite" | "libre";
-  dim?: CarrelageDim;
+  /** Dimension — texte libre descriptif (n'entre plus dans le calcul). */
+  dim?: string;
+  /** Legacy, toléré — plus exposé en UI ni lu par le moteur. */
   colle?: CarrelageColle;
   /** "etancheite" uniquement. */
   mode?: EtancheiteMode;
@@ -298,20 +302,22 @@ export interface CarrelageSegment {
 // ─── Faïence : modèle "segments" (o.lignes), patron peinture ─────────
 // Axes (listes PLAUSIBLES métier — à valider Benjamin) :
 //   • type : faïence standard / grès cérame mural / grand format mural ;
-//   • dimension : pilote la consommation de colle (peigne, kg/m², à valider) ;
-//   • colle : C2 standard / C2S1 flex ;
-//   • sous-couche : aucune / primaire d'accrochage (interprétation métier de
-//     la « sous-couche » murale — à valider Benjamin).
+//   • dimension : TEXTE LIBRE descriptif — affichée au descriptif client, ne
+//     pilote PLUS le calcul ;
+//   • colle : FORFAITAIRE (4 kg/m², C2 standard) — plus de choix C2/C2S1 en UI ;
+//   • sous-couche : aucune / primaire d'accrochage (CONSERVÉE — interprétation
+//     métier de la « sous-couche » murale, à valider Benjamin).
 // ÉTANCHÉITÉ : option card (comme carrelage). PAS de plinthes (décision).
 // (Les profilés alu de l'ancien modèle ne sont plus un axe — à valider.)
 export type FaienceType = "fai" | "gres" | "gf";
-export type FaienceDim = "20x30" | "30x60" | "60x120";
 export type FaienceSousCouche = "non" | "primaire";
 export interface FaienceSegment {
   id: string;
   /** Type de carreau, ou "etancheite" (m²), ou "libre". */
   type: FaienceType | "etancheite" | "libre";
-  dim?: FaienceDim;
+  /** Dimension — texte libre descriptif (n'entre plus dans le calcul). */
+  dim?: string;
+  /** Legacy, toléré — plus exposé en UI ni lu par le moteur. */
   colle?: CarrelageColle;
   sc?: FaienceSousCouche;
   /** "etancheite" uniquement. */

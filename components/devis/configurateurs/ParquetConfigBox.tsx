@@ -3,15 +3,16 @@
 // ============================================================
 // SOCLE — Box de configuration PARQUET (patron segments / vue globale)
 //
-// Deux familles dans un seul lot :
-//   • Parquet (m²) : matériau / dimension de lame / colle / sous-couche.
+// FAMILLE en ONGLETS (ConfigTabs), nettement séparée des sous-choix :
+//   • Parquet (m²) : matériau / dimension de lame (TEXTE LIBRE descriptif) /
+//     pose (flottant ou collé — VRAI choix métier, INCHANGÉ) / sous-couche.
 //     Briques déboursé → MO + marge (comme peinture). Chute = réglage lot.
 //   • Plinthes (ml) : segment DÉDIÉ (carte normale, badge/reset acquis),
 //     prix au ml INDICATIF (bp.parquet_plinthes — à valider Benjamin).
 //
 // LISTES D'OPTIONS PLAUSIBLES MÉTIER — à valider Benjamin (placeholders) :
-// dimension descriptive (aucun impact prix tant que la passe prix n'est pas
-// faite), colle MS = pose collée, sans colle = pose flottante.
+// dimension descriptive (aucun impact prix), colle MS = pose collée, sans colle
+// = pose flottante.
 // Dé-chrome-isée : rend <div className="dee-cfg-body"> uniquement — le repli
 // est porté par la box lot. Implémente SegmentConfigBoxProps (registre
 // SEGMENT_LOTS). AUCUNE notion de gamme.
@@ -20,11 +21,11 @@
 import { useState } from "react";
 import type {
   ParquetColle,
-  ParquetDim,
   ParquetMateriau,
   ParquetSousCouche,
 } from "@/lib/devis/engine/types";
 import ConfigPills from "./ConfigPills";
+import ConfigTabs from "./ConfigTabs";
 import type { SegmentConfigBoxProps } from "./segment-config";
 
 const FAMILLES: ReadonlyArray<{ v: "parquet" | "plinthes"; l: string }> = [
@@ -36,11 +37,6 @@ const MATERIAUX: ReadonlyArray<{ v: ParquetMateriau; l: string }> = [
   { v: "strat", l: "Stratifié" },
   { v: "contre", l: "Contrecollé" },
   { v: "massif", l: "Massif" },
-];
-const DIMS: ReadonlyArray<{ v: ParquetDim; l: string }> = [
-  { v: "etroite", l: "Étroite 90" },
-  { v: "std", l: "Standard 139" },
-  { v: "large", l: "Large 190" },
 ];
 const COLLES: ReadonlyArray<{ v: ParquetColle; l: string }> = [
   { v: "non", l: "Flottant (sans colle)" },
@@ -54,7 +50,8 @@ const SOUS_COUCHES: ReadonlyArray<{ v: ParquetSousCouche; l: string }> = [
 
 interface ParquetDraft {
   type: ParquetMateriau;
-  dim: ParquetDim;
+  /** Dimension de lame — texte libre descriptif (n'entre pas dans le calcul). */
+  dim: string;
   colle: ParquetColle;
   sc: ParquetSousCouche;
   m2: number;
@@ -69,7 +66,7 @@ export default function ParquetConfigBox({
   const [famille, setFamille] = useState<"parquet" | "plinthes">("parquet");
   const [d, setD] = useState<ParquetDraft>({
     type: "strat",
-    dim: "std",
+    dim: "",
     colle: "non",
     sc: "mousse",
     m2: 0,
@@ -78,7 +75,7 @@ export default function ParquetConfigBox({
 
   function addParquet() {
     if (d.m2 <= 0) return;
-    onAdd({ type: d.type, dim: d.dim, colle: d.colle, sc: d.sc, m2: d.m2 });
+    onAdd({ type: d.type, dim: d.dim.trim(), colle: d.colle, sc: d.sc, m2: d.m2 });
     setD((p) => ({ ...p, m2: 0 }));
   }
   function addPlinthes() {
@@ -89,14 +86,12 @@ export default function ParquetConfigBox({
 
   return (
     <div className="dee-cfg-body">
-      <div className="dee-cfg-box-grid">
-        <ConfigPills
-          label="Famille"
-          options={FAMILLES}
-          value={famille}
-          onChange={setFamille}
-        />
-      </div>
+      <ConfigTabs
+        ariaLabel="Famille"
+        options={FAMILLES}
+        value={famille}
+        onChange={setFamille}
+      />
 
       {famille === "parquet" ? (
         <>
@@ -107,12 +102,16 @@ export default function ParquetConfigBox({
               value={d.type}
               onChange={(v) => setD((p) => ({ ...p, type: v }))}
             />
-            <ConfigPills
-              label="Dimension de lame"
-              options={DIMS}
-              value={d.dim}
-              onChange={(v) => setD((p) => ({ ...p, dim: v }))}
-            />
+            <div className="dee-cfg-field">
+              <span className="dee-cfg-flabel">Dimension de lame</span>
+              <input
+                className="dee-cfg-text"
+                type="text"
+                value={d.dim}
+                placeholder="Lame large 190 mm"
+                onChange={(e) => setD((p) => ({ ...p, dim: e.target.value }))}
+              />
+            </div>
             <ConfigPills
               label="Pose"
               options={COLLES}

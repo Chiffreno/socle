@@ -3,9 +3,10 @@
 // ============================================================
 // SOCLE — Box de configuration FAÏENCE (patron segments / vue globale)
 //
-// Deux familles dans un seul lot :
-//   • Faïence (m²) : type / dimension / colle / sous-couche (primaire
-//     d'accrochage). La dimension pilote la consommation de colle (kg/m²).
+// FAMILLE en ONGLETS (ConfigTabs), nettement séparée des sous-choix :
+//   • Faïence (m²) : type / dimension (TEXTE LIBRE descriptif) / sous-couche
+//     (primaire d'accrochage — CONSERVÉE). Colle FORFAITAIRE au calcul (plus de
+//     choix C2/C2S1, plus de pilotage par la dimension).
 //   • Étanchéité (m²) : OPTION ex-lot étanchéité — mode liquide (SEL) / natte,
 //     segment dédié → UNE ligne, carte normale (badge/reset acquis).
 // PAS de plinthes (décision produit).
@@ -17,13 +18,12 @@
 
 import { useState } from "react";
 import type {
-  CarrelageColle,
   EtancheiteMode,
-  FaienceDim,
   FaienceSousCouche,
   FaienceType,
 } from "@/lib/devis/engine/types";
 import ConfigPills from "./ConfigPills";
+import ConfigTabs from "./ConfigTabs";
 import type { SegmentConfigBoxProps } from "./segment-config";
 
 const FAMILLES: ReadonlyArray<{ v: "faience" | "etancheite"; l: string }> = [
@@ -36,15 +36,6 @@ const TYPES: ReadonlyArray<{ v: FaienceType; l: string }> = [
   { v: "gres", l: "Grès mural" },
   { v: "gf", l: "Grand format" },
 ];
-const DIMS: ReadonlyArray<{ v: FaienceDim; l: string }> = [
-  { v: "20x30", l: "20×30" },
-  { v: "30x60", l: "30×60" },
-  { v: "60x120", l: "60×120" },
-];
-const COLLES: ReadonlyArray<{ v: CarrelageColle; l: string }> = [
-  { v: "c2", l: "C2 standard" },
-  { v: "c2s", l: "C2S1 flex" },
-];
 const SOUS_COUCHES: ReadonlyArray<{ v: FaienceSousCouche; l: string }> = [
   { v: "non", l: "Aucune" },
   { v: "primaire", l: "Primaire d'accrochage" },
@@ -56,8 +47,8 @@ const MODES: ReadonlyArray<{ v: EtancheiteMode; l: string }> = [
 
 interface FaienceDraft {
   type: FaienceType;
-  dim: FaienceDim;
-  colle: CarrelageColle;
+  /** Dimension — texte libre descriptif (n'entre pas dans le calcul). */
+  dim: string;
   sc: FaienceSousCouche;
   m2: number;
 }
@@ -71,8 +62,7 @@ export default function FaienceConfigBox({
   const [famille, setFamille] = useState<"faience" | "etancheite">("faience");
   const [d, setD] = useState<FaienceDraft>({
     type: "fai",
-    dim: "30x60",
-    colle: "c2",
+    dim: "",
     sc: "non",
     m2: 0,
   });
@@ -83,7 +73,7 @@ export default function FaienceConfigBox({
 
   function addFaience() {
     if (d.m2 <= 0) return;
-    onAdd({ type: d.type, dim: d.dim, colle: d.colle, sc: d.sc, m2: d.m2 });
+    onAdd({ type: d.type, dim: d.dim.trim(), sc: d.sc, m2: d.m2 });
     setD((p) => ({ ...p, m2: 0 }));
   }
   function addEtancheite() {
@@ -94,14 +84,12 @@ export default function FaienceConfigBox({
 
   return (
     <div className="dee-cfg-body">
-      <div className="dee-cfg-box-grid">
-        <ConfigPills
-          label="Famille"
-          options={FAMILLES}
-          value={famille}
-          onChange={setFamille}
-        />
-      </div>
+      <ConfigTabs
+        ariaLabel="Famille"
+        options={FAMILLES}
+        value={famille}
+        onChange={setFamille}
+      />
 
       {famille === "faience" ? (
         <>
@@ -112,18 +100,16 @@ export default function FaienceConfigBox({
               value={d.type}
               onChange={(v) => setD((p) => ({ ...p, type: v }))}
             />
-            <ConfigPills
-              label="Dimension"
-              options={DIMS}
-              value={d.dim}
-              onChange={(v) => setD((p) => ({ ...p, dim: v }))}
-            />
-            <ConfigPills
-              label="Colle"
-              options={COLLES}
-              value={d.colle}
-              onChange={(v) => setD((p) => ({ ...p, colle: v }))}
-            />
+            <div className="dee-cfg-field">
+              <span className="dee-cfg-flabel">Dimension</span>
+              <input
+                className="dee-cfg-text"
+                type="text"
+                value={d.dim}
+                placeholder="30 × 60 cm"
+                onChange={(e) => setD((p) => ({ ...p, dim: e.target.value }))}
+              />
+            </div>
             <ConfigPills
               label="Sous-couche"
               options={SOUS_COUCHES}

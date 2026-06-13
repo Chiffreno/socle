@@ -3,9 +3,10 @@
 // ============================================================
 // SOCLE — Box de configuration CARRELAGE (patron segments / vue globale)
 //
-// Trois familles dans un seul lot :
-//   • Carrelage (m²) : type / dimension / colle (PAS de sous-couche).
-//     La dimension pilote la consommation de colle (peigne, kg/m²).
+// FAMILLE en ONGLETS (ConfigTabs), nettement séparée des sous-choix :
+//   • Carrelage (m²) : type / dimension (TEXTE LIBRE descriptif). Colle
+//     FORFAITAIRE au calcul (plus de choix C2/C2S1, plus de pilotage par la
+//     dimension). PAS de sous-couche.
 //   • Plinthes (ml) : segment dédié (carte normale, badge/reset acquis).
 //   • Étanchéité (m²) : OPTION ex-lot étanchéité — mode liquide (SEL) / natte,
 //     segment dédié → UNE ligne au lot, carte normale. Prix au m² INDICATIFS
@@ -17,13 +18,9 @@
 // ============================================================
 
 import { useState } from "react";
-import type {
-  CarrelageColle,
-  CarrelageDim,
-  CarrelageType,
-  EtancheiteMode,
-} from "@/lib/devis/engine/types";
+import type { CarrelageType, EtancheiteMode } from "@/lib/devis/engine/types";
 import ConfigPills from "./ConfigPills";
+import ConfigTabs from "./ConfigTabs";
 import type { SegmentConfigBoxProps } from "./segment-config";
 
 const FAMILLES: ReadonlyArray<{
@@ -40,15 +37,6 @@ const TYPES: ReadonlyArray<{ v: CarrelageType; l: string }> = [
   { v: "gres", l: "Grès cérame" },
   { v: "gf", l: "Grand format" },
 ];
-const DIMS: ReadonlyArray<{ v: CarrelageDim; l: string }> = [
-  { v: "30x30", l: "30×30" },
-  { v: "60x60", l: "60×60" },
-  { v: "60x120", l: "60×120" },
-];
-const COLLES: ReadonlyArray<{ v: CarrelageColle; l: string }> = [
-  { v: "c2", l: "C2 standard" },
-  { v: "c2s", l: "C2S1 flex" },
-];
 const MODES: ReadonlyArray<{ v: EtancheiteMode; l: string }> = [
   { v: "liquide", l: "Liquide (SEL)" },
   { v: "natte", l: "Natte" },
@@ -56,8 +44,8 @@ const MODES: ReadonlyArray<{ v: EtancheiteMode; l: string }> = [
 
 interface CarrelageDraft {
   type: CarrelageType;
-  dim: CarrelageDim;
-  colle: CarrelageColle;
+  /** Dimension — texte libre descriptif (n'entre pas dans le calcul). */
+  dim: string;
   m2: number;
 }
 
@@ -72,8 +60,7 @@ export default function CarrelageConfigBox({
   >("carrelage");
   const [d, setD] = useState<CarrelageDraft>({
     type: "gres",
-    dim: "60x60",
-    colle: "c2",
+    dim: "",
     m2: 0,
   });
   const [ml, setMl] = useState(0);
@@ -84,7 +71,7 @@ export default function CarrelageConfigBox({
 
   function addCarrelage() {
     if (d.m2 <= 0) return;
-    onAdd({ type: d.type, dim: d.dim, colle: d.colle, m2: d.m2 });
+    onAdd({ type: d.type, dim: d.dim.trim(), m2: d.m2 });
     setD((p) => ({ ...p, m2: 0 }));
   }
   function addPlinthes() {
@@ -100,14 +87,12 @@ export default function CarrelageConfigBox({
 
   return (
     <div className="dee-cfg-body">
-      <div className="dee-cfg-box-grid">
-        <ConfigPills
-          label="Famille"
-          options={FAMILLES}
-          value={famille}
-          onChange={setFamille}
-        />
-      </div>
+      <ConfigTabs
+        ariaLabel="Famille"
+        options={FAMILLES}
+        value={famille}
+        onChange={setFamille}
+      />
 
       {famille === "carrelage" ? (
         <>
@@ -118,18 +103,16 @@ export default function CarrelageConfigBox({
               value={d.type}
               onChange={(v) => setD((p) => ({ ...p, type: v }))}
             />
-            <ConfigPills
-              label="Dimension"
-              options={DIMS}
-              value={d.dim}
-              onChange={(v) => setD((p) => ({ ...p, dim: v }))}
-            />
-            <ConfigPills
-              label="Colle"
-              options={COLLES}
-              value={d.colle}
-              onChange={(v) => setD((p) => ({ ...p, colle: v }))}
-            />
+            <div className="dee-cfg-field">
+              <span className="dee-cfg-flabel">Dimension</span>
+              <input
+                className="dee-cfg-text"
+                type="text"
+                value={d.dim}
+                placeholder="60 × 60 cm"
+                onChange={(e) => setD((p) => ({ ...p, dim: e.target.value }))}
+              />
+            </div>
           </div>
           <div className="dee-cfg-box-action">
             <span className="dee-cfg-surf">

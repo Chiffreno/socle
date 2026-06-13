@@ -378,11 +378,6 @@ const PARQUET_EYEBROW: Record<string, string> = {
   massif: "Parquet massif",
   plinthes: "Plinthes",
 };
-const PARQUET_DIM_LABEL: Record<string, string> = {
-  etroite: "lame étroite (90 mm)",
-  std: "lame standard (139 mm)",
-  large: "lame large (190 mm)",
-};
 const PARQUET_SC_LABEL: Record<string, string> = {
   mousse: "sous-couche mousse",
   liege: "sous-couche liège",
@@ -394,7 +389,8 @@ export function descriptionParquet(seg: ParquetSegment): string {
   if (seg.type === "plinthes")
     return "Plinthes assorties au parquet, coupes et fixation comprises.";
   const mat = PARQUET_MAT_LABEL[seg.type] ?? "";
-  const dim = seg.dim ? `, ${PARQUET_DIM_LABEL[seg.dim] ?? ""}` : "";
+  const dimT = (seg.dim || "").trim();
+  const dim = dimT ? `, ${dimT}` : "";
   const pose =
     seg.colle === "ms"
       ? ", pose collée (colle MS polymère)"
@@ -430,11 +426,6 @@ const CARRELAGE_EYEBROW: Record<string, string> = {
   plinthes: "Plinthes",
   etancheite: "Étanchéité",
 };
-const CARRELAGE_COLLE_LABEL: Record<string, string> = {
-  c2: "colle C2 standard",
-  c2s: "colle C2S1 flex",
-};
-
 /** Description d'une option étanchéité (partagée carrelage / faïence). */
 function descriptionEtancheite(mode: string | undefined, support: string): string {
   return (mode || "liquide") === "liquide"
@@ -450,9 +441,9 @@ export function descriptionCarrelage(seg: CarrelageSegment): string {
   if (seg.type === "etancheite")
     return descriptionEtancheite(seg.mode, "carrelage");
   const t = CARRELAGE_TYPE_LABEL[seg.type] ?? "";
-  const dim = seg.dim ? ` ${seg.dim.replace("x", "×")}` : "";
-  const colle = seg.colle ? `, ${CARRELAGE_COLLE_LABEL[seg.colle] ?? ""}` : "";
-  return `Carrelage ${t}${dim}, pose droite${colle}, joints et coupes compris.`;
+  const dimT = (seg.dim || "").trim();
+  const dim = dimT ? ` ${dimT}` : "";
+  return `Carrelage ${t}${dim}, pose droite, joints et coupes compris.`;
 }
 
 function agregerCarrelage(state: EngineState, lt: LotTotaux): LigneClient[] {
@@ -493,13 +484,11 @@ export function descriptionFaience(seg: FaienceSegment): string {
   if (seg.type === "etancheite")
     return descriptionEtancheite(seg.mode, "faïence");
   const t = FAIENCE_TYPE_LABEL[seg.type] ?? "";
-  const dim = seg.dim ? ` ${seg.dim.replace("x", "×")}` : "";
-  const colle = seg.colle
-    ? `, ${CARRELAGE_COLLE_LABEL[seg.colle] ?? ""}`
-    : "";
+  const dimT = (seg.dim || "").trim();
+  const dim = dimT ? ` ${dimT}` : "";
   const prim =
     seg.sc === "primaire" ? ", primaire d'accrochage" : "";
-  return `Faïence ${t}${dim}, pose murale droite${colle}${prim}, joints et coupes compris.`;
+  return `Faïence ${t}${dim}, pose murale droite${prim}, joints et coupes compris.`;
 }
 
 function agregerFaience(state: EngineState, lt: LotTotaux): LigneClient[] {

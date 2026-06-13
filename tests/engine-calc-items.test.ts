@@ -457,7 +457,7 @@ describe("calcItems — parquet / carrelage / faïence (modèle segments)", () =
     expect(items[0].total).toBeCloseTo(12 * BP.parquet_plinthes, 10);
   });
 
-  it("carrelage : la colle suit la dimension du carreau (peigne)", () => {
+  it("carrelage : colle forfaitaire (5 kg/m²), indépendante du texte dimension", () => {
     const state = makeState();
     state.lots.carrelage.on = true;
     Object.assign(state.lots.carrelage.o, {
@@ -466,17 +466,16 @@ describe("calcItems — parquet / carrelage / faïence (modèle segments)", () =
         {
           id: "c1",
           type: "gres",
-          dim: "60x120",
-          colle: "c2s",
+          dim: "60 × 120 cm", // texte libre descriptif — n'entre pas dans le calcul
           m2: 15,
         } satisfies CarrelageSegment,
       ],
     });
     const items = calcItems(state, "carrelage");
     expect(ligne(items, "gres_cerame").qty).toBe(15);
-    // 60×120 → 7 kg/m² → ceil(15 × 7) = 105 kg, colle flex C2S1.
-    const colle = ligne(items, "colle_c2s");
-    expect(colle.qty).toBe(105);
+    // Forfait 5 kg/m² → ceil(15 × 5) = 75 kg, colle C2 standard (colle_carrelage).
+    const colle = ligne(items, "colle_carrelage");
+    expect(colle.qty).toBe(75);
     expect(colle.unit).toBe("kg");
   });
 
@@ -510,7 +509,7 @@ describe("calcItems — parquet / carrelage / faïence (modèle segments)", () =
     );
   });
 
-  it("faïence : colle dimensionnée + primaire d'accrochage en option", () => {
+  it("faïence : colle forfaitaire (4 kg/m²) + primaire d'accrochage en option", () => {
     const state = makeState();
     state.lots.faience.on = true;
     Object.assign(state.lots.faience.o, {
@@ -519,8 +518,7 @@ describe("calcItems — parquet / carrelage / faïence (modèle segments)", () =
         {
           id: "fa1",
           type: "fai",
-          dim: "20x30",
-          colle: "c2",
+          dim: "20 × 30 cm", // texte libre — n'entre pas dans le calcul
           sc: "primaire",
           m2: 10,
         } satisfies FaienceSegment,
@@ -528,7 +526,7 @@ describe("calcItems — parquet / carrelage / faïence (modèle segments)", () =
     });
     const items = calcItems(state, "faience");
     expect(ligne(items, "faience_std").qty).toBe(10);
-    expect(ligne(items, "colle_faience").qty).toBe(30); // 20×30 → 3 kg/m²
+    expect(ligne(items, "colle_faience").qty).toBe(40); // forfait 4 kg/m²
     expect(ligne(items, "primaire_accrochage").qty).toBe(10);
   });
 });

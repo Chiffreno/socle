@@ -681,9 +681,10 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
 
     case "carrelage": {
       // Modèle "segments" (patron peinture/parquet) : une prestation par
-      // segment de o.lignes. Carreau = ligne hl (brut +chute%), colle dérivée
-      // de la DIMENSION (peigne — kg/m² à valider). "plinthes" (ml) et
-      // "etancheite" (mode liquide/natte, UNE ligne) = segments dédiés.
+      // segment de o.lignes. Carreau = ligne hl (brut +chute%), colle
+      // FORFAITAIRE (5 kg/m², C2 standard — la dimension est descriptive et
+      // n'entre plus dans le calcul). "plinthes" (ml) et "etancheite" (mode
+      // liquide/natte, UNE ligne) = segments dédiés.
       const lignes = Array.isArray(o.lignes)
         ? (o.lignes as CarrelageSegment[])
         : [];
@@ -700,8 +701,8 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
         gres: "Grès cérame rectifié",
         gf: "Grand format",
       };
-      // kg de colle / m² selon dimension (peigne) — INDICATIF, à valider.
-      const DIM_KG: Record<string, number> = { "30x30": 3, "60x60": 5, "60x120": 7 };
+      // Colle forfaitaire — kg/m² INDICATIF (à valider), indépendant du carreau.
+      const COLLE_KG_M2 = 5;
       const items: EngineLigne[] = [];
       for (const seg of lignes) {
         const q = Number(seg.m2) || 0;
@@ -732,14 +733,15 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
           continue;
         }
         const brut = chuted(q, chute);
-        const dim = seg.dim || "60x60";
-        const kg = Math.ceil(q * (DIM_KG[dim] || 5));
+        const dim = (seg.dim || "").trim();
+        const dimLbl = dim ? `${dim} ` : "";
+        const kg = Math.ceil(q * COLLE_KG_M2);
         const zoneItems: EngineLigne[] = [
-          _hrow(TYPE_KEY[seg.type] || "carrelage_std", brut, `${TYPE_LBL[seg.type] || "Carrelage"} ${dim.replace("x", "×")} × ${q} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute, net ${q} m²)`),
+          _hrow(TYPE_KEY[seg.type] || "carrelage_std", brut, `${TYPE_LBL[seg.type] || "Carrelage"} ${dimLbl}× ${q} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute, net ${q} m²)`),
           _row(
-            seg.colle === "c2s" ? "colle_c2s" : "colle_carrelage",
+            "colle_carrelage",
             kg,
-            `Colle ${seg.colle === "c2s" ? "C2S1 flex" : "C2 standard"} (${DIM_KG[dim] || 5} kg/m²)`,
+            `Colle à carrelage (${COLLE_KG_M2} kg/m², forfait)`,
             "kg"
           ),
         ];
@@ -751,8 +753,9 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
 
     case "faience": {
       // Modèle "segments" (patron peinture/carrelage) : une prestation par
-      // segment de o.lignes. Carreau = ligne hl (brut +chute%), colle dérivée
-      // de la DIMENSION (kg/m² à valider), sous-couche = primaire d'accrochage.
+      // segment de o.lignes. Carreau = ligne hl (brut +chute%), colle
+      // FORFAITAIRE (4 kg/m², C2 standard — la dimension est descriptive et
+      // n'entre plus dans le calcul), sous-couche = primaire d'accrochage.
       // "etancheite" (liquide/natte, UNE ligne) = segment dédié. PAS de plinthes.
       const lignes = Array.isArray(o.lignes)
         ? (o.lignes as FaienceSegment[])
@@ -770,8 +773,8 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
         gres: "Grès cérame mural rectifié",
         gf: "Grand format mural",
       };
-      // kg de colle / m² selon dimension (peigne mural) — INDICATIF, à valider.
-      const DIM_KG: Record<string, number> = { "20x30": 3, "30x60": 4, "60x120": 6 };
+      // Colle forfaitaire — kg/m² INDICATIF (à valider), indépendant du carreau.
+      const COLLE_KG_M2 = 4;
       const items: EngineLigne[] = [];
       for (const seg of lignes) {
         const q = Number(seg.m2) || 0;
@@ -796,14 +799,15 @@ function _calcItemsCore(state: EngineState, lotId: LotId): EngineLigne[] {
           continue;
         }
         const brut = chuted(q, chute);
-        const dim = seg.dim || "30x60";
-        const kg = Math.ceil(q * (DIM_KG[dim] || 4));
+        const dim = (seg.dim || "").trim();
+        const dimLbl = dim ? `${dim} ` : "";
+        const kg = Math.ceil(q * COLLE_KG_M2);
         const zoneItems: EngineLigne[] = [
-          _hrow(TYPE_KEY[seg.type] || "faience_std", brut, `${TYPE_LBL[seg.type] || "Faïence"} ${dim.replace("x", "×")} × ${q} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute, net ${q} m²)`),
+          _hrow(TYPE_KEY[seg.type] || "faience_std", brut, `${TYPE_LBL[seg.type] || "Faïence"} ${dimLbl}× ${q} m²`, "m²", `Brut : ${brut} m² (+${chute}% chute, net ${q} m²)`),
           _row(
-            seg.colle === "c2s" ? "colle_c2s" : "colle_faience",
+            "colle_faience",
             kg,
-            `Colle ${seg.colle === "c2s" ? "C2S1 flex" : "C2 standard"} (${DIM_KG[dim] || 4} kg/m²)`,
+            `Colle à faïence (${COLLE_KG_M2} kg/m², forfait)`,
             "kg"
           ),
         ];

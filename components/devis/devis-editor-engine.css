@@ -1240,6 +1240,55 @@
 }
 .dee-cfg-pills { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 
+/* Onglets de FAMILLE — soulignés, distincts des pills de sous-choix.
+   Filet de séparation sous la barre ; actif = texte vert + soulignement. */
+.dee-cfg-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--dee-line);
+}
+.dee-cfg-tab {
+  padding: 7px 14px 9px;
+  margin-bottom: -1px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dee-ink-2);
+  cursor: pointer;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.dee-cfg-tab:hover { color: var(--black); background: var(--green-light); }
+.dee-cfg-tab.is-active {
+  color: var(--green-dark);
+  font-weight: 600;
+  border-bottom-color: var(--green);
+}
+
+/* Champ texte libre (ex. dimension descriptive du carreau / de la lame). */
+.dee-cfg-text {
+  width: 100%;
+  padding: 7px 9px;
+  background: var(--white);
+  border: 1px solid var(--dee-line);
+  border-radius: var(--dee-r-sm);
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+  transition: border-color .12s, box-shadow .12s;
+}
+.dee-cfg-text:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-light);
+}
+
 .dee-cfg-box-action {
   display: flex;
   align-items: center;
