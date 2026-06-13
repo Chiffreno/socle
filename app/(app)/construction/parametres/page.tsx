@@ -31,6 +31,9 @@ const DEFAULT_FORM: EntrepriseInput = {
   tauxHoraire: 0,
   iban: "",
   cgv: "",
+  logo: "",
+  couleurAccent: "#1a7a3c",
+  penalitesRetardTaux: null,
 };
 
 type SaveStatus = "idle" | "saving" | "saved";
@@ -98,6 +101,51 @@ export default function ParametresPage() {
       setStatus("idle");
     }
   }, []);
+
+  const [logoWarn, setLogoWarn] = useState<string | null>(null);
+  // Logo : redimensionné (max 240 px) + compressé + plafonné base64 (localStorage).
+  const onLogoFile = useCallback(
+    async (file: File) => {
+      setLogoWarn(null);
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = () => reject(new Error("read"));
+          r.readAsDataURL(file);
+        });
+        const img = new Image();
+        await new Promise<void>((res, rej) => {
+          img.onload = () => res();
+          img.onerror = () => rej(new Error("img"));
+          img.src = dataUrl;
+        });
+        const maxW = 240;
+        const scale = Math.min(1, maxW / (img.width || maxW));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("ctx");
+        ctx.fillStyle = "#ffffff"; // fond blanc (doc imprimé sur blanc)
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        let out = canvas.toDataURL("image/png");
+        if (out.length > 160_000) out = canvas.toDataURL("image/jpeg", 0.82);
+        if (out.length > 200_000) {
+          setLogoWarn("Image trop lourde même après compression — essaie un logo plus simple.");
+          return;
+        }
+        set({ logo: out });
+        save();
+      } catch {
+        setLogoWarn("Impossible de lire cette image.");
+      }
+    },
+    [set, save]
+  );
 
   // Warnings non bloquants.
   const sirenWarn =
@@ -182,6 +230,97 @@ export default function ParametresPage() {
               onBlur={save}
             />
             <span className="suffix">€</span>
+          </div>
+        </div>
+      </section>
+
+      {/* LOGO & MARQUE */}
+      <section className="section">
+        <div className="section-title">Logo &amp; marque</div>
+        <div className="field">
+          <label className="field-label">Logo (en-tête du devis)</label>
+          <div className="logo-row">
+            {form.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={form.logo} alt="Logo" className="logo-preview" />
+            ) : (
+              <div className="logo-preview is-empty">Aucun logo</div>
+            )}
+            <div className="logo-actions">
+              <label className="btn-secondary logo-upload">
+                <i className="ti ti-upload" aria-hidden="true" />
+                {form.logo ? "Remplacer" : "Charger un logo"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  hidden
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) onLogoFile(f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {form.logo && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    set({ logo: "" });
+                    save();
+                  }}
+                >
+                  <i className="ti ti-trash" aria-hidden="true" />
+                  Retirer
+                </button>
+              )}
+            </div>
+          </div>
+          {logoWarn ? (
+            <div className="field-warn">
+              <i className="ti ti-alert-triangle" aria-hidden="true" />
+              {logoWarn}
+            </div>
+          ) : (
+            <div className="field-hint">
+              PNG ou JPEG — redimensionné automatiquement (max 240 px) et stocké
+              localement. Sans logo, l&apos;en-tête affiche le nom de
+              l&apos;entreprise.
+            </div>
+          )}
+        </div>
+        <div className="field">
+          <label className="field-label">Couleur d&apos;accent du devis</label>
+          <div className="color-row">
+            <input
+              type="color"
+              className="color-input"
+              value={form.couleurAccent}
+              onChange={(e) => set({ couleurAccent: e.target.value })}
+              onBlur={save}
+              aria-label="Couleur d'accent"
+            />
+            <input
+              className="input mono color-hex"
+              value={form.couleurAccent}
+              onChange={(e) => set({ couleurAccent: e.target.value })}
+              onBlur={save}
+            />
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                set({ couleurAccent: "#1a7a3c" });
+                save();
+              }}
+            >
+              Réinitialiser
+            </button>
+          </div>
+          <div className="field-hint">
+            Pilote les accents du document client (filets, en-têtes de tableau,
+            numéros de lot, total TTC). Le corps reste noir/gris. Défaut : vert
+            SOCLE.
           </div>
         </div>
       </section>
@@ -425,6 +564,33 @@ export default function ParametresPage() {
               <span className="suffix">€/h</span>
             </div>
           </div>
+        </div>
+        <div className="row cols-2">
+          <div className="field">
+            <label className="field-label">Pénalités de retard</label>
+            <div className="input-suffix">
+              <input
+                className="input mono"
+                type="number"
+                min={0}
+                step={0.5}
+                value={form.penalitesRetardTaux ?? ""}
+                placeholder="—"
+                onChange={(e) =>
+                  set({
+                    penalitesRetardTaux:
+                      e.target.value === "" ? null : Number(e.target.value),
+                  })
+                }
+                onBlur={save}
+              />
+              <span className="suffix">% / mois</span>
+            </div>
+            <div className="field-hint">
+              Affiché dans les conditions du devis. Vide → « à préciser ».
+            </div>
+          </div>
+          <div className="field" />
         </div>
       </section>
 

@@ -101,3 +101,29 @@
 }
 .params-tool .save-indicator.saved .save-dot { background: var(--green); }
 .params-tool .save-indicator.saving .save-dot { background: var(--orange); }
+
+/* Indice sous un champ */
+.params-tool .field-hint {
+  margin-top: 6px; font-size: 12px; color: var(--gray4); line-height: 1.5;
+}
+
+/* Logo & marque */
+.params-tool .logo-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.params-tool .logo-preview {
+  width: 120px; height: 64px; object-fit: contain;
+  border: 1px solid var(--gray2); background: var(--white); padding: 6px;
+}
+.params-tool .logo-preview.is-empty {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--gray3); font-style: italic;
+}
+.params-tool .logo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.params-tool .logo-upload {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+}
+.params-tool .color-row { display: flex; align-items: center; gap: 10px; }
+.params-tool .color-input {
+  width: 44px; height: 38px; padding: 2px; border: 1px solid var(--gray2);
+  background: var(--white); cursor: pointer;
+}
+.params-tool .color-hex { width: 130px; text-transform: uppercase; }
