@@ -26,3 +26,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# contenu éditorial (blog / SEO) — hors périmètre du code applicatif
+/SOCLE/
+
+# artefacts (captures d'écran, etc.)
+/.pv-screens/
