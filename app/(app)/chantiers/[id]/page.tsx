@@ -109,6 +109,8 @@ export default function ChantierDossierPage() {
       statut: "brouillon",
       dateCreation: todayISO(),
       dateValidite: null,
+      dateDebutPrevue: null,
+      dateFinPrevue: null,
       chantierId: chantier.id,
       lots: [],
       acomptePct: 30,

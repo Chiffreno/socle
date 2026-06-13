@@ -756,8 +756,10 @@ function remiseAmountClient(
   valeur: number
 ): number {
   if (subTotalHT <= 0) return 0;
+  // Négatif clampé à 0 (symétrie mode euros) : une remise saisie négative
+  // ne doit jamais augmenter le total.
   if (mode === "pourcent")
-    return Math.min(subTotalHT, subTotalHT * ((valeur || 0) / 100));
+    return Math.min(subTotalHT, subTotalHT * (Math.max(0, valeur || 0) / 100));
   if (mode === "euros") return Math.min(subTotalHT, Math.max(0, valeur || 0));
   return 0;
 }

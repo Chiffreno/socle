@@ -27,6 +27,11 @@ export interface PointPrestation {
   unite: Unite;
   /** Prix de vente FINAL au client, tout compris pour la prestation. */
   prixVente: number;
+  /** Part fourniture (matériel) en % du prixVente — INDICATIVE, à valider en
+   *  passe prix. Sert à l'affichage client « Fourniture : X · Pose : Y » :
+   *  fourniture = total × pct/100, pose = total − fourniture (Σ inchangée).
+   *  Absente → pas de décomposition affichée pour cette prestation. */
+  partFourniturePct?: number;
   tva: TauxTVA;
   /**
    * Sémantiquement true pour un produit fini reconnaissable par le client
@@ -35,6 +40,14 @@ export interface PointPrestation {
    * Pour la démolition (100% pose) : false partout.
    */
   afficheFourniture: boolean;
+}
+
+/** Override PONCTUEL d'un point sur UN devis (lot.o.pointsOverride[prestationId]).
+ *  N'altère JAMAIS le catalogue global. `pu` absent → prixVente catalogue ;
+ *  `lbl` absent → libellé catalogue. Override prix/libellé CLIENT (pas interne). */
+export interface PointOverride {
+  pu?: number;
+  lbl?: string;
 }
 
 /** Catégorie d'un catalogue de points (regroupement UI, sections repliables). */

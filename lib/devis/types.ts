@@ -3,12 +3,12 @@
 // Calqués sur lib/devis/schema.sql (camelCase côté TS).
 //
 // P2 — Le contenu chiffrage est porté par `Devis.engine: EngineState`
-// (moteur "15 lots ChiffReno"). Les anciens `Lot`/`Ligne` (modèle C1
+// (moteur "14 lots ChiffReno"). Les anciens `Lot`/`Ligne` (modèle C1
 // ligne-par-ligne) sont @deprecated et seront retirés en P3 quand
 // DevisEditor sera réécrit autour du configurateur de lots.
 // ============================================================
 
-import type { EngineState } from "./engine/types";
+import type { EngineState, LotId } from "./engine/types";
 
 export type ClientType = "particulier" | "professionnel";
 
@@ -24,6 +24,22 @@ export type LigneNature = "normal" | "option";
 
 /** Mode de remise commerciale appliquée au sous-total HT. */
 export type RemiseMode = "aucune" | "pourcent" | "euros";
+
+/** Échéancier de paiement (multi-acomptes). Étape 2 : remplace l'acompte
+ *  unique `acomptePct` côté UI. Résolu en montants par `resoudreEcheancier`
+ *  (lib/devis/echeancier.ts) — SEULE source des montants, partagée UI/PDF. */
+export type EcheanceMoment = "commande" | "encours" | "reception";
+export type EcheanceMode = "pourcent" | "montant" | "solde";
+
+export interface Echeance {
+  id: string;
+  libelle: string;
+  moment: EcheanceMoment;
+  /** "solde" = 100 % − somme des autres lignes ; une seule ligne solde. */
+  mode: EcheanceMode;
+  /** Ignoré si mode === "solde". */
+  valeur: number;
+}
 
 export type TauxTVA = 5.5 | 10 | 20;
 
@@ -106,6 +122,15 @@ export interface Entreprise {
   tauxHoraire: number;
   iban: string;
   cgv: string;
+  /** Logo de l'entreprise — data URL base64 (redimensionné/compressé côté
+   *  client, plafonné). Vide = pas de logo (l'en-tête retombe sur le nom). */
+  logo: string;
+  /** Couleur d'accent du document client (hex). Pilote tous les accents du
+   *  PDF via la variable CSS --ap-accent. Défaut = vert SOCLE #1a7a3c. */
+  couleurAccent: string;
+  /** Taux de pénalités de retard (% par mois). null = non renseigné →
+   *  placeholder « [taux à préciser] » sur le devis (jamais inventé). */
+  penalitesRetardTaux: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -194,6 +219,80 @@ export interface Facture {
 }
 export type FactureInput = Omit<Facture, "id" | "createdAt" | "updatedAt">;
 
+// ─── PV de réception (MODÈLE SEUL — aucune UI, aucun composant ici) ───
+// Posé selon le patron Facture : modèle + repository + helper de statut, avant
+// toute UI. Le PV pré-charge les lots du devis signé d'un chantier ; pour
+// chaque lot réceptionné, l'utilisateur pose un verdict et — en cas de
+// réserve/refus — une liste de réserves (texte + photos).
+//
+// Décisions actées (Temps 1) :
+//  - Stockage 100 % local : le modèle vit en localStorage (cf. repository).
+//  - Photos : référencées par id (clés IndexedDB résolues en phase B), JAMAIS
+//    inline dans le modèle.
+//  - Signatures : data-URL PNG du canvas.
+//  - Levée des réserves : NON codée en Temps 1 ; l'emplacement est prévu
+//    (`PVReserve.leveeLe`) mais reste undefined partout — ne pas l'utiliser.
+
+/** Verdict posé sur un lot réceptionné. `non_statue` = état initial (le lot
+ *  n'a pas encore été tranché ; un verdict explicite est requis pour finaliser). */
+export type PVVerdict = "non_statue" | "valide" | "reserve" | "refus";
+
+/** Statut de réception global, DÉRIVÉ des lignes (cf. `verdictPV`). Non stocké.
+ *  `incomplete` = au moins un lot reste `non_statue` → PV non finalisable. */
+export type StatutReception =
+  | "incomplete"
+  | "sans_reserve"
+  | "avec_reserves"
+  | "refuse";
+
+/** Signature manuscrite capturée au canvas (client ou entreprise). */
+export interface PVSignature {
+  /** PNG du canvas (data URL base64). */
+  dataUrl: string;
+  /** Nom du signataire. */
+  nom: string;
+  /** Date de signature (ISO). */
+  date: string;
+}
+
+/** Une réserve émise sur un lot (verdict `reserve` ou `refus`). */
+export interface PVReserve {
+  id: string;
+  texte: string;
+  /** Clés vers les photos (IndexedDB, résolues en phase B). JAMAIS d'image
+   *  inline dans le modèle. */
+  photoIds: string[];
+  /** Date de levée de la réserve (ISO). PRÉVU pour le Temps 2 — reste
+   *  undefined partout en Temps 1, ne pas l'utiliser ni l'exposer. */
+  leveeLe?: string;
+}
+
+/** Une ligne de PV = un lot réceptionné. */
+export interface PVLigne {
+  /** Identifiant stable du moteur (JAMAIS le libellé : label/icône résolus au
+   *  rendu via `LM`, cf. lib/devis/engine/lots.ts). */
+  lotId: LotId;
+  verdict: PVVerdict;
+  /** Réserves émises ; vide si verdict === "valide". */
+  reserves: PVReserve[];
+}
+
+export interface PV {
+  id: string;
+  /** FK Chantier parent. */
+  chantierId: string;
+  /** FK Devis source : fige les lots réceptionnés à la création. */
+  devisId: string;
+  /** Date de réception (ISO date — YYYY-MM-DD). */
+  date: string;
+  lignes: PVLigne[];
+  signatureClient?: PVSignature;
+  signatureEntreprise?: PVSignature;
+  createdAt: string;
+  updatedAt: string;
+}
+export type PVInput = Omit<PV, "id" | "createdAt" | "updatedAt">;
+
 // ─── @deprecated — modèle C1 ligne-par-ligne ───
 // Conservé en P2 pour ne pas casser DevisEditor/ApercuDevis. Sera supprimé
 // en P3 quand l'UI bascule sur le configurateur de lots ChiffReno. Les
@@ -216,7 +315,7 @@ export interface Ligne {
   coutMoInterne?: number;
 }
 
-/** @deprecated P2 — modèle C1, remplacé par les 15 lots ChiffReno
+/** @deprecated P2 — modèle C1, remplacé par les 14 lots ChiffReno
  *  (cf. `lib/devis/engine/lots.ts`). */
 export interface Lot {
   id: string;
@@ -234,6 +333,10 @@ export interface Devis {
   statut: DevisStatut;
   dateCreation: string; // ISO date (YYYY-MM-DD)
   dateValidite: string | null;
+  /** Délai PRÉVISIONNEL des travaux proposé sur ce devis (≠ planning réel du
+   *  Chantier). null = non renseigné. Affiché en section dédiée du document. */
+  dateDebutPrevue: string | null; // ISO date
+  dateFinPrevue: string | null; // ISO date
   /** FK vers le Chantier parent. L'adresse de chantier est portée par le
    *  Chantier (le Devis ne stocke plus d'adresse). */
   chantierId: string;
@@ -254,7 +357,12 @@ export interface Devis {
   /** @deprecated P2 — modèle C1, vidé à [] par la migration. Sera retiré
    *  en P3 quand DevisEditor sera réécrit autour de `engine`. */
   lots: Lot[];
+  /** @deprecated Étape 2 — remplacé par `echeancier`. Conservé pour la
+   *  migration (acompte unique → 2 lignes) ; l'UI ne l'édite plus. */
   acomptePct: number;
+  /** Échéancier multi-acomptes. Défauté par le repository (jamais par le
+   *  moteur). Migration non cassante depuis `acomptePct`. */
+  echeancier: Echeance[];
   lettreIntro: string;
   notesInternes: string;
   /** Affiche le détail Matériaux/Pose dans l'aperçu/PDF client. */
@@ -297,11 +405,17 @@ export type DevisInput = Omit<
   | "tvaParDefaut"
   | "engine"
   | "chantierId"
+  | "echeancier"
   | "regimeTVA"
 > &
   Partial<
     Pick<
       Devis,
-      "globalSurf" | "tvaParDefaut" | "engine" | "chantierId" | "regimeTVA"
+      | "globalSurf"
+      | "tvaParDefaut"
+      | "engine"
+      | "chantierId"
+      | "echeancier"
+      | "regimeTVA"
     >
   >;

@@ -52,6 +52,11 @@ export interface LotTotaux {
   items: EngineLigne[];
   // Décomposition déboursé
   deboursé: number; // somme item.total où prixEstFinal=false
+  /** Sous-ensemble du déboursé qui PORTE la MO (lignes non-`sansMO`). La MO du
+   *  lot se répartit uniquement dessus ; les lignes `sansMO` (ex. Consuel)
+   *  reçoivent la marge mais aucune MO. Égal à `deboursé` si aucune ligne
+   *  `sansMO` → comportement et chiffres inchangés pour tous les autres lots. */
+  debourséAvecMO: number;
   MO: number; // tempsMoHeures × tauxHoraire
   margePct: number; // lot.m
   caDeboursé: number; // (deboursé + MO) × (1 + m%)
@@ -99,7 +104,9 @@ function remiseAmount(
 ): number {
   if (subTotalHT <= 0) return 0;
   if (mode === "pourcent") {
-    return Math.min(subTotalHT, subTotalHT * ((valeur || 0) / 100));
+    // Négatif clampé à 0 (symétrie mode euros) : une remise saisie négative
+    // ne doit jamais augmenter le total.
+    return Math.min(subTotalHT, subTotalHT * (Math.max(0, valeur || 0) / 100));
   }
   if (mode === "euros") {
     return Math.min(subTotalHT, Math.max(0, valeur || 0));
@@ -119,6 +126,13 @@ export function calcLotTotaux(
 
   const deboursé = round2(
     items.filter((i) => !i.prixEstFinal).reduce((a, i) => a + i.total, 0)
+  );
+  // Pool qui porte la MO : déboursé hors lignes `sansMO`. Sans ligne sansMO,
+  // debourséAvecMO === deboursé (cas de tous les lots actuels).
+  const debourséAvecMO = round2(
+    items
+      .filter((i) => !i.prixEstFinal && !i.sansMO)
+      .reduce((a, i) => a + i.total, 0)
   );
   const caPoints = round2(
     items.filter((i) => i.prixEstFinal).reduce((a, i) => a + i.total, 0)
@@ -141,6 +155,7 @@ export function calcLotTotaux(
     active: lot.on,
     items,
     deboursé,
+    debourséAvecMO,
     MO,
     margePct,
     caDeboursé,
@@ -151,6 +166,44 @@ export function calcLotTotaux(
     margePoints,
     caLot: round2(caDeboursé + caPoints),
   };
+}
+
+// ─── Ventilation du CA déboursé par ligne (SOURCE UNIQUE) ────────────
+// CETTE formule est partagée à l'identique par totals.ts (ventilation TVA) ET
+// agregation.ts (lignes client). Toute divergence casserait l'invariant
+// « Σ lignes client = HT lot ». Ne dupliquer NULLE PART.
+//
+// La MO du lot se répartit sur le pool `debourséAvecMO` (lignes non-`sansMO`) ;
+// les lignes `sansMO` reçoivent la marge seule. Sans aucune ligne `sansMO`,
+// `debourséAvecMO === deboursé` → `coefAvecMO === caDeboursé / deboursé` (le
+// coefficient historique) : chiffres byte-identiques pour tous les lots actuels.
+
+export interface LotCAContext {
+  margePct: number;
+  /** Coefficient appliqué au `total` des lignes déboursé NON-`sansMO`. */
+  coefAvecMO: number;
+  /** Surplus de CA non porté par une ligne (MO+marge orpheline) → tvaParDefaut. */
+  orphanCA: number;
+}
+
+export function lotCAContext(lt: LotTotaux): LotCAContext {
+  const marge = 1 + (lt.margePct || 0) / 100;
+  const debourséSansMO = round2(lt.deboursé - lt.debourséAvecMO);
+  const caSansMO = round2(debourséSansMO * marge);
+  const caAvecMO = round2(lt.caDeboursé - caSansMO);
+  const coefAvecMO = lt.debourséAvecMO > 0 ? caAvecMO / lt.debourséAvecMO : 0;
+  // Aucune ligne avecMO pour porter caAvecMO (MO pur, ou tout le déboursé en
+  // sansMO) → ce CA devient orphelin (rattaché à tvaParDefaut côté ventilation).
+  const orphanCA = lt.debourséAvecMO === 0 ? caAvecMO : 0;
+  return { margePct: lt.margePct || 0, coefAvecMO, orphanCA };
+}
+
+/** CA client d'UNE ligne moteur. Prix ferme → tel quel ; déboursé `sansMO` →
+ *  marge seule ; déboursé normal → coefAvecMO (déboursé + sa part de MO + marge). */
+export function lineClientCA(item: EngineLigne, ctx: LotCAContext): number {
+  if (item.prixEstFinal) return item.total;
+  if (item.sansMO) return item.total * (1 + ctx.margePct / 100);
+  return item.total * ctx.coefAvecMO;
 }
 
 // ─── Calcul global du devis ──────────────────────────────────────────
@@ -185,25 +238,18 @@ export function calcEngineTotaux(
     const ventilationAcc: Record<number, number> = {};
 
     for (const lt of activeLots) {
-      const { deboursé, caDeboursé, items } = lt;
-      // coefficient pour distribuer caDeboursé sur les lignes déboursé du lot.
-      const coefDeboursé = deboursé > 0 ? caDeboursé / deboursé : 0;
-      // surplus orphan (MO+marge sans aucune ligne déboursé pour le porter)
-      const orphanCA = deboursé === 0 ? caDeboursé : 0;
+      const ctx = lotCAContext(lt);
 
-      for (const item of items) {
+      for (const item of lt.items) {
         const tva = item.tva ?? state.tvaParDefaut;
-        const lineCABeforeRemise = item.prixEstFinal
-          ? item.total
-          : item.total * coefDeboursé;
-        const lineCAAfterRemise = lineCABeforeRemise * ratio;
+        const lineCAAfterRemise = lineClientCA(item, ctx) * ratio;
         const lineTVA = lineCAAfterRemise * (tva / 100);
         ventilationAcc[tva] = (ventilationAcc[tva] || 0) + lineTVA;
       }
 
-      if (orphanCA > 0) {
+      if (ctx.orphanCA > 0) {
         const tva = state.tvaParDefaut;
-        const lineTVA = orphanCA * ratio * (tva / 100);
+        const lineTVA = ctx.orphanCA * ratio * (tva / 100);
         ventilationAcc[tva] = (ventilationAcc[tva] || 0) + lineTVA;
       }
     }

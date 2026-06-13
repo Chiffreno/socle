@@ -27,11 +27,16 @@ import type {
   Devis,
   DevisInput,
   DevisStatut,
+  Echeance,
+  EcheanceMode,
+  EcheanceMoment,
   Entreprise,
   EntrepriseInput,
   Facture,
   FactureInput,
   Lot,
+  PV,
+  PVInput,
   RegimeTVA,
   RemiseMode,
   TauxTVA,
@@ -70,12 +75,24 @@ export interface FactureRepository {
   create(data: FactureInput): Promise<Facture>;
 }
 
+/** PV de réception — CRUD local (modèle seul, aucune UI). Interface async pour
+ *  rester compatible avec la future bascule Supabase. */
+export interface PvRepository {
+  get(id: string): Promise<PV | null>;
+  create(data: PVInput): Promise<PV>;
+  update(id: string, data: Partial<PVInput>): Promise<PV>;
+  delete(id: string): Promise<void>;
+  /** Tous les PV rattachés à un chantier. */
+  listByChantier(chantierId: string): Promise<PV[]>;
+}
+
 export interface Repository {
   entreprise: EntrepriseRepository;
   clients: CrudRepository<Client, ClientInput>;
   devis: DevisRepository;
   chantiers: ChantierRepository;
   factures: FactureRepository;
+  pv: PvRepository;
 }
 
 // ─── Clés de stockage ───
@@ -85,6 +102,7 @@ const KEY_DEVIS = "socle_devis";
 const KEY_DEVIS_SEQ = "socle_devis_seq";
 const KEY_CHANTIERS = "socle_chantiers";
 const KEY_FACTURES = "socle_factures";
+const KEY_PV = "socle_pv";
 
 // ─── Versionnage de schéma (reset one-shot) ───
 const KEY_SCHEMA_VERSION = "socle_schema_version";
@@ -157,6 +175,64 @@ function asNumber(v: unknown, def = 0): number {
   return Number.isFinite(n) ? n : def;
 }
 
+/** Échéancier par défaut : acompte (%) à la commande + solde à la réception.
+ *  Sert au défaut de création ET à la migration depuis l'acompte unique. */
+function defaultEcheancier(acomptePct: number): Echeance[] {
+  const pct = acomptePct > 0 ? acomptePct : 30;
+  return [
+    {
+      id: "ech-acompte",
+      libelle: "Acompte à la commande",
+      moment: "commande",
+      mode: "pourcent",
+      valeur: pct,
+    },
+    {
+      id: "ech-solde",
+      libelle: "Solde",
+      moment: "reception",
+      mode: "solde",
+      valeur: 0,
+    },
+  ];
+}
+
+/** Migration NON cassante : échéancier stocké si présent et valide, sinon
+ *  reconstruit depuis `acomptePct` (acompte unique → 2 lignes). Garde-fou :
+ *  une seule ligne `solde` — les suivantes sont rétrogradées en `pourcent`. */
+function normalizeEcheancier(raw: unknown, acomptePct: number): Echeance[] {
+  if (Array.isArray(raw) && raw.length > 0) {
+    const out: Echeance[] = [];
+    let soldeVu = false;
+    for (const item of raw) {
+      const o = (item ?? {}) as Raw;
+      const moment: EcheanceMoment =
+        o.moment === "commande" ||
+        o.moment === "encours" ||
+        o.moment === "reception"
+          ? o.moment
+          : "encours";
+      let mode: EcheanceMode =
+        o.mode === "pourcent" || o.mode === "montant" || o.mode === "solde"
+          ? o.mode
+          : "pourcent";
+      if (mode === "solde") {
+        if (soldeVu) mode = "pourcent";
+        else soldeVu = true;
+      }
+      out.push({
+        id: asString(o.id, uid()) || uid(),
+        libelle: asString(o.libelle, "Échéance"),
+        moment,
+        mode,
+        valeur: asNumber(o.valeur, 0),
+      });
+    }
+    return out;
+  }
+  return defaultEcheancier(acomptePct);
+}
+
 function normalizeDevis(raw: unknown): Devis {
   const r = (raw ?? {}) as Raw;
 
@@ -215,6 +291,11 @@ function normalizeDevis(raw: unknown): Devis {
     statut: ((r.statut as DevisStatut) || "brouillon") as DevisStatut,
     dateCreation: asString(r.dateCreation, todayISO()) || todayISO(),
     dateValidite: typeof r.dateValidite === "string" ? r.dateValidite : null,
+    // Additif : devis antérieurs sans délai prévisionnel → null (intact).
+    dateDebutPrevue:
+      typeof r.dateDebutPrevue === "string" ? r.dateDebutPrevue : null,
+    dateFinPrevue:
+      typeof r.dateFinPrevue === "string" ? r.dateFinPrevue : null,
     chantierId: asString(r.chantierId),
     globalSurf,
     tvaParDefaut,
@@ -222,6 +303,7 @@ function normalizeDevis(raw: unknown): Devis {
     engine,
     lots,
     acomptePct: asNumber(r.acomptePct, 30),
+    echeancier: normalizeEcheancier(r.echeancier, asNumber(r.acomptePct, 30)),
     lettreIntro: asString(r.lettreIntro),
     notesInternes: asString(r.notesInternes),
     detailMatPose,
@@ -285,7 +367,22 @@ async function withTotaux<
 // ─── Entreprise (singleton) ───
 const entrepriseRepo: EntrepriseRepository = {
   async get() {
-    return readJSON<Entreprise | null>(KEY_ENTREPRISE, null);
+    const e = readJSON<Entreprise | null>(KEY_ENTREPRISE, null);
+    if (!e) return null;
+    // Additif : profils antérieurs sans logo / couleur d'accent / pénalités →
+    // défauts sûrs (chargement intact d'un profil existant).
+    return {
+      ...e,
+      logo: typeof e.logo === "string" ? e.logo : "",
+      couleurAccent:
+        typeof e.couleurAccent === "string" && e.couleurAccent
+          ? e.couleurAccent
+          : "#1a7a3c",
+      penalitesRetardTaux:
+        typeof e.penalitesRetardTaux === "number"
+          ? e.penalitesRetardTaux
+          : null,
+    };
   },
   async save(data) {
     const existing = readJSON<Entreprise | null>(KEY_ENTREPRISE, null);
@@ -390,6 +487,7 @@ const devisRepo: DevisRepository = {
       tvaParDefaut,
       regimeTVA,
       engine,
+      echeancier: data.echeancier ?? defaultEcheancier(data.acomptePct ?? 30),
       id: uid(),
       numero: allocateNumero(),
       totalHT: 0,
@@ -505,10 +603,48 @@ const facturesRepo: FactureRepository = {
   },
 };
 
+// ─── PV de réception (modèle seul — CRUD local, aucune UI) ───
+const pvRepo: PvRepository = {
+  async get(id) {
+    return readJSON<PV[]>(KEY_PV, []).find((p) => p.id === id) ?? null;
+  },
+  async create(data) {
+    const list = readJSON<PV[]>(KEY_PV, []);
+    const record: PV = {
+      ...data,
+      id: uid(),
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+    };
+    writeJSON(KEY_PV, [...list, record]);
+    return record;
+  },
+  async update(id, data) {
+    const list = readJSON<PV[]>(KEY_PV, []);
+    const idx = list.findIndex((p) => p.id === id);
+    if (idx === -1) throw new Error(`[devis] PV introuvable: ${id}`);
+    const record: PV = { ...list[idx], ...data, id, updatedAt: nowISO() };
+    list[idx] = record;
+    writeJSON(KEY_PV, list);
+    return record;
+  },
+  async delete(id) {
+    const list = readJSON<PV[]>(KEY_PV, []);
+    writeJSON(
+      KEY_PV,
+      list.filter((p) => p.id !== id)
+    );
+  },
+  async listByChantier(chantierId) {
+    return readJSON<PV[]>(KEY_PV, []).filter((p) => p.chantierId === chantierId);
+  },
+};
+
 export const repository: Repository = {
   entreprise: entrepriseRepo,
   clients: clientsRepo,
   devis: devisRepo,
   chantiers: chantiersRepo,
   factures: facturesRepo,
+  pv: pvRepo,
 };
