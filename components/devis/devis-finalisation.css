@@ -1,0 +1,401 @@
+/* ============================================================
+   SOCLE — Page de finalisation du devis — scopé .fina-*
+   Charte INTERFACE artisan : vert = actif/validé, Figtree (var(--ff)) +
+   Space Grotesk tnum (var(--num)) sur les chiffres, sentence case, Tabler.
+   ============================================================ */
+
+.fina-shell {
+  min-height: 100vh;
+  background: var(--gray-bg);
+  font-family: var(--ff);
+  color: var(--black);
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+.fina-shell .num {
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Topbar ─────────────────────────────────────────────────────── */
+.fina-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 24px;
+  min-height: 56px;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray2);
+}
+.fina-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid var(--gray2);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.fina-back:hover { border-color: var(--black); background: var(--gray-bg); }
+.fina-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--black);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.fina-num { font-family: var(--num); font-size: 13px; font-weight: 500; color: var(--gray3); }
+.fina-statut {
+  padding: 4px 10px;
+  border: 1px solid var(--gray2);
+  border-radius: 6px;
+  background: var(--gray-bg);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray4, #555);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.fina-save {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.fina-save.is-dirty { color: var(--orange); }
+.fina-save.is-saved { color: var(--green); }
+.fina-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.fina-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 6px;
+  font-family: var(--ff);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--black);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fina-btn:hover:not(:disabled) { border-color: var(--black); background: var(--gray-bg); }
+.fina-btn:disabled { color: var(--gray3); cursor: not-allowed; background: var(--gray-bg); }
+.fina-btn i { font-size: 16px; }
+.fina-btn-primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--white);
+}
+.fina-btn-primary:hover:not(:disabled) {
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+}
+
+/* ── Corps ──────────────────────────────────────────────────────── */
+.fina-main { padding: 26px 24px 80px; }
+.fina-cols {
+  max-width: 1340px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .fina-cols { grid-template-columns: 1fr; }
+}
+
+.fina-col { display: flex; flex-direction: column; gap: 18px; }
+
+/* ── Aperçu intégré : MÊME document A4 que /apercu (ApercuDocument).
+      Charte DOC CLIENT (noir/gris + accent) dans sa colonne, distincte de la
+      charte interface artisan des réglages — coexistence voulue. Le document
+      vit en .ap-doc (apercu.css) ; ici seulement le cadre + la réduction. ── */
+.fina-apercu-col {
+  position: sticky;
+  top: 70px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 88px);
+  background: var(--gray-bg);
+  border: 1px solid var(--gray2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.fina-apercu-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 16px;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray2);
+}
+.fina-apercu-bar-t {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--black);
+}
+.fina-apercu-bar-note {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: .02em;
+  color: var(--gray3);
+}
+.fina-apercu-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 18px 0 28px;
+  -webkit-overflow-scrolling: touch;
+}
+/* Réduction fidèle (proportions conservées) pour tenir dans la colonne. */
+.fina-apercu-zoom {
+  zoom: 0.82;
+}
+.fina-apercu-empty {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--gray3);
+}
+/* Empilé sur écran étroit : l'aperçu passe sous les réglages, hauteur libre. */
+@media (max-width: 980px) {
+  .fina-apercu-col {
+    position: static;
+    height: auto;
+    max-height: none;
+  }
+  .fina-apercu-zoom { zoom: 0.9; }
+}
+
+.fina-card {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+  padding: 20px 22px 22px;
+}
+.fina-card-t {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--black);
+}
+.fina-private {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--gray3);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.fina-private i { font-size: 13px; }
+.fina-hint { margin: -8px 0 14px; font-size: 12.5px; color: var(--gray4, #555); }
+
+.fina-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 18px;
+}
+.fina-field { display: flex; flex-direction: column; gap: 6px; }
+.fina-field.col-full { grid-column: 1 / -1; }
+.fina-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray4, #555);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.fina-input,
+.fina-select,
+.fina-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 6px;
+  font-family: var(--ff);
+  font-size: 14px;
+  color: var(--black);
+  transition: border-color .12s, box-shadow .12s;
+}
+.fina-input.num { font-family: var(--num); }
+.fina-input:focus,
+.fina-select:focus,
+.fina-textarea:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-light);
+}
+.fina-textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+.fina-readonly {
+  padding: 9px 11px;
+  background: var(--gray-bg);
+  border: 1px solid var(--gray2);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--gray4, #555);
+}
+.fina-row { display: flex; gap: 8px; align-items: center; }
+.fina-suffix { position: relative; }
+.fina-suffix .fina-input { padding-right: 40px; }
+.fina-suffix-u {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--num);
+  font-size: 12px;
+  color: var(--gray3);
+  pointer-events: none;
+}
+
+/* ── Échéancier de paiement (multi-acomptes) ───────────────────────── */
+.fina-ech { display: flex; flex-direction: column; gap: 10px; margin-top: 2px; }
+.fina-ech-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 11px;
+  border: 1px solid var(--gray2);
+  border-radius: 9px;
+  background: var(--white);
+}
+.fina-ech-row .fina-input,
+.fina-ech-row .fina-select { min-width: 0; }
+.fina-ech-lib { flex: 1 1 100%; }
+.fina-ech-row .fina-select:not(.fina-ech-lib) { flex: 1 1 130px; }
+.fina-ech-val { flex: 0 0 104px; }
+.fina-ech-auto {
+  flex: 0 0 104px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--gray3);
+  text-align: center;
+}
+.fina-ech-montant {
+  flex: 1 1 auto;
+  text-align: right;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--black);
+  white-space: nowrap;
+}
+.fina-ech-del {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--gray2);
+  border-radius: 7px;
+  background: var(--white);
+  color: var(--gray3);
+  cursor: pointer;
+}
+.fina-ech-del:hover { color: #b42318; border-color: #f0c0bb; background: #fef3f2; }
+.fina-ech-del i { font-size: 16px; }
+.fina-ech-empty { padding: 6px 2px; }
+.fina-ech-add { margin-top: 12px; }
+
+.fina-ech-recap {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gray2);
+  font-size: 13px;
+  color: var(--gray4, #555);
+}
+.fina-ech-recap-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.fina-ech-recap-line strong { color: var(--green-dark); font-size: 14px; }
+.fina-ech-recap-pct { font-weight: 500; color: var(--gray3); font-size: 12px; }
+.fina-ech-recap-sub { margin-top: 4px; color: var(--gray3); }
+.fina-ech-recap.is-warn .fina-ech-recap-line strong { color: #b54708; }
+.fina-ech-warn {
+  margin: 11px 0 0;
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  font-size: 12.5px;
+  color: #b54708;
+  background: #fffaeb;
+  border: 1px solid #fedf89;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.fina-ech-warn i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Aside résumé ───────────────────────────────────────────────── */
+.fina-aside { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 82px; }
+.fina-aside-card {
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--gray4, #555);
+  line-height: 1.5;
+}
+.fina-aside-h {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gray3);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 7px;
+}
+.fina-aside-strong { font-weight: 600; color: var(--black); }
+.fina-muted { color: var(--gray3); font-style: italic; }
+.fina-aside-ttc { background: var(--green-light); border-color: var(--green-b); }
+.fina-aside-ttc .fina-aside-h { color: var(--green-dark); }
+.fina-ttc {
+  font-family: var(--num);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: -0.01em;
+}
+.fina-aside-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green-dark);
+  text-decoration: none;
+}
+.fina-aside-link:hover { text-decoration: underline; }
+.fina-aside-link i { font-size: 15px; }
