@@ -1,8 +1,10 @@
 /* ============================================================
-   SOCLE — Aperçu client minimal P3 — scopé .ap-*
-   RÈGLES NON NÉGOCIABLES : noir + gris uniquement, AUCUN vert
-   (réservé à l'interface artisan). Zéro radius, zéro shadow, zéro
-   gradient. Mise en forme PDF stylée → P5.
+   SOCLE — Document client : DEVIS (prototype PDF, P5) — scopé .ap-*
+   CHARTE DOC CLIENT, non négociable :
+     · NOIR / GRIS uniquement — AUCUN vert (réservé à l'interface artisan).
+     · Chiffres en Space Grotesk (.num → var(--num), tabular-nums).
+     · Sobre, lisible, conventions de devis classiques. Sentence case.
+   Impression : @page A4, barre d'outils masquée, lots non coupés.
    ============================================================ */
 
 .ap-page {
@@ -10,330 +12,376 @@
   min-height: 100vh;
   font-family: var(--ff);
   color: var(--black);
-  padding: 18px 24px 60px;
+  padding: 22px 24px 70px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.ap-page .num {
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Barre d'actions (hors document, non imprimable) */
+/* ── Barre d'outils (écran uniquement) ──────────────────────────── */
 .ap-toolbar {
-  max-width: 920px;
-  margin: 0 auto 16px;
+  max-width: 820px;
+  margin: 0 auto 18px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 9px 12px;
   background: var(--white);
   border: 1px solid var(--gray2);
 }
 .ap-btn {
-  padding: 6px 12px;
-  background: transparent;
-  border: 1px solid var(--gray2);
-  border-radius: 0;
+  padding: 7px 13px;
+  background: var(--white);
+  border: 1px solid var(--gray3);
   font-family: var(--ff);
   font-size: 13px;
+  font-weight: 500;
   color: var(--black);
   text-decoration: none;
   cursor: pointer;
 }
-.ap-btn:hover { border-color: var(--black); }
+.ap-btn:hover { background: var(--black); color: var(--white); border-color: var(--black); }
+.ap-btn-print { font-weight: 600; }
 .ap-toolbar-note {
   margin-left: auto;
-  font-family: var(--ff);
   font-size: 12px;
   color: var(--gray3);
-  letter-spacing: .04em;
+  letter-spacing: .03em;
 }
 
-/* Document A4 simulé */
+/* ── Feuille A4 ─────────────────────────────────────────────────── */
 .ap-doc {
-  max-width: 920px;
+  /* Couleur d'accent pilotée par l'entreprise (injectée inline). Repli sur le
+     vert SOCLE si non fournie. --ap-accent = filets/teintes ; --ap-accent-ink =
+     texte coloré (assombri si l'accent est clair → contraste garanti). */
+  --ap-accent: #1a7a3c;
+  --ap-accent-ink: #155e2e;
+  --ap-tint: color-mix(in srgb, var(--ap-accent) 8%, white);
+  max-width: 820px;
   margin: 0 auto;
   background: var(--white);
   border: 1px solid var(--gray2);
-  padding: 40px 48px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+  padding: 46px 52px 56px;
   color: var(--black);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ap-doc p { margin: 0 0 2px; }
+.ap-strong { font-weight: 600; }
+.ap-muted { color: var(--gray3); }
+.ap-ph {
+  color: var(--gray3);
+  font-style: italic;
+  font-weight: 400;
 }
 
-/* En-tête entreprise + meta document */
-.ap-doc-head {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
+/* ── En-tête : émetteur + bandeau document ──────────────────────── */
+.ap-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   gap: 32px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--gray2);
-  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--ap-accent);
 }
-.ap-ent-name {
+.ap-emetteur { max-width: 60%; }
+.ap-logo {
+  display: block;
+  max-width: 200px;
+  max-height: 76px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+.ap-emetteur-nom {
   margin: 0 0 6px;
   font-family: var(--ff);
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--black);
 }
-.ap-ent-line {
-  margin: 1px 0;
-  font-family: var(--ff);
-  font-size: 12px;
-  color: var(--gray4);
-  line-height: 1.4;
+.ap-emetteur-nom-sub {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--black);
 }
-.ap-ent-assurance { margin-top: 6px; }
-.ap-meta { text-align: right; }
-.ap-meta-titre {
-  margin: 0 0 4px;
-  font-family: var(--ff);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--gray4);
-  text-transform: uppercase;
+.ap-emetteur-meta { font-size: 11.5px; color: #555; line-height: 1.55; }
+.ap-emetteur-meta p { margin: 0; }
+.ap-docmeta { text-align: right; flex-shrink: 0; }
+.ap-docmeta-titre {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
   letter-spacing: .14em;
-}
-.ap-meta-num {
-  margin: 0 0 12px;
-  font-family: var(--mono);
-  font-size: 18px;
-  font-weight: 500;
+  text-transform: uppercase;
   color: var(--black);
 }
-.ap-meta-line {
-  margin: 1px 0;
-  font-family: var(--ff);
-  font-size: 12px;
-  color: var(--gray4);
-}
-.ap-meta-statut {
-  margin-top: 8px;
-  display: inline-block;
-  padding: 3px 10px;
-  border: 1px solid var(--gray2);
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--gray4);
+.ap-docmeta-t { margin-left: auto; border-collapse: collapse; font-size: 12px; }
+.ap-docmeta-t td { padding: 2px 0 2px 14px; text-align: right; }
+.ap-docmeta-t td:first-child {
+  text-align: left;
+  color: var(--gray3);
   text-transform: uppercase;
-  letter-spacing: .12em;
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  padding-left: 0;
 }
 
-/* Sections génériques */
-.ap-h2 {
-  margin: 0 0 12px;
-  font-family: var(--ff);
+/* ── Parties : client | lieu des travaux ────────────────────────── */
+.ap-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin: 22px 0 4px;
+}
+.ap-partie-t {
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--gray3);
+  border-bottom: 1px solid var(--gray2);
+  padding-bottom: 4px;
+}
+.ap-partie p { font-size: 12.5px; }
+
+/* ── Objet + intro ──────────────────────────────────────────────── */
+.ap-objet {
+  margin: 24px 0 4px;
   font-size: 15px;
   font-weight: 600;
   color: var(--black);
 }
-.ap-h3 {
-  margin: 0 0 8px;
-  font-family: var(--ff);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--gray4);
-  text-transform: uppercase;
-  letter-spacing: .12em;
-}
-.ap-strong { font-weight: 600; color: var(--black); }
-.ap-muted { color: var(--gray3); font-style: italic; }
+.ap-intro { margin: 10px 0 4px; font-size: 12.5px; color: #444; }
+.ap-intro p { margin: 0 0 6px; }
 
-/* Parties Client / Chantier */
-.ap-parties {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 28px;
-  margin-bottom: 24px;
+/* ── Synthèse par lot (vue d'ensemble en tête) ──────────────────── */
+/* Récapitulatif par lot = vue d'ensemble isolée en BOXE : teinte douce de
+   l'accent + ancrage couleur fort (bord gauche épais). Le texte reste noir/gris,
+   l'accent ne fait que souligner le bloc. Piloté par --ap-accent / --ap-tint. */
+.ap-synth {
+  margin: 22px 0 6px;
+  padding: 14px 16px 8px;
+  background: var(--ap-tint);
+  border: 1px solid var(--gray2);
+  border-left: 4px solid var(--ap-accent);
+  border-radius: 8px;
 }
-.ap-parties p {
-  margin: 1px 0;
-  font-family: var(--ff);
+.ap-synth .ap-bloc-t { color: var(--ap-accent-ink); }
+.ap-synth-t { width: 100%; border-collapse: collapse; }
+.ap-synth-t td {
   font-size: 13px;
-  color: var(--black);
-  line-height: 1.45;
-}
-
-/* Objet + intro */
-.ap-objet { margin-bottom: 16px; }
-.ap-intro {
-  margin-bottom: 24px;
-  padding: 12px 0;
-  border-top: 1px solid var(--gray2);
+  padding: 7px 8px;
   border-bottom: 1px solid var(--gray2);
 }
-.ap-intro p {
-  margin: 4px 0;
-  font-family: var(--ff);
-  font-size: 13px;
-  color: var(--gray4);
-  line-height: 1.5;
+.ap-synth-t .s-num { width: 40px; color: var(--ap-accent-ink); font-weight: 600; }
+.ap-synth-t .s-lib { color: var(--black); }
+.ap-synth-t .s-ht { text-align: right; font-weight: 600; white-space: nowrap; }
+.ap-synth-total td {
+  border-top: 1.5px solid var(--ap-accent);
+  border-bottom: none;
+  padding-top: 9px;
+  font-weight: 700;
 }
+.ap-synth-total .s-ht { color: var(--ap-accent-ink); }
 
-/* Détail par lot */
-.ap-lots { margin-bottom: 28px; }
-.ap-lot { margin-bottom: 26px; }
+/* ── Délai prévisionnel ─────────────────────────────────────────── */
+.ap-delai { margin-top: 22px; font-size: 12.5px; }
+.ap-delai p { margin: 0; }
+
+/* ── Corps : lots & prestations ─────────────────────────────────── */
+.ap-empty { margin: 32px 0; text-align: center; }
+.ap-lot { margin-top: 24px; }
 .ap-lot-head {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--gray2);
-  margin-bottom: 8px;
+  gap: 12px;
+  padding: 6px 0 7px;
+  border-bottom: 1.5px solid var(--ap-accent);
 }
-.ap-lot-title {
-  margin: 0;
+.ap-lot-num { font-size: 13px; font-weight: 700; color: var(--ap-accent-ink); min-width: 30px; }
+.ap-lot-titre { flex: 1; font-size: 14px; font-weight: 700; color: var(--black); }
+.ap-lot-ht { font-size: 13px; font-weight: 600; color: var(--black); }
+
+.ap-lignes { width: 100%; border-collapse: collapse; margin-top: 2px; }
+.ap-lignes thead th {
   font-family: var(--ff);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--black);
+  font-size: 9.5px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .06em;
+  color: var(--ap-accent-ink);
+  text-align: right;
+  padding: 8px 8px 7px;
+  border-bottom: 1.5px solid var(--ap-accent);
 }
-.ap-lot-sub {
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--black);
-}
-
-/* Table des lignes du lot */
-.ap-lot-items {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-.ap-lot-items th {
-  text-align: left;
-  padding: 6px 8px;
+.ap-lignes thead th.c-num,
+.ap-lignes thead th.c-des { text-align: left; }
+.ap-lignes tbody td {
+  font-size: 12.5px;
+  padding: 8px 8px;
   border-bottom: 1px solid var(--gray2);
-  font-family: var(--ff);
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--gray4);
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  background: transparent;
-}
-.ap-lot-items td {
-  padding: 8px;
   vertical-align: top;
-  border-bottom: 1px solid var(--gray2);
-  font-family: var(--ff);
-  color: var(--black);
+  text-align: right;
 }
-.ap-lot-items td.lbl { color: var(--black); }
-.ap-lot-items td.lbl small {
+/* Zébré : lisibilité ligne à ligne (gris très clair, jamais l'accent). */
+.ap-lignes tbody tr:nth-child(even) td { background: #f6f7f8; }
+.ap-lignes .c-num { width: 34px; text-align: left; }
+.ap-lignes .c-des { text-align: left; }
+.ap-lignes .c-qte { width: 52px; }
+.ap-lignes .c-u { width: 56px; text-align: left; }
+.ap-lignes .c-pu { width: 86px; }
+.ap-lignes .c-tva { width: 56px; }
+.ap-lignes .c-tot { width: 96px; }
+/* Couleurs « atténuées » de colonnes : CORPS uniquement (les en-têtes gardent
+   l'accent). */
+.ap-lignes tbody .c-num { color: var(--gray3); font-size: 11.5px; }
+.ap-lignes tbody .c-u,
+.ap-lignes tbody .c-tva { color: #555; }
+.ap-lignes tbody .c-tot { font-weight: 600; }
+.ap-l-titre { display: block; font-weight: 500; color: var(--black); }
+.ap-l-desc {
   display: block;
   margin-top: 2px;
-  color: var(--gray3);
-  font-family: var(--ff);
   font-size: 11px;
-  line-height: 1.35;
+  color: var(--gray3);
+  line-height: 1.4;
+  max-width: 46ch;
 }
-/* Description client (phrase dérivée de la config) — un peu plus lisible. */
-.ap-lot-items td.lbl small.ap-desc { color: var(--gray4); }
-.ap-lot-items th.qty,
-.ap-lot-items td.qty,
-.ap-lot-items th.pu,
-.ap-lot-items td.pu,
-.ap-lot-items th.tva,
-.ap-lot-items td.tva,
-.ap-lot-items th.total,
-.ap-lot-items td.total {
-  text-align: right;
-  white-space: nowrap;
+/* Sous-titre de catégorie (élec) — eyebrow accent, sobre. */
+.ap-l-cat td {
+  padding: 9px 5px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ap-accent-ink);
+  background: var(--white) !important;
+  border-bottom: 1px solid var(--ap-accent);
 }
-.ap-lot-items td.pu,
-.ap-lot-items td.qty,
-.ap-lot-items td.tva,
-.ap-lot-items td.total {
-  font-family: var(--mono);
-  font-size: 12px;
+/* Décomposition client Fourniture / Pose (info client, jamais interne). */
+.ap-l-fp {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: #555;
 }
-.ap-lot-items td.total { font-weight: 500; color: var(--black); }
 
-/* Totaux du devis */
+/* ── Récapitulatif ──────────────────────────────────────────────── */
 .ap-totaux {
-  margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px solid var(--gray2);
   display: flex;
   justify-content: flex-end;
+  margin-top: 22px;
 }
-.ap-totaux dl {
-  display: grid;
-  grid-template-columns: auto auto;
-  column-gap: 28px;
-  row-gap: 6px;
-  margin: 0;
-  font-size: 13px;
-  min-width: 320px;
-}
-.ap-totaux dt {
-  color: var(--gray4);
-  font-family: var(--ff);
-  text-align: right;
-}
-.ap-totaux dd {
-  margin: 0;
-  font-family: var(--mono);
+.ap-totaux-t { border-collapse: collapse; min-width: 320px; }
+.ap-totaux-t td { padding: 6px 0; font-size: 13px; }
+.ap-totaux-t td:first-child { color: #444; padding-right: 28px; }
+.ap-totaux-t td:last-child { text-align: right; font-weight: 500; }
+.ap-totaux-ht td {
+  font-weight: 700;
   color: var(--black);
-  text-align: right;
-}
-.ap-totaux dt.ap-strong,
-.ap-totaux dd.ap-strong {
-  color: var(--black);
-  font-weight: 600;
   border-top: 1px solid var(--gray2);
-  padding-top: 6px;
-  margin-top: 4px;
-}
-.ap-totaux dt.ap-ttc,
-.ap-totaux dd.ap-ttc {
-  color: var(--black);
-  font-weight: 600;
-  font-size: 16px;
-  border-top: 2px solid var(--black);
   padding-top: 8px;
-  margin-top: 6px;
 }
+.ap-totaux-ttc td {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ap-accent-ink);
+  background: var(--ap-tint);
+  border-top: 2px solid var(--ap-accent);
+  padding: 9px 10px;
+}
+.ap-totaux-ttc td:first-child { padding-left: 10px; }
 
-/* Modalités d'acompte */
-.ap-acompte {
-  margin-top: 24px;
-  padding: 14px 0;
-  border-top: 1px solid var(--gray2);
-}
-.ap-acompte p {
-  margin: 4px 0;
-  font-family: var(--ff);
-  font-size: 13px;
+/* ── Blocs texte (règlement, mentions) ──────────────────────────── */
+.ap-bloc-t {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
   color: var(--black);
 }
+.ap-reglement { margin-top: 26px; font-size: 12.5px; }
+.ap-reglement p { margin: 0 0 4px; }
 
-/* Mentions légales (placeholder P3) */
-.ap-mentions {
-  margin-top: 32px;
-  padding-top: 16px;
-  border-top: 1px dashed var(--gray2);
+/* Échéancier de paiement — sobre, aligné sur le récap totaux. Accent
+   (--ap-accent) en filet gauche + montant ; texte noir/gris, aucun aplat. */
+.ap-ech-t {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2px 0 8px;
 }
-.ap-mentions-note {
-  margin: 0;
-  font-family: var(--ff);
-  font-size: 11px;
+.ap-ech-t td {
+  padding: 7px 0;
+  font-size: 12.5px;
+  border-bottom: 1px solid var(--gray2);
+  vertical-align: baseline;
+}
+.ap-ech-t tr:last-child td { border-bottom: none; }
+.ap-ech-lib { color: var(--black); padding-left: 10px; border-left: 2px solid var(--ap-accent); }
+.ap-ech-moment { color: var(--gray3); }
+.ap-ech-pct {
+  text-align: right;
+  white-space: nowrap;
   color: var(--gray3);
-  font-style: italic;
+  padding: 0 18px;
+}
+.ap-ech-mt {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--ap-accent-ink);
+}
+.ap-mentions { margin-top: 26px; }
+.ap-mentions-l {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  color: #444;
+  line-height: 1.55;
+}
+.ap-mentions-l li { margin-bottom: 4px; }
+.ap-mentions-flag { color: var(--gray3); }
+.ap-mentions-flag em { font-style: italic; }
+
+/* ── Signature ──────────────────────────────────────────────────── */
+.ap-signature { margin-top: 22px; display: flex; justify-content: flex-end; }
+.ap-signature-box { width: 320px; }
+.ap-signature-l { font-size: 11px; color: #444; margin: 0 0 6px; }
+.ap-signature-zone {
+  height: 72px;
+  border: 1px solid var(--gray2);
 }
 
-/* Impression : enlève la chrome SOCLE et la toolbar */
+/* ── Impression : A4, sans chrome ───────────────────────────────── */
 @media print {
-  body { background: white; }
-  .ap-toolbar { display: none; }
-  .ap-page { padding: 0; background: white; }
-  .ap-doc { border: none; padding: 20px; max-width: 100%; }
-}
-
-/* Mobile */
-@media (max-width: 720px) {
-  .ap-doc { padding: 24px 18px; }
-  .ap-doc-head { grid-template-columns: 1fr; gap: 16px; }
-  .ap-meta { text-align: left; }
-  .ap-parties { grid-template-columns: 1fr; gap: 18px; }
-  .ap-lot-items { font-size: 11px; }
-  .ap-lot-items th, .ap-lot-items td { padding: 5px 4px; }
+  @page { size: A4; margin: 15mm 14mm; }
+  .ap-toolbar { display: none !important; }
+  .ap-page { background: var(--white); padding: 0; min-height: 0; }
+  .ap-doc {
+    max-width: none;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  .ap-lignes thead { display: table-header-group; } /* en-têtes répétés */
+  .ap-lot,
+  .ap-parties,
+  .ap-synth,
+  .ap-totaux,
+  .ap-reglement,
+  .ap-mentions,
+  .ap-signature { break-inside: avoid; }
 }
